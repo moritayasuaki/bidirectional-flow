@@ -647,28 +647,35 @@ https://ncatlab.org/nlab/show/2-poset
   - compositions: composition of forward and backward monotone functions, (f , b) ∘ (f' , b') = (f ∘ f' , b' ∘ b)
   - 2-morphisms: pointwise ordering, (f , b) ≤ (f' , b') := (∀ d, f d ≤ f' d) ∧ (∀ e , b e ≤ b' e)
 
-- There is an adjunction
+here is an adjunction
 
+```
             R ⊆ f2r fb
 r2f ⊣ f2r   ==========
             r2f R ≥ fb
+```
 
 
-Tensor product?
-(D , E , R) ⊗ (E , F , R') → (D , F , R ; R')
-(D , E , fb) ⊗ (E , F , fb') → (D , F  fb ∘ fb')
+In homogeneous setting, composition of 2-morphisms is a tensor product in monoidal category
+- (D , D) ⊗ (D , D) → (D , D)
 
+```
                        r2f
-                      ---->   monotone
-            (𝒫(D×E),⊆) ⊥   (D⇒E × E⇒D , ≤)
+                      ---->
+            (𝒫(D×E),⊆) ⊥   (D⇒E × E⇒D , ≤) + monotone
                  |    <----    |
                  |     f2r     |
                  |             |
             (𝒫(D×E),⊆) ==== (D⇒E × E⇒D , ≤)
             + something       monotone + something
+```
 
- + r2f ∘ f2r adds pairs for butterfly shapes relation
+The bottom two categories in the diagram are fixed point of adjunction.
+Their tensor product does different thing (e.g. adding pair of retation) from the top two.
 
+- r2f ∘ f2r adds pairs for butterfly shapes relation
+
+```
     d     e
     |\   /|
     | \ / |
@@ -676,9 +683,8 @@ Tensor product?
     | / \ |
     |/   \|
     d'    e'
+```
 
-The bottom two categories in the diagram are centors of adjunction.
-And their tensor product does different thing (e.g. adding pair of retation) than the top two.
 
 
 ```agda
