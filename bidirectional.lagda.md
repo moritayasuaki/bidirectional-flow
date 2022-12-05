@@ -649,7 +649,7 @@ https://ncatlab.org/nlab/show/2-poset
 
 here is an adjunction
 
-```
+```txt
             R ⊆ f2r fb
 r2f ⊣ f2r   ==========
             r2f R ≥ fb
@@ -659,7 +659,7 @@ r2f ⊣ f2r   ==========
 In homogeneous setting, composition of 2-morphisms is a tensor product in monoidal category
 - (D , D) ⊗ (D , D) → (D , D)
 
-```
+```txt
                        r2f
                       ---->
             (𝒫(D×E),⊆) ⊥   (D⇒E × E⇒D , ≤) + monotone
@@ -675,7 +675,7 @@ Their tensor product does different thing (e.g. adding pair of retation) from th
 
 - r2f ∘ f2r adds pairs for butterfly shapes relation
 
-```
+```txt
     d     e
     |\   /|
     | \ / |
