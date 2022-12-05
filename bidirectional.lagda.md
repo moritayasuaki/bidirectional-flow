@@ -673,7 +673,7 @@ In homogeneous setting, composition of 2-morphisms is a tensor product in monoid
 The bottom two categories in the diagram are fixed point of adjunction.
 Their tensor product does different thing (e.g. adding pair of retation) from the top two.
 
-- r2f ∘ f2r adds pairs for butterfly shapes relation
+- r2f ∘ f2r adds pairs on the relation for butterfly shape relation
 
 ```txt
     d     e
@@ -689,15 +689,13 @@ Their tensor product does different thing (e.g. adding pair of retation) from th
 
 ```agda
 
-module _
+module bidirectional-flow
   (D : _) (_≤D_ : _) (⋀D : _) (D-is-cmlat : _)
   (E : _) (_≤E_ : _) (⋀E : _) (E-is-cmlat : _)
   where
   private
     D-cmlat = cmlat D _≤D_ ⋀D D-is-cmlat
     E-cmlat = cmlat E _≤E_ ⋀E E-is-cmlat
-
-
 
   private
     module D = is-complete-meet-semilattice D-is-cmlat
@@ -870,7 +868,6 @@ module _
 
   module unit (R : rel D E) where
 
-
     f2r-r2f-increasing : R ⊆₂ f2r (r2f R)
     fst (f2r-r2f-increasing {d₀} {e₀} d₀Re₀) =
       begin-≤
@@ -887,13 +884,13 @@ module _
       d₀ ∎
       where open ≤D-reasoning
 
-    butterfly : rel D E → prop
-    butterfly R = ∀ d₀ e₀ {d e d' e'}
+    is-butterfly : rel D E → prop
+    is-butterfly R = ∀ d₀ e₀ {d e d' e'}
       → d' ≤D d₀ → d₀ ≤D d
       → e' ≤E e₀ → e₀ ≤E e
       → R d' e → R d e' → R d₀ e₀
 
-    f2r-r2f-butterfly : f2r (r2f R) ⊆₂ R → butterfly R
+    f2r-r2f-butterfly : f2r (r2f R) ⊆₂ R → is-butterfly R
     f2r-r2f-butterfly r2rR⊆R d₀ e₀ {d} {e} {d'} {e'} d'≤d₀ d₀≤d e'≤e₀ e₀≤e d'Re dRe' =  r2rR⊆R (⋀E≤e₀ , ⋀D≤d₀)
       where
       ⋀E≤e₀ : fst (r2f R) d₀ ≤E e₀
@@ -941,7 +938,7 @@ module _
       postulate fstR-meet-closed : is-meet-closed-subset D-is-cmlat (fst-rel R)
       postulate sndR-meet-closed : is-meet-closed-subset E-is-cmlat (snd-rel R)
 
-      butterfly-f2r-r2f : butterfly R → f2r (r2f R) ⊆₂ R
+      butterfly-f2r-r2f : is-butterfly R → f2r (r2f R) ⊆₂ R
       butterfly-f2r-r2f R-butterfly {d₀} {e₀} d₀R'e₀ = R-butterfly d₀ e₀ d'≤d₀ d₀≤d e'≤e₀ e₀≤e d'Re dRe'
         where
           P : rel D E
@@ -999,6 +996,9 @@ module _
     id≤a : ∀ d₀ → d₀ ≤D a d₀
     id≤a d₀ = D.bigmeet-greatest _ _ (\ { d (e , d₀≤d , fd≤e , be≤d) → d₀≤d})
 
+    id≤p : ∀ e₀ → e₀ ≤E p e₀
+    id≤p e₀ = E.bigmeet-greatest _ _ (\ { e (d , e₀≤e , fd≤e , be≤d) → e₀≤e})
+
     bf≤a : ∀ d₀ →  b (f d₀) ≤D a d₀
     bf≤a d₀ =
       begin-≤
@@ -1007,13 +1007,24 @@ module _
       a d₀ ∎
       where open ≤D-reasoning
 
+    fb≤p : ∀ e₀ →  f (b e₀) ≤E p e₀
+    fb≤p e₀ =
+      begin-≤
+      f (b e₀) ≤⟨ E.bigmeet-greatest _ _ (\{ e (d , e₀≤e , fd≤e , be≤d) → f-mono (b-mono e₀≤e) ⟨ E.≤-trans ⟩ f-mono be≤d ⟨ E.≤-trans ⟩ fd≤e }) ⟩
+      ⋀E (\ e → ∃ \ d → e₀ ≤E e × f d ≤E e × b e ≤D d) ≡⟨⟩
+      p e₀ ∎
+      where open ≤E-reasoning
+
     ap→r2f-f2r : (f ∘ a , b ∘ p) ≤fp (f , b) → r2f (f2r (f , b)) ≤fp (f , b)
     fst (ap→r2f-f2r (f'≤f , b'≤b)) d₀ =
       begin-≤ fst (r2f (f2r (f , b))) d₀ ≡⟨⟩
       ⋀E (\ e → ∃ \ d → d₀ ≤D d × f d ≤E e × b e ≤D d) ≤⟨ E.bigmeet-lowerbound _ _ (a d₀ , id≤a d₀ , f'≤f d₀ , bf≤a d₀) ⟩
       f d₀ ∎
       where open ≤E-reasoning
-    snd (ap→r2f-f2r (f'≤f , b'≤b)) e = {!!}
+    snd (ap→r2f-f2r (f'≤f , b'≤b)) e₀ =
+      begin-≤ snd (r2f (f2r (f , b))) e₀ ≡⟨⟩
+      ⋀D (\ d → ∃ \ e → e₀ ≤E e × f d ≤E e × b e ≤D d) ≤⟨ D.bigmeet-lowerbound _ _ (p e₀ , id≤p e₀ , fb≤p e₀  , b'≤b e₀) ⟩
+      b e₀ ∎
       where open ≤D-reasoning
 
 
@@ -1032,5 +1043,7 @@ module _
       open ≤E-reasoning
 
     snd (r2f-f2r→ap (f , b)) e = {!!}
+
+
 
 ```
