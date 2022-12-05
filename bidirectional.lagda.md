@@ -659,16 +659,26 @@ Tensor product?
 (D , E , fb) ⊗ (E , F , fb') → (D , F  fb ∘ fb')
 
                        r2f
-                      ---->
-            (𝒫(D×E),⊆) ⊥  (D⇒E × E⇒D , ≤)
+                      ---->   monotone
+            (𝒫(D×E),⊆) ⊥   (D⇒E × E⇒D , ≤)
                  |    <----    |
                  |     f2r     |
                  |             |
             (𝒫(D×E),⊆) ==== (D⇒E × E⇒D , ≤)
- + closing butterfly shape
+            + something       monotone + something
 
-Tensor products below two (centor of adjunction)
-does something different
+ + r2f ∘ f2r adds pairs for butterfly shapes relation
+
+    d     e
+    |\   /|
+    | \ / |
+    d₀ x  e₀  ===> d₀---e₀
+    | / \ |
+    |/   \|
+    d'    e'
+
+The bottom two categories in the diagram are centors of adjunction.
+And their tensor product does different thing (e.g. adding pair of retation) than the top two.
 
 
 ```agda
