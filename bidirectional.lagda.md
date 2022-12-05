@@ -630,44 +630,46 @@ module _
 
 ```
 
-2 poset
+2-poset
 -------
 
-  https://ncatlab.org/nlab/show/2-poset
+https://ncatlab.org/nlab/show/2-poset
 
-  LatRel
-    objects: complete lattices, D , E , F , ...
-    morphisms: relations between objects, R , R' , R'' , ...
-    compositions: relation composition, R;R'
-    2-morphisms: inclusion R ⊆ R'
+- Category of relations:
+  - objects: complete lattices, D , E , F , ...
+  - morphisms: relations between objects, R , R' , R'' , ...
+  - compositions: relation composition, R;R'
+  - 2-morphisms: inclusion R ⊆ R'
 
-  LatMFP
-    objects: complete lattices, D , E , F , ...
-    morphisms: pairs of forward and backward monotone functions, (f , b) , (f' , b') , ...
-    compositions: composition of forward and backward monotone functions, (f , b) ∘ (f' , b') = (f ∘ f' , b' ∘ b)
-    2-morphisms: pointwise ordering, (f , b) ≤ (f' , b') := (∀ d, f d ≤ f' d) ∧ (∀ e , b e ≤ b' e)
+- Category of bidirectional monotone functions
+  - objects: complete lattices, D , E , F , ...
+  - morphisms: pairs of forward and backward monotone functions, (f , b) , (f' , b') , ...
+  - compositions: composition of forward and backward monotone functions, (f , b) ∘ (f' , b') = (f ∘ f' , b' ∘ b)
+  - 2-morphisms: pointwise ordering, (f , b) ≤ (f' , b') := (∀ d, f d ≤ f' d) ∧ (∀ e , b e ≤ b' e)
 
-  There is an adjunction
+- There is an adjunction
 
-              R ⊆ f2r fb
-  r2f ⊣ f2r   ==========
-              r2f R ≥ fb
+            R ⊆ f2r fb
+r2f ⊣ f2r   ==========
+            r2f R ≥ fb
 
 
-  Monoidal product?
+Tensor product?
+(D , E , R) ⊗ (E , F , R') → (D , F , R ; R')
+(D , E , fb) ⊗ (E , F , fb') → (D , F  fb ∘ fb')
 
-  (D , E , R) ⊗ (E , F , R') → (D , F , R ; R')
+                       r2f
+                      ---->
+            (𝒫(D×E),⊆) ⊥  (D⇒E × E⇒D , ≤)
+                 |    <----    |
+                 |     f2r     |
+                 |             |
+            (𝒫(D×E),⊆) ==== (D⇒E × E⇒D , ≤)
+ + closing butterfly shape
 
-  (D , E , fb) ⊗ (E , F , fb') → (D , F  fb ∘ fb')
+Tensor products below two (centor of adjunction)
+does something different
 
-              r2f
-             <----
-      LatMFP   ⊥   LatRel
-        |    ---->     |
-        |     f2r      |
-        |              |
-      LatMFP ==== LatMeetClosed
-       Fix         Butterfly
 
 ```agda
 
