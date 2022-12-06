@@ -37,6 +37,9 @@ pred X = Pred X (level-of X)
 subset : Set → prop
 subset = pred
 
+⊆-refl : ∀ {X} (S : subset X) → S ⊆ S
+⊆-refl S x∈S = x∈S
+
 comprehension-syntax : ∀ {X} → pred X → subset X
 comprehension-syntax = \ { x → x }
 
@@ -53,6 +56,7 @@ syntax comprehension-syntax (\ x → P) = ｛ x ∣ P ｝
 
 rel : Set → Set → prop
 rel X Y = REL X Y (level-of X ⊔ level-of Y)
+
 
 _⊆₂_ : ∀ {X Y} → rel (rel X Y) (rel X Y)
 R ⊆₂ R' = ∀ {x y} → R x y → R' x y
@@ -98,6 +102,9 @@ record iso-pair (_~_ : rel X X) (x y : X) : prop where
 
 open iso-pair
 
+_≅_ : ∀ {X} → rel (subset X) (subset X)
+_≅_ = iso-pair _⊆_
+
 module _ {X : Set} where
 
   is-reflexive : pred (rel X X)
@@ -112,6 +119,10 @@ module _ {X : Set} where
   is-antisymmetric : rel (rel X X) (rel X X)
   is-antisymmetric _≈_ _≤_ = ∀ {x y} → x ≤ y → y ≤ x → x ≈ y
 
+  iso-refl : {_~_ : rel X X} → is-reflexive _~_ → is-reflexive (iso-pair _~_)
+  forward (iso-refl r-refl x) = r-refl x
+  backward (iso-refl r-refl x) = r-refl x
+
   -- I use preorder instead of partial order and use equivalence a ≈ b := a ≤ b and b
   record is-preorder (_≤_ : rel X X) : Set where
     field
@@ -120,6 +131,14 @@ module _ {X : Set} where
 
     identity-to-rel : ∀ {x y} → x ≡ y → x ≤ y
     identity-to-rel ≡.refl = rel-is-reflexive _
+
+    iso-reflexive : ∀ x → iso-pair _≤_ x x
+    forward (iso-reflexive x) = rel-is-reflexive x
+    backward (iso-reflexive x) = rel-is-reflexive x
+
+    iso-transitive : ∀ {x y z} → iso-pair _≤_ x y → iso-pair _≤_ y z → iso-pair _≤_ x z
+    forward (iso-transitive x~y y~z) = rel-is-transitive (forward x~y) (forward y~z)
+    backward (iso-transitive x~y y~z) =  rel-is-transitive (backward y~z) (backward x~y)
 
     ↑ : X → subset X
     ↑ x = x ≤_
@@ -296,8 +315,8 @@ module _ {X : Set} where
     forward (bigmeet-up-intersection-iso x S x∈S) = bigmeet-greatest (↑ x ∩ S) x \ _ → fst
     backward (bigmeet-up-intersection-iso x S x∈S) = bigmeet-lowerbound (↑ x ∩ S) x  (rel-is-reflexive x , x∈S)
 
-    subset-largermeet : ∀ {S S'} → S ⊆ S' → ⋀ S' ≤ ⋀ S
-    subset-largermeet {S} {S'} S⊆S' =
+    bigmeet-monotone : ∀ {S S'} → S ⊆ S' → ⋀ S' ≤ ⋀ S
+    bigmeet-monotone {S} {S'} S⊆S' =
       let ⋀S-glb = bigmeet-greatest S
           ⋀S'-lb = bigmeet-lowerbound S'
       in
@@ -306,9 +325,18 @@ module _ {X : Set} where
       ⋀ S ∎
       where open reasoning _ rel-is-preorder
 
-    bigmeet-bounded : ∀ (S : subset X) x → x ∈ S → ⋀ S ≤ x → Σ _ (↓ x ∩ S)
-    bigmeet-bounded S x x∈S ⋀S≤x = x , rel-is-reflexive x , x∈S
+    bigmeet-welldefined : ∀{S S'} → S ≅ S' → ⋀ S' ≈ ⋀ S
+    forward (bigmeet-welldefined S=S') = bigmeet-monotone (forward S=S')
+    backward (bigmeet-welldefined S=S') = bigmeet-monotone (backward S=S')
 
+    bigmeet-equivalence :  ∀ S x → (∀ S' → S' ⊆ S → ⋀ S' ∈ S) → (⋀ S ≤ x) ↔ Σ _ \ x' → x' ≤ x × x' ∈ S
+    forward (bigmeet-equivalence S x ⋀wd) ⋀S≤x = ⋀ S , ⋀S≤x , ⋀wd S id  
+    backward (bigmeet-equivalence S x ⋀wd) (x' , x'≤x , x'∈X) =
+      begin-≤
+      ⋀ S ≤⟨  bigmeet-lowerbound _ _ x'∈X ⟩
+      x' ≤⟨ x'≤x ⟩
+      x ∎
+      where open reasoning _ rel-is-preorder
 
   is-op-closed-subset : (_≤_ : rel X X) (⋀ : subsetop X) (S : subset X) → prop
   is-op-closed-subset _≤_ ⋀ S = ∀ S' → S' ⊆ S → ⋀ S' ∈ S
@@ -318,12 +346,12 @@ module _ {X : Set} where
 
   module _ {_≤_ : rel X X} {⋀ : subsetop X}
     {superset-is-cmlat : is-complete-meet-semilattice _≤_ ⋀}
-    {S : subset X} (S-meet-closed : is-meet-closed-subset superset-is-cmlat S) where
+    {S : subset X} (S-meet-closed : is-meet-closed-subset superset-is-cmlat S)
+    where
     open is-complete-meet-semilattice superset-is-cmlat
-    ↑restriction : ∀ x → is-op-closed-subset _≤_ ⋀ (↑ x ∩ S)
-    fst (↑restriction x S' S'⊆↑x∩S) = bigmeet-greatest _ _ \ _ → fst ∘ S'⊆↑x∩S
-    snd (↑restriction x S' S'⊆↑x∩S) = S-meet-closed S' (snd ∘ S'⊆↑x∩S)
-
+    ↑∩-is-meet-closed : ∀ x → is-op-closed-subset _≤_ ⋀ (↑ x ∩ S)
+    fst (↑∩-is-meet-closed x S' S'⊆↑x∩S) = bigmeet-greatest _ _ \ _ → fst ∘ S'⊆↑x∩S
+    snd (↑∩-is-meet-closed x S' S'⊆↑x∩S) = S-meet-closed S' (snd ∘ S'⊆↑x∩S)
 
 record rel-set : Set where
   constructor rset
@@ -344,7 +372,7 @@ record preordered-set : Set where
   upperbounds : (S : subset carrier) → subset carrier
   upperbounds S = is-upperbound relation S
 
-module _ {D E : Set} (_≤D_ : rel D D) (_≤E_ : rel E E) where
+module _ {D : Set} {E : Set} (_≤D_ : rel D D) (_≤E_ : rel E E) where
   private
     _≈D_ = iso-pair _≤D_
     _≈E_ = iso-pair _≤E_
@@ -355,11 +383,18 @@ module _ {D E : Set} (_≤D_ : rel D D) (_≤E_ : rel E E) where
   is-monotone : pred (D → E)
   is-monotone f = ∀ {d d'} → d ≤D d' → f d ≤E f d'
 
+
 module _ {D E : Set} {_≤D_ : rel D D} {_≤E_ : rel E E} where
-  open iso-pair
+  private
+    _≈D_ = iso-pair _≤D_
+    _≈E_ = iso-pair _≤E_
   monotone2welldefined : {f : D → E} → is-monotone _≤D_ _≤E_ f → is-welldefined  _≤D_ _≤E_ f
   forward (monotone2welldefined {f} f-is-monotone d≈d') = f-is-monotone (forward d≈d')
   backward (monotone2welldefined {f} f-is-monotone d≈d') = f-is-monotone (backward d≈d')
+
+  transport : {f : D → E} → is-welldefined _≤D_ _≤E_ f → {d d' : D} → d ≈D d' → f d ≤E f d'
+  transport = {!!}
+
 
 record monotone-func (D E : rel-set) : Set where
   constructor mono
@@ -557,16 +592,19 @@ module _
     module D = is-complete-meet-semilattice D-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
     module E = is-complete-meet-semilattice E-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
     D×E-cmlat = D-cmlat ×-cmlat E-cmlat
+    D×E-is-cmlat = complete-meet-semilattice.property D×E-cmlat
+
+
+  open complete-meet-semilattice D×E-cmlat renaming (operation to ⋀ ; relation to _≤_)
+  open is-complete-meet-semilattice D×E-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
+
   private
     infix 1 _↔_
     _↔_ = iso-pair (\A B → A → B)
 
     _≈D_ = iso-pair _≤D_
     _≈E_ = iso-pair _≤E_
-
-  open complete-meet-semilattice D×E-cmlat renaming (operation to ⋀ ; relation to _≤_)
-  open is-complete-meet-semilattice (complete-meet-semilattice.property D×E-cmlat) renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
-
+    _≈_ = iso-pair _≤_
 
   fst-≤ : {p p' : D × E} → p ≤ p' → fst p ≤D fst p'
   fst-≤ x = fst x
@@ -741,13 +779,13 @@ module bidirectional-flow
     module ≤-reasoning = reasoning _ ≤-pre
 
   -- Left adjoin
-  r2f : rel D E → func-pair D E
-  fst (r2f _R_) d₀ = ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × d R e) ｝
-  snd (r2f _R_) e₀ = ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × d R e) ｝
+  r2f : subset (D × E) → func-pair D E
+  fst (r2f R) d₀ = ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × (d , e) ∈ R) ｝
+  snd (r2f R) e₀ = ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × (d , e) ∈ R) ｝
 
   -- Right adjoint
-  f2r : func-pair D E → rel D E
-  f2r (f , b) d e = f d ≤E e × b e ≤D d
+  f2r : func-pair D E → subset (D × E)
+  f2r (f , b) (d , e) = f d ≤E e × b e ≤D d
 
   _≤fp_ : rel (func-pair D E) (func-pair D E)
   (f , b) ≤fp (f' , b') = (∀ d → f d ≤E f' d) × (∀ e → b e ≤D b' e)
@@ -759,21 +797,28 @@ module bidirectional-flow
     _≈E_ = iso-pair _≤E_
     _≈_ = iso-pair _≤_
 
-  _≈₂_ : ∀ {X Y} → rel (rel X Y) (rel X Y)
-  _≈₂_ = iso-pair _⊆₂_
+  ≈×≈→≈ : ∀ {d d' e e'} → d ≈D d' → e ≈E e' → (d , e) ≈ (d' , e')
+  forward (≈×≈→≈ ≈D ≈E) = forward ≈D , forward ≈E
+  backward (≈×≈→≈ ≈D ≈E) = backward ≈D , backward ≈E
+
+
+  ≅×≅→≅ : ∀ {X Y} {S S' : subset X} {T T' : subset Y} → S ≅ S' → T ≅ T' → ((S ∘ fst) ∩ (T ∘ snd)) ≅ ((S' ∘ fst) ∩ (T' ∘ snd))
+  forward (≅×≅→≅ S=S' T=T') (d , e) = (forward S=S' d) , (forward T=T' e)
+  backward (≅×≅→≅ S=S' T=T') (d , e) = (backward S=S' d) , (backward T=T' e)
+
 
   _≈fp_ = iso-pair _≤fp_
 
   module _ {f : D → E} {b : E → D}
     (f-is-mono : is-monotone _≤D_ _≤E_ f) (b-is-mono : is-monotone _≤E_ _≤D_ b) where
-    f2r-mono-join-closed : is-meet-closed-subset D×E-is-cmlat (rel2subset (f2r (f , b)))
+    f2r-mono-join-closed : is-meet-closed-subset D×E-is-cmlat (f2r (f , b))
     fst (f2r-mono-join-closed S' S'⊆) =
       begin-≤
       f (fst (⋀ S')) ≡⟨⟩
       f (⋀D ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝) ≤⟨ mono-meet≤meet-mono D-is-cmlat E-is-cmlat f-is-mono ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝ ⟩
       ⋀E (fimage f ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝) ≡⟨⟩
       ⋀E ｛ e ∣ Σ[ d ∈ D ] ((Σ[ e' ∈ E ](S' (d , e'))) × f d ≡ e)｝ ≤⟨ bigmeet-≡-≤' D-is-cmlat E-is-cmlat f-is-mono S' ⟩
-      ⋀E ｛ e ∣ Σ[ d ∈ D ] ((Σ[ e' ∈ E ](S' (d , e'))) × f d ≤E e)｝ ≤⟨ E.subset-largermeet (\ { {e} (d , de∈S') → d , ((e , de∈S') , fst (S'⊆ de∈S')) }) ⟩
+      ⋀E ｛ e ∣ Σ[ d ∈ D ] ((Σ[ e' ∈ E ](S' (d , e'))) × f d ≤E e)｝ ≤⟨ E.bigmeet-monotone (\ { {e} (d , de∈S') → d , ((e , de∈S') , fst (S'⊆ de∈S')) }) ⟩
       ⋀E ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝ ≡⟨⟩
       snd (⋀ S') ∎
       where open ≤E-reasoning
@@ -783,21 +828,21 @@ module bidirectional-flow
       b (⋀E ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝) ≤⟨ mono-meet≤meet-mono E-is-cmlat D-is-cmlat b-is-mono ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝ ⟩
       ⋀D (fimage b ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝) ≡⟨⟩
       ⋀D ｛ d ∣ Σ[ e ∈ E ] ((Σ[ d' ∈ D ](S' (d' , e))) × b e ≡ d)｝ ≤⟨ bigmeet-≡-≤' E-is-cmlat D-is-cmlat b-is-mono (S' ∘ Data.Product.swap) ⟩
-      ⋀D ｛ d ∣ Σ[ e ∈ E ] ((Σ[ d' ∈ D ](S' (d' , e))) × b e ≤D d)｝ ≤⟨ D.subset-largermeet (\ { {d} (e , de∈S') → e , ((d , de∈S') , snd (S'⊆ de∈S')) }) ⟩
+      ⋀D ｛ d ∣ Σ[ e ∈ E ] ((Σ[ d' ∈ D ](S' (d' , e))) × b e ≤D d)｝ ≤⟨ D.bigmeet-monotone (\ { {d} (e , de∈S') → e , ((d , de∈S') , snd (S'⊆ de∈S')) }) ⟩
       ⋀D ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝ ≡⟨⟩
       fst (⋀ S') ∎
       where open ≤D-reasoning
 
-  module _ (R : rel D E) where
+  module _ (R : subset (D × E)) where
     r2f-monotone : let (f , b) = r2f R in is-monotone _≤D_ _≤E_ f × is-monotone _≤E_ _≤D_ b
     fst r2f-monotone {d} {d'} d≤d' =
       begin-≤
-      fst (r2f R) d ≤⟨ E.subset-largermeet (\ { {e} (d'' , d'≤d'' , Rd''e) → d'' , (d≤d' ⟨ D.≤-trans ⟩ d'≤d'') , Rd''e }) ⟩
+      fst (r2f R) d ≤⟨ E.bigmeet-monotone (\ { {e} (d'' , d'≤d'' , Rd''e) → d'' , (d≤d' ⟨ D.≤-trans ⟩ d'≤d'') , Rd''e }) ⟩
       fst (r2f R) d' ∎
       where open ≤E-reasoning
     snd r2f-monotone {e} {e'} e≤e' =
       begin-≤
-      snd (r2f R) e ≤⟨ D.subset-largermeet (\ { {d} (e'' , e'≤e'' , Rde'') → e'' , (e≤e' ⟨ E.≤-trans ⟩ e'≤e'') , Rde'' }) ⟩
+      snd (r2f R) e ≤⟨ D.bigmeet-monotone (\ { {d} (e'' , e'≤e'' , Rde'') → e'' , (e≤e' ⟨ E.≤-trans ⟩ e'≤e'') , Rde'' }) ⟩
       snd (r2f R) e' ∎
       where open ≤D-reasoning
 
@@ -810,7 +855,7 @@ module bidirectional-flow
     snd (rel-is-transitive ≤fp-is-preorder fb≤fb' fb'≤fb'') e = D.≤-trans (snd fb≤fb' e) (snd fb'≤fb'' e)
 
   module galois-connection
-    (R : rel D E)
+    (R : subset (D × E))
     {f : D → E} {b : E → D}
     (f-is-mono : is-monotone _≤D_ _≤E_ f) (b-is-mono : is-monotone _≤E_ _≤D_ b) where
 
@@ -820,84 +865,84 @@ module bidirectional-flow
     b-is-wd : is-welldefined _≤E_ _≤D_ b
     b-is-wd = monotone2welldefined b-is-mono
 
-    left-transpose : R ⊆₂ f2r (f , b) → (f , b) ≤fp r2f R
+    left-transpose : R ⊆ f2r (f , b) → (f , b) ≤fp r2f R
     fst (left-transpose R⊆f2r[fb]) d₀ =
       begin-≤
       f d₀                                         ≈⟨ f-is-wd (D.bigmeet-up-iso d₀) ⟩
       f (⋀D (D.↑ d₀))                              ≤⟨ mono-meet≤meet-mono D-is-cmlat E-is-cmlat f-is-mono (D.↑ d₀) ⟩
-      ⋀E (fimage f (D.↑ d₀))                       ≤⟨ E.subset-largermeet (λ { {e} (d , d₀≤d , fd=e ) → d , d₀≤d , fd=e}) ⟩
+      ⋀E (fimage f (D.↑ d₀))                       ≤⟨ E.bigmeet-monotone (λ { {e} (d , d₀≤d , fd=e ) → d , d₀≤d , fd=e}) ⟩
       ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × f d ≡ e) ｝   ≤⟨ bigmeet-≡-≤ D-is-cmlat E-is-cmlat f-is-mono d₀ ⟩
-      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × f d ≤E e) ｝  ≤⟨ E.subset-largermeet (\ { (d' , d₀≤d' , d'Re') → d' , d₀≤d' , fst (R⊆f2r[fb] d'Re')}) ⟩
-      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × R d e) ｝     ≡⟨⟩
+      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × f d ≤E e) ｝  ≤⟨ E.bigmeet-monotone (\ { (d' , d₀≤d' , d'Re') → d' , d₀≤d' , fst (R⊆f2r[fb] d'Re')}) ⟩
+      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × (d , e) ∈ R) ｝     ≡⟨⟩
       fst (r2f R) d₀ ∎
         where open ≤E-reasoning
     snd (left-transpose R⊆f2r[fb]) e₀ =
       begin-≤
       b e₀                                         ≈⟨ b-is-wd (E.bigmeet-up-iso e₀) ⟩
       b (⋀E (E.↑ e₀))                              ≤⟨ mono-meet≤meet-mono E-is-cmlat D-is-cmlat b-is-mono (E.↑ e₀) ⟩
-      ⋀D (fimage b (E.↑ e₀))                       ≤⟨ D.subset-largermeet (λ { {d} (e , e₀≤e , be=d ) → e , e₀≤e , be=d}) ⟩
+      ⋀D (fimage b (E.↑ e₀))                       ≤⟨ D.bigmeet-monotone (λ { {d} (e , e₀≤e , be=d ) → e , e₀≤e , be=d}) ⟩
       ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × b e ≡ d) ｝   ≤⟨ bigmeet-≡-≤ E-is-cmlat D-is-cmlat b-is-mono e₀ ⟩
-      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × b e ≤D d) ｝  ≤⟨ D.subset-largermeet (\ { (e' , e₀≤e' , d'Re') → e' , e₀≤e' , snd (R⊆f2r[fb] d'Re')}) ⟩
-      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × R d e) ｝     ≡⟨⟩
+      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × b e ≤D d) ｝  ≤⟨ D.bigmeet-monotone (\ { (e' , e₀≤e' , d'Re') → e' , e₀≤e' , snd (R⊆f2r[fb] d'Re')}) ⟩
+      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × (d , e) ∈ R) ｝ ≡⟨⟩
       snd (r2f R) e₀ ∎
         where open ≤D-reasoning
 
-    right-transpose : (f , b) ≤fp r2f R → R ⊆₂ f2r (f , b)
-    fst (right-transpose (f≤ , b≤) {d} {e} dRe) =
+    right-transpose : (f , b) ≤fp r2f R → R ⊆ f2r (f , b)
+    fst (right-transpose (f≤ , b≤) {d , e} dRe) =
       begin-≤
       f d ≤⟨ f≤ d ⟩
       fst (r2f R) d ≤⟨ E.bigmeet-lowerbound _ _ (d , D.≤-refl d , dRe) ⟩
       e ∎
         where open ≤E-reasoning
-    snd (right-transpose (f≤ , b≤) {d} {e} dRe) =
+    snd (right-transpose (f≤ , b≤) {d , e} dRe) =
       begin-≤
       b e ≤⟨ b≤ e ⟩
       snd (r2f R) e ≤⟨ D.bigmeet-lowerbound _ _ (e , E.≤-refl e , dRe) ⟩
       d ∎
         where open ≤D-reasoning
 
-    galois-connection : R ⊆₂ f2r (f , b) ↔ (f , b) ≤fp r2f R
+    galois-connection : R ⊆ f2r (f , b) ↔ (f , b) ≤fp r2f R
     forward galois-connection = left-transpose
     backward galois-connection = right-transpose
 
     unit : ((f , b) ≤fp r2f R) → (f , b) ≤fp r2f R
     unit = left-transpose ∘ right-transpose
 
-    counit : R ⊆₂ f2r (f , b) → R ⊆₂ f2r (f , b)
+    counit : R ⊆ f2r (f , b) → R ⊆ f2r (f , b)
     counit = right-transpose ∘ left-transpose
 
-  module unit (R : rel D E) where
+  module unit (R : subset (D × E)) where
 
-    f2r-r2f-increasing : R ⊆₂ f2r (r2f R)
-    fst (f2r-r2f-increasing {d₀} {e₀} d₀Re₀) =
+    f2r-r2f-increasing : R ⊆ f2r (r2f R)
+    fst (f2r-r2f-increasing {d₀ , e₀} d₀Re₀) =
       begin-≤
       fst (r2f R) d₀                                     ≡⟨⟩
-      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × R d e) ｝              ≤⟨ E.subset-largermeet (\ { (d , (d₀≤d , e₀≤e) , dRe) → d , d₀≤d , dRe }) ⟩
-      snd (⋀ (↑ (d₀ , e₀) ∩ ｛ de ∣ R (fst de) (snd de) ｝)) ≤⟨ snd (backward (bigmeet-up-intersection-iso (d₀ , e₀) (\(d , e) → R d e) d₀Re₀)) ⟩
+      ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × (d , e) ∈ R) ｝     ≤⟨ E.bigmeet-monotone (\ { (d , (d₀≤d , e₀≤e) , dRe) → d , d₀≤d , dRe }) ⟩
+      snd (⋀ (↑ (d₀ , e₀) ∩ ｛ de ∣ de ∈ R ｝)) ≤⟨ snd (backward (bigmeet-up-intersection-iso (d₀ , e₀) (\de → de ∈ R) d₀Re₀)) ⟩
       e₀ ∎
       where open ≤E-reasoning
-    snd (f2r-r2f-increasing {d₀} {e₀} d₀Re₀) =
+    snd (f2r-r2f-increasing {d₀ , e₀} d₀Re₀) =
       begin-≤
       snd (r2f R) e₀                                    ≡⟨⟩
-      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × R d e) ｝              ≤⟨ D.subset-largermeet (\ { (e , (d₀≤d , e₀≤e) , dRe) → e , e₀≤e , dRe }) ⟩
-      fst (⋀ (↑ (d₀ , e₀) ∩ ｛ de ∣ R (fst de) (snd de) ｝)) ≤⟨ fst (backward (bigmeet-up-intersection-iso (d₀ , e₀) (\(d , e) → R d e) d₀Re₀)) ⟩
+      ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × (d , e) ∈ R) ｝     ≤⟨ D.bigmeet-monotone (\ { (e , (d₀≤d , e₀≤e) , dRe) → e , e₀≤e , dRe }) ⟩
+      fst (⋀ (↑ (d₀ , e₀) ∩ ｛ de ∣ de ∈ R ｝)) ≤⟨ fst (backward (bigmeet-up-intersection-iso (d₀ , e₀) (\de → de ∈ R) d₀Re₀)) ⟩
       d₀ ∎
       where open ≤D-reasoning
 
-    is-butterfly : rel D E → prop
+    is-butterfly : pred (subset (D × E))
     is-butterfly R = ∀ d₀ e₀ {d e d' e'}
       → d' ≤D d₀ → d₀ ≤D d
       → e' ≤E e₀ → e₀ ≤E e
-      → R d' e → R d e' → R d₀ e₀
+      → (d' , e) ∈ R → (d , e') ∈ R → (d₀ , e₀) ∈ R
 
-    f2r-r2f-butterfly : f2r (r2f R) ⊆₂ R → is-butterfly R
+    f2r-r2f-butterfly : f2r (r2f R) ⊆ R → is-butterfly R
     f2r-r2f-butterfly r2rR⊆R d₀ e₀ {d} {e} {d'} {e'} d'≤d₀ d₀≤d e'≤e₀ e₀≤e d'Re dRe' =  r2rR⊆R (⋀E≤e₀ , ⋀D≤d₀)
       where
       ⋀E≤e₀ : fst (r2f R) d₀ ≤E e₀
       ⋀E≤e₀ =
         begin-≤
         fst (r2f R) d₀ ≡⟨⟩
-        ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × R d e) ｝ ≤⟨ E.bigmeet-lowerbound _ _ (d , d₀≤d , dRe') ⟩
+        ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × (d , e) ∈ R) ｝ ≤⟨ E.bigmeet-lowerbound _ _ (d , d₀≤d , dRe') ⟩
         e' ≤⟨ e'≤e₀ ⟩
         e₀ ∎
         where open ≤E-reasoning
@@ -905,46 +950,69 @@ module bidirectional-flow
       ⋀D≤d₀ =
         begin-≤
         snd (r2f R) e₀ ≡⟨⟩
-        ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × R d e) ｝ ≤⟨  D.bigmeet-lowerbound _ _ (e , e₀≤e , d'Re) ⟩
+        ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × (d , e) ∈ R) ｝ ≤⟨  D.bigmeet-lowerbound _ _ (e , e₀≤e , d'Re) ⟩
         d' ≤⟨ d'≤d₀ ⟩
         d₀ ∎
         where open ≤D-reasoning
 
-    [R] = (\de → fst de ∈ fst-rel R × snd de ∈ snd-rel R)
-    R⊆[R] : rel2subset R ⊆ [R]
-    R⊆[R] {d , e} de∈R = (e , de∈R) , (d , de∈R)
-
     R' = f2r (r2f R)
-    R'-meet-closed : is-meet-closed-subset D×E-is-cmlat (rel2subset (f2r (r2f R)))
+    R'-meet-closed : is-meet-closed-subset D×E-is-cmlat (f2r (r2f R))
     R'-meet-closed = f2r-mono-join-closed (fst (r2f-monotone R)) (snd (r2f-monotone R))
 
-    module _ (R-meet-closed : is-meet-closed-subset D×E-is-cmlat (rel2subset R)) (R-welldefined : is-welldefined-subset _≤_ (rel2subset R)) where
+    module _ (R-meet-closed : is-meet-closed-subset D×E-is-cmlat R)
+      (R-welldefined : is-welldefined-subset _≤_ R) where
 
-      proj-bigmeet-≈ : ⋀ (rel2subset R) ≈ ⋀ [R]
-      fst (forward proj-bigmeet-≈) = D.subset-largermeet \{ (_ , P , _) → P }
-      snd (forward proj-bigmeet-≈) = E.subset-largermeet \{ (_ , _ , Q) → Q }
-      fst (backward proj-bigmeet-≈) =
-        begin-≤
-        fst (⋀ (\ de → fst de ∈ fst-rel R × snd de ∈ snd-rel R)) ≤⟨ D.bigmeet-lowerbound _ _ ((snd (⋀ (rel2subset R))) , R⊆[R] (R-meet-closed _ id)) ⟩
-        fst (⋀ (rel2subset R)) ∎
-        where open ≤D-reasoning
-      snd (backward proj-bigmeet-≈) =
-        begin-≤
-        snd (⋀ (\ de → fst de ∈ fst-rel R × snd de ∈ snd-rel R)) ≤⟨ E.bigmeet-lowerbound _ _ ((fst (⋀ (rel2subset R))) , R⊆[R] (R-meet-closed _ id)) ⟩
-        snd (⋀ (rel2subset R)) ∎
-        where open ≤E-reasoning
+      R-subst : ∀{p q} → (iso : p ≈ q) → R p → R q
+      R-subst iso = forward (R-welldefined iso)
 
-      -- These require choice?
-      postulate fstR-meet-closed : is-meet-closed-subset D-is-cmlat (fst-rel R)
-      postulate sndR-meet-closed : is-meet-closed-subset E-is-cmlat (snd-rel R)
+      fstR-meet-closed : is-meet-closed-subset D-is-cmlat (fst-subset R)
+      fstR-meet-closed S₁ S₁⊆R₁ = ⋀E S₂ , ⋀S₁⋀S₂∈R
+        where
 
-      butterfly-f2r-r2f : is-butterfly R → f2r (r2f R) ⊆₂ R
-      butterfly-f2r-r2f R-butterfly {d₀} {e₀} d₀R'e₀ = R-butterfly d₀ e₀ d'≤d₀ d₀≤d e'≤e₀ e₀≤e d'Re dRe'
+        counterpart : ∀ {d} → d ∈ S₁ → E
+        counterpart d∈S₁ = fst (S₁⊆R₁ d∈S₁)
+
+        pairing-in-R : ∀ {d} → (d∈S₁ : d ∈ S₁) → (d , counterpart (d∈S₁)) ∈ R
+        pairing-in-R d∈S₁ = snd (S₁⊆R₁ d∈S₁)
+
+        S : subset (D × E)
+        S (d , e) = Σ (d ∈ S₁) \ d∈S₁ → counterpart d∈S₁ ≈E e
+
+        S₂ : subset E
+        S₂ = snd-subset S
+
+        fstS=S₁ : fst-subset S ≅ S₁
+        backward fstS=S₁ d∈S₁                      = (counterpart d∈S₁ , d∈S₁ , iso-refl E.≤-refl _)
+        forward  fstS=S₁ (d∈fstS @ (_ , d∈S₁ , _)) = d∈S₁
+
+        S=S₁×S₂ : ((fst-subset S ∘ fst) ∩ (snd-subset S ∘ snd)) ≅ ((S₁ ∘ fst) ∩ (S₂ ∘ snd))
+        S=S₁×S₂ =  ≅×≅→≅ fstS=S₁ (is-preorder.iso-reflexive ⊆-is-preorder S₂)
+
+        ⋀fstS≈D⋀S₁ : ⋀D (fst-subset S) ≈D ⋀D S₁
+        ⋀fstS≈D⋀S₁ = D.bigmeet-welldefined (! fstS=S₁)
+
+        S⊆R : S ⊆ R
+        S⊆R (d∈S' , counterpart-d=e) = R-subst (≈×≈→≈ (D.iso-reflexive _) counterpart-d=e) (pairing-in-R d∈S')
+
+        ⋀S∈R : ⋀ S ∈ R
+        ⋀S∈R = R-meet-closed S S⊆R
+
+        ⋀S₁⋀S₂∈R : (⋀D S₁ , ⋀E S₂) ∈ R
+        ⋀S₁⋀S₂∈R = R-subst (≈×≈→≈ ⋀fstS≈D⋀S₁ (E.iso-reflexive _)) ⋀S∈R
+
+      sndR-meet-closed : is-meet-closed-subset E-is-cmlat (snd-subset R) -- TODO: the same above
+      sndR-meet-closed = {!!}
+
+      ⋀sndR≤e₀↔∃↓e₀∩sndR : ∀ e₀ → ⋀E (snd-subset R) ≤E e₀ ↔ Σ _ (\ e' → e' ≤E e₀ × e' ∈ snd-subset R)
+      ⋀sndR≤e₀↔∃↓e₀∩sndR e₀ = E.bigmeet-equivalence (snd-subset R) e₀ (\ S' S'⊆fstR → sndR-meet-closed S'  S'⊆fstR)
+
+      butterfly-f2r-r2f : is-butterfly R → f2r (r2f R) ⊆ R
+      butterfly-f2r-r2f R-butterfly {(d₀ , e₀)} d₀R'e₀ = R-butterfly d₀ e₀ d'≤d₀ d₀≤d e'≤e₀ e₀≤e d'Re dRe'
         where
           P : rel D E
-          P d e = d₀ ≤D d × e ≤E e₀ × R' d e
+          P d e = d₀ ≤D d × e ≤E e₀ × (d , e) ∈ R'
           Q : rel D E
-          Q d e = e₀ ≤E e × d ≤D d₀ × R' d e
+          Q d e = e₀ ≤E e × d ≤D d₀ × (d , e) ∈ R'
           de' : D × E
           de' = ⋀ (rel2subset P)
           d'e : D × E
@@ -973,9 +1041,9 @@ module bidirectional-flow
             e₀ ≤⟨ E.bigmeet-greatest _ _ (\{ e (d , de∈) → fst de∈ }) ⟩
             snd d'e ∎
             where open ≤E-reasoning
-          d'Re : d'e ∈ rel2subset R
+          d'Re : d'e ∈ R
           d'Re = {!!}
-          dRe' : de' ∈ rel2subset R
+          dRe' : de' ∈ R
           dRe' = {!!}
 
   module counit (f : D → E) (b : E → D)
