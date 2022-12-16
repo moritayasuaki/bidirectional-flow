@@ -2,10 +2,14 @@
 Lattices, preorder, relation, subset, and monotone functions
 ------------------------------------------------------------
 
-<!--
+We use type-in-type to avoid about universe level arithmetic
+
 ```agda
 {-# OPTIONS --type-in-type #-}
+```
 
+<!--
+```agda
 open import Level
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
@@ -17,8 +21,12 @@ open import Relation.Nullary
 open import Relation.Unary
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
+import Data.Nat as Nat
+```
 
-module bidirectional (todo : ∀ {A : Set} → A) where
+
+```agda
+module bidirectional where
 private variable
   ℓ : Level
   X : Set
@@ -49,7 +57,9 @@ sigma-syntax :  (X : Set) → (X → Set) → Set
 sigma-syntax  = Σ
 
 syntax comprehension-syntax (\ x → P) = ｛ x ∣ P ｝
+```
 
+```agda
 {-# DISPLAY comprehension-syntax P = P #-}
 {-# DISPLAY Σ-syntax D E = Σ D E #-}
 
@@ -59,8 +69,15 @@ syntax comprehension-syntax (\ x → P) = ｛ x ∣ P ｝
 rel : Set → Set → prop
 rel X Y = REL X Y (level-of X ⊔ level-of Y)
 
-_⋈_ : ∀{X Y Z} → rel X Y → rel Y Z → rel X Z
-r ⋈ r' = \ x z → Σ _ \ y → r x y × r' y z
+pointwise : ∀ {C X Y} → rel X Y → rel (C → X) (C → Y)
+pointwise _~_ f g = ∀ c → f c ~ g c
+
+map-rel : ∀ {C D X Y} → (C → X) → (D → Y) → rel X Y → rel C D
+map-rel f g r c d = r (f c) (g d)
+
+
+_⋈_ : ∀{X Y Z} → subset (X × Y) → subset (Y × Z) → subset (X × Z)
+(r ⋈ r') (x , z) = Σ _ \ y → (x , y) ∈ r × (y , z) ∈ r'
 
 _⊆₂_ : ∀ {X Y} → rel (rel X Y) (rel X Y)
 R ⊆₂ R' = ∀ {x y} → R x y → R' x y
@@ -113,6 +130,11 @@ _↔_ = iso-pair (\X Y → X → Y)
 infix 1 _≅_
 _≅_ : ∀ {X} → rel (subset X) (subset X)
 _≅_ = iso-pair _⊆_
+
+hidden↔explicit : ∀ {X : Set} (P : pred X) → (∀ {x} → P x) ↔ (∀ x → P x)
+forward (hidden↔explicit P) ∀P x = ∀P
+backward (hidden↔explicit P) ∀P = ∀P _
+
 
 module _ {X : Set} where
 
@@ -371,6 +393,10 @@ module _ {X : Set} where
     forward (bigmeet-≡-≤ f p) = bigmeet-greatest _ _ \ { x (y , py , fy≤x) → bigmeet-lowerbound _ _ (y , (py , (≡.refl))) ⟨ rel-is-transitive ⟩ fy≤x }
     backward (bigmeet-≡-≤ f p) = bigmeet-monotone \{ {x'} (y , py , fy≡x') → y , (py , identity-to-rel fy≡x') }
 
+    bigmeet-mono-equivalence : ∀ S {f : X → X} (f-is-mono : ∀ {x x'} → x ≤ x' → f x ≤ f x') → (∀ x₀ → x₀ ∈ S → f x₀ ≤ x₀) ↔ (∀ x₀ → f x₀ ≤ ⋀ (\ x → x₀ ≤ x × x ∈ S))
+    forward (bigmeet-mono-equivalence S f-is-mono) ∀x,x∈S→fx≤x x₀ = bigmeet-greatest _ _ \{ x (x₀≤x , x∈S) → rel-is-transitive (f-is-mono x₀≤x) (∀x,x∈S→fx≤x x x∈S)}
+      where open reasoning _ rel-is-preorder
+    backward (bigmeet-mono-equivalence S f-is-mono) ∀x₀,fx₀≤⋀[x:x₀≤x×x∈S] x x∈S =  rel-is-transitive (∀x₀,fx₀≤⋀[x:x₀≤x×x∈S] x) (bigmeet-lowerbound _ _ ((rel-is-reflexive _) , x∈S))
 
   is-binop-closed-subset : (_≤_ : rel X X) (_∧_ : binop X) (S : subset X) → prop
   is-binop-closed-subset _≤_ _∧_ S = ∀ x x' → x ∧ x' ∈ S
@@ -432,6 +458,7 @@ record preordered-set : Set where
   carrier opposite = carrier
   relation opposite = flip relation
   property opposite = is-preorder.opposite property
+  relloop = iso-pair relation
 
 
 module _ where
@@ -471,6 +498,11 @@ module _ {X : Set} {Y : Set} {_≤X_ : rel X X} {_≤Y_ : rel Y Y}
 is-antitone : {X : Set} {Y : Set} {_≤X_ : rel X X} {_≤Y_ : rel Y Y} (≤X-pre : is-preorder _≤X_) (≤Y-pre : is-preorder _≤Y_) → pred (X → Y)
 is-antitone ≤X-pre ≤Y-pre f = is-monotone ≤X-pre (is-preorder.opposite ≤Y-pre) f
 
+
+≅→∀↔∀ : {X : Set} → (P Q : pred X) → P ≅ Q → (∀ x → P x) ↔ (∀ x → Q x)
+forward (≅→∀↔∀ P Q P≅Q) ∀P x = forward P≅Q (∀P x)
+backward (≅→∀↔∀ P Q P≅Q) ∀Q x = backward P≅Q (∀Q x)
+
 module _ {X : Set} {_≤_ : rel X X} (≤-pre : is-preorder _≤_)
   where
   private
@@ -485,7 +517,11 @@ record monotone-func (D E : preordered-set) : Set where
   open preordered-set E renaming (carrier to |E| ; property to ≤E-pre)
   field
     func : |D| → |E|
-    func-is-monotone : is-monotone ≤D-pre ≤E-pre func
+    property : is-monotone ≤D-pre ≤E-pre func
+
+  dual : monotone-func (preordered-set.opposite D) (preordered-set.opposite E)
+  func dual = func
+  property dual = property
 
 antitone-func : (D E : preordered-set) → Set
 antitone-func D E = monotone-func D (preordered-set.opposite E)
@@ -667,7 +703,7 @@ module _ {D E : Set} {_≤D_ : rel D D} {_≤E_ : rel E E} where
     mfp2fp : monotone-func-pair → func-pair D E
     mfp2fp (mfp funcp _) = funcp
 
-record is-monotone-galois-connection
+record is-galois-connection
   {C D : preordered-set}
   (L : monotone-func D C)
   (R : monotone-func C D) : Set
@@ -678,16 +714,36 @@ record is-monotone-galois-connection
   module R = monotone-func R
   field equiv : ∀ (c : C.carrier) (d : D.carrier) → C.relation (L.func d) c ↔ D.relation d (R.func c)
 
-record is-antitone-galois-connection
-  {C D : preordered-set}
-  (L : antitone-func D C)
-  (R : antitone-func C D) : Set
-  where
-  module C = preordered-set C
-  module D = preordered-set D
-  module L = monotone-func L
-  module R = monotone-func R
-  field equiv : ∀ (c : C.carrier) (d : D.carrier) → C.relation c (L.func d) ↔ D.relation d (R.func c)
+is-antitone-galois-connection : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
+is-antitone-galois-connection {C} {D} L R = is-galois-connection {preordered-set.opposite C} {D} L (monotone-func.dual R)
+
+record galois-connection (C D : preordered-set) : Set where
+  constructor gal-conn
+  field
+    left-adjoint : monotone-func D C
+    right-adjoint : monotone-func C D
+
+  module C = preordered-set C renaming (relation to _≤_)
+  module D = preordered-set D renaming (relation to _≤_)
+  module C-pre = is-preorder C.property
+  module D-pre = is-preorder D.property
+  module L = monotone-func left-adjoint
+  module R = monotone-func right-adjoint
+  field
+    equiv : ∀ (c : C.carrier) (d : D.carrier) → L.func d C.≤ c ↔ d D.≤ (R.func c)
+
+  unit = R.func ∘ L.func
+  counit = L.func ∘ R.func
+
+  unit-increasing : id ⟨ pointwise D._≤_ ⟩ unit
+  unit-increasing d = forward (equiv (L.func d) d) (C-pre.rel-is-reflexive _)
+
+  counit-decreasing : counit ⟨ pointwise C._≤_ ⟩ id
+  counit-decreasing c = backward (equiv c (R.func c)) (D-pre.rel-is-reflexive _)
+
+  unit-idempotent : ∀ c → D.relloop ((R.func ∘ L.func ∘ R.func) c) (R.func c)
+  forward (unit-idempotent c) = {!map-rel !}
+  backward (unit-idempotent c) = {!!}
 
 module _
   {D : _} {_≤D_ : _} {⋀D : _} (D-is-cmlat : _)
@@ -952,7 +1008,40 @@ module transfer-function-pair
       ⋀S₁⋀S₂∈R = R-subst (≈×≈→≈ ⋀fstS≈D⋀S₁ (E.iso-reflexive _)) ⋀S∈R
 
     snd-meet-closed : is-meet-closed-subset E-is-cmlat (snd-subset R)
-    snd-meet-closed = todo
+    snd-meet-closed S₂ S₂⊆R₂ = ⋀D S₁ , ⋀S₁⋀S₂∈R
+      where
+
+      counterpart : ∀ {e} → e ∈ S₂ → D
+      counterpart e∈S₂ = fst (S₂⊆R₂ e∈S₂)
+
+      pairing-in-R : ∀ {e} → (e∈S₂ : e ∈ S₂) → (counterpart (e∈S₂), e) ∈ R
+      pairing-in-R e∈S₂ = snd (S₂⊆R₂ e∈S₂)
+
+      S : subset (D × E)
+      S (d , e) = Σ (e ∈ S₂) \ e∈S₂ → counterpart e∈S₂ ≈D d
+
+      S₁ : subset D
+      S₁ = fst-subset S
+
+      sndS=S₂ : snd-subset S ≅ S₂
+      backward sndS=S₂ e∈S₂                      = (counterpart e∈S₂ , e∈S₂ , iso-refl D.≤-refl _)
+      forward  sndS=S₂ (e∈sndS @ (_ , e∈S₂ , _)) = e∈S₂
+
+      S=S₁×S₂ : ((fst-subset S ∘ fst) ∩ (snd-subset S ∘ snd)) ≅ ((S₁ ∘ fst) ∩ (S₂ ∘ snd))
+      S=S₁×S₂ =  ≅×≅→≅ (is-preorder.iso-reflexive ⊆-is-preorder S₁) sndS=S₂
+
+      ⋀sndS≈E⋀S₂ : ⋀E (snd-subset S) ≈E ⋀E S₂
+      ⋀sndS≈E⋀S₂ = E.bigmeet-welldefined (! sndS=S₂)
+
+      S⊆R : S ⊆ R
+      S⊆R (e∈S' , counterpart-e=d) = R-subst (≈×≈→≈ counterpart-e=d (E.iso-reflexive _)) (pairing-in-R e∈S')
+
+      ⋀S∈R : ⋀ S ∈ R
+      ⋀S∈R = R-meet-closed S S⊆R
+
+      ⋀S₁⋀S₂∈R : (⋀D S₁ , ⋀E S₂) ∈ R
+      ⋀S₁⋀S₂∈R = R-subst (≈×≈→≈ (D.iso-reflexive _) ⋀sndS≈E⋀S₂) ⋀S∈R
+
 
   -- Left adjoin
   r2f : subset (D × E) → func-pair D E
@@ -1015,16 +1104,16 @@ module transfer-function-pair
 
   f2r-anti : antitone-func pre-mfp pre-r
   monotone-func.func f2r-anti (mfp funcp funcp-is-monotone) = f2r funcp
-  monotone-func.func-is-monotone f2r-anti = f2r-is-antitone
+  monotone-func.property f2r-anti = f2r-is-antitone
 
   r2f-anti : antitone-func pre-r pre-mfp
   monotone-func.func r2f-anti r = mfp (r2f r) (r2f-R-is-monotone-pair r)
-  monotone-func.func-is-monotone r2f-anti = r2f-is-antitone
+  monotone-func.property r2f-anti = r2f-is-antitone
 
   f2r-r2f-mono = pre-comp-anti f2r-anti r2f-anti
-  open monotone-func f2r-r2f-mono renaming (func-is-monotone to f2r-r2f-is-monotone)
+  open monotone-func f2r-r2f-mono renaming (property to f2r-r2f-is-monotone)
   r2f-f2r-mono = pre-comp-anti r2f-anti f2r-anti
-  open monotone-func r2f-f2r-mono renaming (func-is-monotone to r2f-f2r-is-monotone)
+  open monotone-func r2f-f2r-mono renaming (property to r2f-f2r-is-monotone)
 
   module _
     {R : subset (D × E)}
@@ -1236,19 +1325,35 @@ module transfer-function-pair
           fst fb' d ∎
           where
             open ≤E-reasoning
-        snd fb*≤ e = todo 
+        snd fb*≤ e =
+          begin-≤
+          snd fb* e ≤⟨ mono-meet≤meet-mono E-is-cmlat D-is-cmlat b-mono _ ⟩
+          ⋀D ((fimage b) (is-upperbound _≤E_ ｛ f (b e) , e ｝₂ )) ≡⟨⟩
+          ⋀D  (\ d → Σ E (\ e' → (e' ∈ is-upperbound _≤E_ ｛ f (b e) , e ｝₂) × (b e' ≡ d))) ≈⟨ D.bigmeet-≡-≤ b _ ⟩
+          ⋀D  (\ d → Σ E (\ e' → (e' ∈ is-upperbound _≤E_ ｛ f (b e) , e ｝₂) × (b e' ≤D d))) ≤⟨ D.bigmeet-monotone (\ {(e' , e≤e' , fd≤e' , be'≤d) → e' , bin-upperbound→subset-upperbound _≤E_ ((f-mono (b-mono e≤e') ⟨ E.≤-trans ⟩ f-mono be'≤d ⟨ E.≤-trans ⟩ fd≤e') , e≤e') , be'≤d }) ⟩
+          ⋀D (\ d → Σ E (\ e' → e ≤E e' × f d ≤E e' × b e' ≤D d)) ≡⟨⟩
+          snd fb' e ∎
+          where
+            open ≤D-reasoning
 
     fix→r2f-f2r : fb* ≤fp fb → fb' ≤fp fb
     fst (fix→r2f-f2r fb*≤fb) d =
       begin-≤
       fst fb' d ≡⟨⟩
-      ⋀E ｛ e ∣ Σ[ d' ∈ D ] (d ≤D d' × f d' ≤E e × b e ≤D d') ｝  ≤⟨ E.bigmeet-lowerbound _ _ ((b (f d) ∨D d) , ((D⋁.bigjoin-upperbound _ _ (right ≡.refl)) , ((fst fb*≤fb d) , D⋁.bigjoin-upperbound _ _ (left ≡.refl)))) ⟩
+      ⋀E ｛ e ∣ Σ[ d' ∈ D ] (d ≤D d' × f d' ≤E e × b e ≤D d') ｝  ≤⟨ E.bigmeet-lowerbound _ _ ((b (f d) ∨D d) , (D⋁.bigjoin-upperbound _ _ (right ≡.refl) , fst fb*≤fb d , D⋁.bigjoin-upperbound _ _ (left ≡.refl))) ⟩
       f d ≡⟨⟩
       fst fb d ∎
       where open ≤E-reasoning
             module D⋁ = is-complete-join-semilattice D-is-cjlat
 
-    snd (fix→r2f-f2r fb*≤fb) e = todo
+    snd (fix→r2f-f2r fb*≤fb) e =
+      begin-≤
+      snd fb' e ≡⟨⟩
+      ⋀D ｛ d ∣ Σ[ e' ∈ E ] (e ≤E e' × f d ≤E e' × b e' ≤D d) ｝  ≤⟨ D.bigmeet-lowerbound _ _ ((f (b e) ∨E e) , (E⋁.bigjoin-upperbound _ _ (right ≡.refl) , E⋁.bigjoin-upperbound _ _ (left ≡.refl) , snd fb*≤fb e)) ⟩
+      b e ≡⟨⟩
+      snd fb e ∎
+      where open ≤D-reasoning
+            module E⋁ = is-complete-join-semilattice E-is-cjlat
 
 module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
   module D-cmlat = complete-meet-semilattice D-cmlat
@@ -1256,8 +1361,8 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
   open transfer-function-pair D-cmlat.carrier D-cmlat.relation D-cmlat.operation D-cmlat.property E-cmlat.carrier E-cmlat.relation E-cmlat.operation E-cmlat.property
 
   f2r-r2f-antitone-galois-connection : is-antitone-galois-connection f2r-anti r2f-anti
-  forward (is-antitone-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
-  backward (is-antitone-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
+  forward (is-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
+  backward (is-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
 
 
 ```
@@ -1300,6 +1405,9 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
   s2f : subset X → (X → X)
   s2f s x₀ = ⋀X ｛ x ∣ x₀ ≤X x × x ∈ s ｝
 
+  s2f-s-is-monotone : ∀ s → is-monotone X.≤-pre X.≤-pre (s2f s)
+  s2f-s-is-monotone s x≤x' = X.bigmeet-monotone \ { (x'≤x'' , x''∈s) → X.≤-trans x≤x' x'≤x'' , x''∈s }
+
   f2s : (X → X) → subset X
   f2s f x = f x ≤X x
 
@@ -1307,19 +1415,51 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
   f ≤f f' = ∀ x → f x ≤X f' x
 
   module _ where
+    open monotone-func
+    open preordered-set
+    _≤mf_ : rel (monotone-func X-pre X-pre) (monotone-func X-pre X-pre)
+    f ≤mf f' = func f ≤f func f'
+
     open is-preorder
     ≤f-is-preorder : is-preorder _≤f_
     (rel-is-reflexive ≤f-is-preorder f) d = X.≤-refl (f d)
     (rel-is-transitive ≤f-is-preorder f≤f' f'≤f'') d = X.≤-trans (f≤f' d) (f'≤f'' d)
 
+    ≤mf-is-preorder : is-preorder _≤mf_
+    rel-is-reflexive ≤mf-is-preorder d = (rel-is-reflexive ≤f-is-preorder (func d))
+    rel-is-transitive ≤mf-is-preorder f≤f' f'≤f'' = rel-is-transitive ≤f-is-preorder f≤f' f'≤f''
+
+    _≈f_ : rel (X → X) (X → X)
+    _≈f_ = iso-pair _≤f_
+
+    _≈mf_ : rel (monotone-func X-pre X-pre) (monotone-func X-pre X-pre)
+    _≈mf_ = iso-pair _≤mf_
+
+    pre-s = pre (subset X) _⊆_ ⊆-is-preorder
+    pre-mf = pre (monotone-func X-pre X-pre) _≤mf_ ≤mf-is-preorder
+
+    s2f-antitone : antitone-func pre-s pre-mf
+    func s2f-antitone s = mono (s2f s) (s2f-s-is-monotone s)
+    property s2f-antitone {s} {s'} s⊆s' x₀ = X.bigmeet-monotone \{ (x₀≤x , x∈s) → x₀≤x , s⊆s' x∈s}
+
+    f2s-antitone : antitone-func pre-mf pre-s
+    func f2s-antitone f = f2s (func f)
+    property f2s-antitone {f} {f'} f≤f' {x} x∈f2sf' = X.≤-trans (f≤f' x) x∈f2sf'
 
 
-  _≈f_ : rel (X → X) (X → X)
-  _≈f_ = iso-pair _≤f_
-
-
-  module _ (s : subset X) (f : X → X) (f-is-mono : is-monotone X.≤-pre X.≤-pre f) where
-    f2s-s2f-antitone-galois-connection : is-antitone-galois-connection {!f2s-antitone!} {!s2f-antitone!}
+  module _ where
+    open is-galois-connection
+    f2s-s2f-antitone-galois-connection : is-antitone-galois-connection f2s-antitone s2f-antitone
+    equiv f2s-s2f-antitone-galois-connection s f-mono =
+      begin-≈
+      flip _⊆_ (f2sm f-mono) s ≡⟨⟩
+      (∀ {x : X} → s x → f x ≤X x) ≈⟨ hidden↔explicit _ ⟩
+      (∀ x₀ → x₀ ∈ s → f x₀ ≤X x₀) ≈⟨ X.bigmeet-mono-equivalence s (f-is-mono)  ⟩
+      (∀ x₀ → f x₀ ≤X ⋀X (\ x → x₀ ≤X x × x ∈ s)) ≡⟨⟩
+      f ≤f s2f s ∎
+      where open reasoning _ (→-is-preorder)
+            open monotone-func f2s-antitone renaming (func to f2sm ; property to f2sm-is-antitone)
+            open monotone-func f-mono renaming (func to f ; property to f-is-mono)
 
 ```
 
@@ -1336,20 +1476,66 @@ Let X is a poset,
                | ↑       R      | ↑
                | |              | |
                |⊣|              |⊢|
-               ↓ J              ↓ J
+               ↓ J        α     ↓ J
+                      ------->
+        (𝒫(C),⊆)_fix     ≅     X_fix
+                      <-------
 
-        (𝒫(C),⊆)_fix ======== X_fix
+
+                         L
+                      ------->            ---------->
+            (𝒫(A × B),⊆)    ⊥   A×B→A×B                 A→B × B→ A
+                      <-------            <-----------
+               | ↑       R      | ↑                      | |
+               | |              | |                      | |
+               |⊣|              |⊢|                      | |
+               ↓ J        α     ↓ J                      | |
+                      ------->                           | |
+        (𝒫(A×B),⊆)_fix   ≅    A×B→A×B_fix               | |
+              | |     <-------                           | |
+              | |                                        | |
+              | |                                        | |
+              | |                                        | |
+              | |                                        | |
+              | |       ------------------------------   | |
+        (𝒫(A×B),⊆)_fix₂               ≅                  A→B × B→A (f (id ∧ b ⊥) ≥ f
+                        ------------------------------
 
 ```
 
-If we have a pair of adjunction L, R on the top then we have
+If we have a pair of adjuncts L, R on the top then we have
 a full sub category (𝒫(C),⊆)_fix of (𝒫(C),⊆) whose objects are c with an isomorphism c ≃ηc RL(c)
 and a full sub category X_fix of X whose objects are x with an isomorphism LR(x) ≃εx x
 https://ncatlab.org/nlab/show/fixed+point+of+an+adjunction
 
+X → Y → Z
+
+p2f (f2p f ⋈ f2p g) = f ⊗ g = p2f (f2p (f * g))
+p2f (f2p (f * (g * h))) = f ⊗ g ⊗ h
 
 ```agda
-module fixed-point-of-galois-connection where
+module fixed-points-of-galois-connection {C D : preordered-set} (gc : galois-connection C D) (let gal-conn L R eq = gc) where
+  open galois-connection gc using (counit ; unit)
+  module C = preordered-set C
+  module D = preordered-set D
+  C* : preordered-set
+  C* = pre (Σ C.carrier \ c → C.relloop c (counit c)) (map-rel fst fst C.relation) {!!}
+  D* : preordered-set
+  D* = pre (Σ D.carrier \ d → D.relloop d (unit d)) (map-rel fst fst D.relation) {!!}
+
+  -- inclusion fixC → C
+  C*2C : monotone-func C* C
+  monotone-func.func C*2C = fst
+  monotone-func.property C*2C = id
+
+  C2C* : monotone-func C C*
+  monotone-func.func C2C* c = counit c , {!idempotent!}
+  monotone-func.property C2C* c≤c' = {!counit-mono c≤c'!}
+
+  C*2C-C2C*-is-galois-connection : is-galois-connection C*2C C2C*
+  forward (is-galois-connection.equiv C*2C-C2C*-is-galois-connection c d) x = {!!}
+  backward (is-galois-connection.equiv C*2C-C2C*-is-galois-connection c d) x = {!!}
+
 
 
 ```
@@ -1358,11 +1544,64 @@ module fixed-point-of-galois-connection where
 we have relation composition
 
 ⋈ : (𝓟(C × D),⊆) × (𝓟(D × E),⊆) → (𝓟(C × E),⊆)
-which preserves meet-closed property
+which preserves meet-closed property but not butterfly condition.
+
+We first think of n-ary relation composition operation indexed by lists of lattices Aᵢ.
+big-⋈_{A₁A₂A₃...Aₙ} : 𝓟(A₁×A₂) → 𝓟(A₂×A₃) ... → 𝓟(Aₙ₋₁×Aₙ) → 𝒫(A×Z)
+big-⋈_{A₁A₂A₃...Aₙ} r₁₂ r₂₃ ... rₙ₋₁ₙ = r₁₂ ⋈ r₂₃ ⋈ ... ⋈ rₙ₋₁ₙ
 
 
+We derive corresponding n-ary composition operations on the following posets, from big-⋈ and adjunctions between the target poset and 𝒫(D × E):
+- endofunctions ((D × E) → (D × E))
+- bidirectional pairs of functions ((D → E) × (E → D))
+- bidirectional pairs of functions with fb* ≤fp fb
+- butterfly relations
+- unidirectional functions (D → E)
 
+big-⊗_{A₁A₂A₃...Aₙ} x₁₂ x₂₃ ... xₙ₋₁ₙ = G₁ₙ ((F₁₂ x₁₂) ⋈ (F₂₃ x₂₃) ⋈ ... ⋈ (Fₙ₋₁ₙ xₙ₋₁ₙ))
+  where each pair (Gₙₘ , Fₙₘ) is the galois connection between 𝓟(Aₙ×Aₘ) and the target poset
 
 ```agda
-module rel-composition where
+module nary-composition where
+  private
+    lat = complete-meet-semilattice
+
+  -- type of index for nary-operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
+  -- whose each element is just a non-empty list  X₁ & X₂ & ... & rightmost Xₙ
+  -- where `hom' is a type constructor that takes a pair of lattices, e.g.,
+  -- * type of binary relation (subsets of product)
+  -- * type of monotone endofunctions (function space between products)
+  -- * type of bidirectional monotone function pair
+  -- * type of unidirection monotone function
+
+  infixr 20 _∷_
+  data latlist : Set where
+    [_] : lat → latlist
+    _∷_ : lat → latlist → latlist
+
+  -- type of nary composition operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
+  nary-comp : (lat → lat → Set) → latlist → Set
+  nary-comp-helper : (lat → lat → Set) → lat → lat → latlist → Set
+
+  nary-comp hom [ R ] = hom R R -- nullary case
+  nary-comp hom (L ∷ [ R ]) = hom L R → hom L R -- unary case
+  nary-comp hom (L ∷ M ∷ [ R ]) = hom L M → hom M R → hom L R -- binary case
+  nary-comp hom (L ∷ M ∷ R ∷ Rs) = hom L M → hom M R → nary-comp-helper hom L R Rs -- nary case
+  nary-comp-helper hom L M [ R ] = hom M R → hom L R
+  nary-comp-helper hom L M (R ∷ Rs) = hom M R → nary-comp-helper hom L R Rs
+
+  module _ where
+    open complete-meet-semilattice
+    rel-lat : lat → lat → Set
+    rel-lat D E = subset (carrier D × carrier E)
+    big-⋈ : {Ls : latlist} → nary-comp rel-lat Ls
+    big-⋈-helper : (L M : lat) → (Rs : latlist) → (subset (carrier L × carrier M)) → nary-comp-helper rel-lat L M Rs
+
+    big-⋈ {[ R ]} (x , x') = iso-pair (relation R) x x'  -- id relation
+    big-⋈ {L ∷ [ R ]} r = r -- no composition
+    big-⋈ {L ∷ M ∷ [ R ]} r r' = r ⋈ r'
+    big-⋈ {L ∷ M ∷ R ∷ Rs} r r' =  big-⋈-helper L R Rs (r ⋈ r') 
+    big-⋈-helper L M [ R ] r r' = r ⋈ r'
+    big-⋈-helper L M (R ∷ Rs) r r' = big-⋈-helper L R Rs (r ⋈ r')
+
 ```
