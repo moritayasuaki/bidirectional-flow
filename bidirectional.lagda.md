@@ -5,7 +5,7 @@ Lattices, preorder, relation, subset, and monotone functions
 We use type-in-type to avoid about universe level arithmetic
 
 ```agda
-{-# OPTIONS --type-in-type #-}
+{-# OPTIONS --type-in-type --exact-split #-}
 ```
 
 <!--
@@ -458,7 +458,7 @@ record preordered-set : Set where
   carrier opposite = carrier
   relation opposite = flip relation
   property opposite = is-preorder.opposite property
-  relloop = iso-pair relation
+  equiv = iso-pair relation
 
 
 module _ where
@@ -703,19 +703,16 @@ module _ {D E : Set} {_≤D_ : rel D D} {_≤E_ : rel E E} where
     mfp2fp : monotone-func-pair → func-pair D E
     mfp2fp (mfp funcp _) = funcp
 
-record is-galois-connection
-  {C D : preordered-set}
-  (L : monotone-func D C)
-  (R : monotone-func C D) : Set
+is-galois-connection : {C D : preordered-set} (L : monotone-func D C) (R : monotone-func C D) → Set
+is-galois-connection {C} {D} L R = ∀ (c : C.carrier) (d : D.carrier) → C.relation (L.func d) c ↔ D.relation d (R.func c)
   where
-  module C = preordered-set C
-  module D = preordered-set D
-  module L = monotone-func L
-  module R = monotone-func R
-  field equiv : ∀ (c : C.carrier) (d : D.carrier) → C.relation (L.func d) c ↔ D.relation d (R.func c)
+    module C = preordered-set C
+    module D = preordered-set D
+    module L = monotone-func L
+    module R = monotone-func R
 
 is-antitone-galois-connection : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
-is-antitone-galois-connection {C} {D} L R = is-galois-connection {preordered-set.opposite C} {D} L (monotone-func.dual R)
+is-antitone-galois-connection {C} L R = is-galois-connection {preordered-set.opposite C} L (monotone-func.dual R)
 
 record galois-connection (C D : preordered-set) : Set where
   constructor gal-conn
@@ -723,27 +720,50 @@ record galois-connection (C D : preordered-set) : Set where
     left-adjoint : monotone-func D C
     right-adjoint : monotone-func C D
 
-  module C = preordered-set C renaming (relation to _≤_)
-  module D = preordered-set D renaming (relation to _≤_)
-  module C-pre = is-preorder C.property
-  module D-pre = is-preorder D.property
-  module L = monotone-func left-adjoint
-  module R = monotone-func right-adjoint
+  private
+    module C = preordered-set C renaming (relation to _≤_ ; equiv to _≅_)
+    module D = preordered-set D renaming (relation to _≤_ ; equiv to _≅_)
+    module C-pre = is-preorder C.property
+    module D-pre = is-preorder D.property
+    module L = monotone-func left-adjoint renaming (property to mono)
+    module R = monotone-func right-adjoint renaming (property to mono)
   field
-    equiv : ∀ (c : C.carrier) (d : D.carrier) → L.func d C.≤ c ↔ d D.≤ (R.func c)
+    left-right-is-galois-connection : is-galois-connection left-adjoint right-adjoint
 
-  unit = R.func ∘ L.func
-  counit = L.func ∘ R.func
+  rl = R.func ∘ L.func
+  lr = L.func ∘ R.func
 
-  unit-increasing : id ⟨ pointwise D._≤_ ⟩ unit
-  unit-increasing d = forward (equiv (L.func d) d) (C-pre.rel-is-reflexive _)
+  rl-mono : is-monotone D.property D.property rl
+  rl-mono = R.mono ∘ L.mono
 
-  counit-decreasing : counit ⟨ pointwise C._≤_ ⟩ id
-  counit-decreasing c = backward (equiv c (R.func c)) (D-pre.rel-is-reflexive _)
+  lr-mono : is-monotone C.property C.property lr
+  lr-mono = L.mono ∘ R.mono
 
-  unit-idempotent : ∀ c → D.relloop ((R.func ∘ L.func ∘ R.func) c) (R.func c)
-  forward (unit-idempotent c) = {!map-rel !}
-  backward (unit-idempotent c) = {!!}
+  rl-increasing : id ⟨ pointwise D._≤_ ⟩ rl
+  rl-increasing d = forward (left-right-is-galois-connection (L.func d) d) (C-pre.rel-is-reflexive _)
+
+  lr-decreasing : lr ⟨ pointwise C._≤_ ⟩ id
+  lr-decreasing c = backward (left-right-is-galois-connection c (R.func c)) (D-pre.rel-is-reflexive _)
+
+  rl-idempotent : rl ∘ R.func ⟨ pointwise D._≅_ ⟩ R.func
+  forward (rl-idempotent c) = R.mono (lr-decreasing c)
+  backward (rl-idempotent c) = rl-increasing (R.func c)
+
+  lr-idempotent : lr ∘ L.func ⟨ pointwise C._≅_ ⟩ L.func
+  forward (lr-idempotent d) = lr-decreasing (L.func d)
+  backward (lr-idempotent d) = L.mono (rl-increasing d)
+
+is-order-isomorphism : {C D : preordered-set} (L : monotone-func D C) (R : monotone-func C D) → Set
+is-order-isomorphism {C} {D} L R = (func L ∘ func R ⟨ pointwise (equiv C) ⟩ id) × (func R ∘ func L ⟨ pointwise (equiv D) ⟩ id)
+  where open monotone-func
+        open preordered-set
+
+record order-isomorphic (C D : preordered-set) : Set where
+  constructor ord-iso
+  field
+    from : monotone-func D C
+    to : monotone-func C D
+    to-is-order-isomorphism : is-order-isomorphism from to
 
 module _
   {D : _} {_≤D_ : _} {⋀D : _} (D-is-cmlat : _)
@@ -1361,8 +1381,8 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
   open transfer-function-pair D-cmlat.carrier D-cmlat.relation D-cmlat.operation D-cmlat.property E-cmlat.carrier E-cmlat.relation E-cmlat.operation E-cmlat.property
 
   f2r-r2f-antitone-galois-connection : is-antitone-galois-connection f2r-anti r2f-anti
-  forward (is-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
-  backward (is-galois-connection.equiv f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
+  forward (f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
+  backward (f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
 
 
 ```
@@ -1448,9 +1468,8 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
 
 
   module _ where
-    open is-galois-connection
     f2s-s2f-antitone-galois-connection : is-antitone-galois-connection f2s-antitone s2f-antitone
-    equiv f2s-s2f-antitone-galois-connection s f-mono =
+    f2s-s2f-antitone-galois-connection s f-mono =
       begin-≈
       flip _⊆_ (f2sm f-mono) s ≡⟨⟩
       (∀ {x : X} → s x → f x ≤X x) ≈⟨ hidden↔explicit _ ⟩
@@ -1514,29 +1533,136 @@ p2f (f2p f ⋈ f2p g) = f ⊗ g = p2f (f2p (f * g))
 p2f (f2p (f * (g * h))) = f ⊗ g ⊗ h
 
 ```agda
-module fixed-points-of-galois-connection {C D : preordered-set} (gc : galois-connection C D) (let gal-conn L R eq = gc) where
-  open galois-connection gc using (counit ; unit)
-  module C = preordered-set C
-  module D = preordered-set D
-  C* : preordered-set
-  C* = pre (Σ C.carrier \ c → C.relloop c (counit c)) (map-rel fst fst C.relation) {!!}
-  D* : preordered-set
-  D* = pre (Σ D.carrier \ d → D.relloop d (unit d)) (map-rel fst fst D.relation) {!!}
+module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected : galois-connection C D) where
+  open galois-connection C-D-connected
+  open is-preorder
+  open monotone-func renaming (property to monotonicity)
+  private
+    module C = preordered-set C renaming (relation to _≤_ ; property to is-pre ; equiv to _≅_)
+    module D = preordered-set D renaming (relation to _≤_ ; property to is-pre ; equiv to _≅_)
 
-  -- inclusion fixC → C
+  C*-carrier = Σ _ \ c → c C.≤ lr c
+  C*-is-pre : is-preorder {C*-carrier} (map-rel fst fst C._≤_)
+  rel-is-reflexive C*-is-pre _ = rel-is-reflexive C.is-pre _
+  rel-is-transitive C*-is-pre =  rel-is-transitive C.is-pre
+
+  C* : preordered-set
+  C* = pre C*-carrier (map-rel fst fst C._≤_) C*-is-pre
+
+  D*-carrier = Σ _ \ d → rl d D.≤ d
+  D*-is-pre : is-preorder {D*-carrier} (map-rel fst fst D._≤_)
+  rel-is-reflexive D*-is-pre _ = rel-is-reflexive D.is-pre _
+  rel-is-transitive D*-is-pre =  rel-is-transitive D.is-pre
+
+  D* : preordered-set
+  D* = pre D*-carrier (map-rel fst fst D._≤_) D*-is-pre
+
+  {-
+
+    D ←L C
+    ↓L   ↑L
+    D* ≅ C*
+  -}
+
+  -- inclusion C* → C
   C*2C : monotone-func C* C
-  monotone-func.func C*2C = fst
-  monotone-func.property C*2C = id
+  func C*2C = fst
+  monotonicity C*2C = id
 
   C2C* : monotone-func C C*
-  monotone-func.func C2C* c = counit c , {!idempotent!}
-  monotone-func.property C2C* c≤c' = {!counit-mono c≤c'!}
+  func C2C* c = lr c , backward (lr-idempotent (func right-adjoint c))
+  monotonicity C2C* c≤c' = lr-mono c≤c'
+
+  D*2D : monotone-func D* D
+  func D*2D = fst
+  monotonicity D*2D = id
+
+  D2D* : monotone-func D D*
+  func D2D* d = rl d , forward (rl-idempotent (func left-adjoint d))
+  monotonicity D2D* d≤d' = rl-mono d≤d'
 
   C*2C-C2C*-is-galois-connection : is-galois-connection C*2C C2C*
-  forward (is-galois-connection.equiv C*2C-C2C*-is-galois-connection c d) x = {!!}
-  backward (is-galois-connection.equiv C*2C-C2C*-is-galois-connection c d) x = {!!}
+  forward (C*2C-C2C*-is-galois-connection c (c* , c*≤lrc*)) c*≤c =
+    begin-≤
+    c* ≤⟨ c*≤lrc* ⟩
+    lr c* ≤⟨ lr-mono c*≤c ⟩
+    lr c ∎
+    where
+      open reasoning _ C.is-pre
+  backward (C*2C-C2C*-is-galois-connection c (c* , c*≤lrc*)) c*≤lrc =
+    begin-≤
+    c* ≤⟨ c*≤lrc ⟩
+    lr c ≤⟨ lr-decreasing c ⟩
+    c ∎
+    where
+      open reasoning _ C.is-pre
 
+  C-C*-connected : galois-connection C C*
+  C-C*-connected = gal-conn C*2C C2C* C*2C-C2C*-is-galois-connection
 
+  D2D*-D*2D-is-galois-connection : is-galois-connection D2D* D*2D
+  forward (D2D*-D*2D-is-galois-connection (d* , rld*≤d*) d) rld≤d* =
+    begin-≤
+    d ≤⟨ rl-increasing d ⟩
+    rl d ≤⟨ rld≤d* ⟩
+    d* ∎
+    where
+      open reasoning _ D.is-pre
+
+  backward (D2D*-D*2D-is-galois-connection (d* , rld*≤d*) d) d≤d* =
+    begin-≤
+    rl d ≤⟨ rl-mono d≤d* ⟩
+    rl d* ≤⟨ rld*≤d* ⟩
+    d* ∎
+    where
+      open reasoning _ D.is-pre
+
+  C*2D* : monotone-func C* D*
+  func C*2D* c* = (func D2D* ∘ func right-adjoint ∘ func C*2C) c*
+  monotonicity C*2D* c*≤c*' = (monotonicity D2D* ∘ monotonicity right-adjoint) c*≤c*' -- c*≤c*' is defined by relation on projecion (snd c* is irrelevant) applying monotonicity C*2C is valid but make it ambiguous
+
+  D*2C* : monotone-func D* C*
+  func D*2C* d* = (func C2C* ∘ func left-adjoint ∘ func D*2D) d*
+  monotonicity D*2C* d*≤d*' = (monotonicity C2C* ∘ monotonicity left-adjoint) d*≤d*'
+
+  private
+    rl-welldefined : is-welldefined D.is-pre D.is-pre rl
+    rl-welldefined = monotone2welldefined D.is-pre D.is-pre rl-mono
+    rld≤d→rld≅d : ∀ {d} → rl d D.≤ d → rl d D.≅ d
+    forward (rld≤d→rld≅d ≤) = ≤
+    backward (rld≤d→rld≅d ≤) = rl-increasing _
+    rld≤d→rlrlrld≅d : ∀ {d} → rl d D.≤ d → rl (rl (rl d)) D.≅ d
+    rld≤d→rlrlrld≅d {d} rld≤d = begin-≈
+      rl (rl (rl d)) ≈⟨ rl-welldefined (rl-welldefined rld≅d) ⟩
+      rl (rl d) ≈⟨ rl-welldefined rld≅d ⟩
+      rl d ≈⟨ rld≅d ⟩
+      d ∎
+      where
+      open reasoning _ D.is-pre
+      rld≅d : rl d D.≅ d
+      rld≅d = rld≤d→rld≅d rld≤d
+
+    lr-welldefined : is-welldefined C.is-pre C.is-pre lr
+    lr-welldefined = monotone2welldefined C.is-pre C.is-pre lr-mono
+    c≤lrc→c≅lrc : ∀ {c} → c C.≤ lr c → c C.≅ lr c
+    forward (c≤lrc→c≅lrc ≤) = ≤
+    backward (c≤lrc→c≅lrc ≤) = lr-decreasing _
+    c≤lrc→c≅lrlrlrc : ∀ {c} → c C.≤ lr c → c C.≅ lr (lr (lr c))
+    c≤lrc→c≅lrlrlrc {c} c≤lrc = begin-≈
+      c ≈⟨ c≅lrc ⟩
+      lr c ≈⟨ lr-welldefined c≅lrc ⟩
+      lr (lr c) ≈⟨  lr-welldefined (lr-welldefined c≅lrc) ⟩
+      lr (lr (lr c)) ∎
+      where
+      open reasoning _ C.is-pre
+      c≅lrc : c C.≅ lr c
+      c≅lrc = c≤lrc→c≅lrc c≤lrc
+
+  C*2D*-D*2C*-is-order-isomorphism : is-order-isomorphism C*2D* D*2C*
+  forward (fst C*2D*-D*2C*-is-order-isomorphism (d , rld≤d)) = forward (rld≤d→rlrlrld≅d rld≤d)
+  backward (fst C*2D*-D*2C*-is-order-isomorphism (d , rld≤d)) = backward (rld≤d→rlrlrld≅d rld≤d)
+  forward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) =  backward (c≤lrc→c≅lrlrlrc c≤lrc)
+  backward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) = forward (c≤lrc→c≅lrlrlrc c≤lrc)
 
 ```
 
@@ -1574,11 +1700,38 @@ module nary-composition where
   -- * type of bidirectional monotone function pair
   -- * type of unidirection monotone function
 
-  infixr 20 _∷_
-  data latlist : Set where
-    [_] : lat → latlist
-    _∷_ : lat → latlist → latlist
+  open import Data.List
 
+
+  module _ {X : Set} where
+    data comptree : X → X → Set where
+      leaf : (x y : X) → comptree x y
+      _⊛_ : {x y z : X} → comptree x y → comptree y z → comptree x z
+
+    rot-right : ∀ {l r} → comptree l r → comptree l r
+    rot-right (leaf l r) = leaf l r
+    rot-right (leaf l m ⊛ tr) = leaf l m ⊛ tr
+    rot-right ((tl ⊛ tm) ⊛ tr) = tl ⊛ (tm ⊛ tr)
+
+    module _ (hom : X → X → Set) where
+      nary-prod : ∀ {l r} → comptree l r → Set
+      nary-prod (leaf l r) = hom l r
+      nary-prod (tl ⊛ tr) = nary-prod tl × nary-prod tr
+
+  module _ where
+    open complete-meet-semilattice
+    sub-lat : lat → lat → Set
+    sub-lat D E = subset (carrier D × carrier E)
+
+    -- nullary case
+    ⋈₀ : ∀ {D} → sub-lat D D
+    ⋈₀ {D} (x , x') = iso-pair (relation D) x x'
+
+    ⋈+ : ∀ {L R} (t : comptree L R) → nary-prod sub-lat t → sub-lat L R
+    ⋈+ (leaf _ _) s = s -- unary case
+    ⋈+ (lt ⊛ rt) (ls , rs) = (⋈+ lt ls) ⋈ (⋈+ rt rs) -- nary (n >= 2) case
+
+{-
   -- type of nary composition operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
   nary-comp : (lat → lat → Set) → latlist → Set
   nary-comp-helper : (lat → lat → Set) → lat → lat → latlist → Set
@@ -1600,8 +1753,12 @@ module nary-composition where
     big-⋈ {[ R ]} (x , x') = iso-pair (relation R) x x'  -- id relation
     big-⋈ {L ∷ [ R ]} r = r -- no composition
     big-⋈ {L ∷ M ∷ [ R ]} r r' = r ⋈ r'
-    big-⋈ {L ∷ M ∷ R ∷ Rs} r r' =  big-⋈-helper L R Rs (r ⋈ r') 
+    big-⋈ {L ∷ M ∷ R ∷ Rs} r r' =  big-⋈-helper L R Rs (r ⋈ r')
     big-⋈-helper L M [ R ] r r' = r ⋈ r'
     big-⋈-helper L M (R ∷ Rs) r r' = big-⋈-helper L R Rs (r ⋈ r')
-
+-}
 ```
+
+https://arxiv.org/pdf/0906.2866.pdf
+https://en.wikipedia.org/wiki/Predicate_transformer_semantics
+https://proofassistants.stackexchange.com/questions/1239/replacing-strict-positivity-with-monotonicity-on-propositions
