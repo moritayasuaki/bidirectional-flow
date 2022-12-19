@@ -641,7 +641,7 @@ D-cmlat@(cmlat D _≤D_ ⋀D D-prop) ×-cmlat E-cmlat@(cmlat E _≤E_ ⋀E E-pro
   (preordered-set.relation D×E-pre)
   (\ S → ⋀D (fst-subset S) , ⋀E (snd-subset S))
   property
-  where
+  module priv where
     open is-complete-meet-semilattice D-prop renaming (rel-is-preorder to ≤D-is-preorder ; op-is-bigmeet to ⋀D-is-bigmeet ; ↑ to ↑D)
     open is-complete-meet-semilattice E-prop renaming (rel-is-preorder to ≤E-is-preorder ; op-is-bigmeet to ⋀E-is-bigmeet ; ↑ to ↑E)
     D-pre = cmlat→pre D-cmlat
@@ -1119,7 +1119,9 @@ module transfer-function-pair
   f2r-is-antitone (f'≤f , b'≤b) {d , e} (fd≤e , be≤d) = (f'≤f d ⟨ E.≤-trans ⟩ fd≤e) , (b'≤b e ⟨ D.≤-trans ⟩ be≤d)
 
   pre-fp = pre (func-pair D E) _≤fp_ ≤fp-is-preorder
+  pre-mfp : preordered-set
   pre-mfp = pre (monotone-func-pair D.≤-pre E.≤-pre) _≤mfp_ ≤mfp-is-preorder
+  pre-r : preordered-set
   pre-r = pre (subset (D × E)) _⊆_ ⊆-is-preorder
 
   f2r-anti : antitone-func pre-mfp pre-r
@@ -1309,17 +1311,6 @@ module transfer-function-pair
         where open ≤E-reasoning
 
 
-    ap→r2f-f2r : (f ∘ a , b ∘ p) ≤fp (f , b) → r2f (f2r (f , b)) ≤fp (f , b)
-    fst (ap→r2f-f2r (f'≤f , b'≤b)) d₀ =
-      begin-≤ fst (r2f (f2r (f , b))) d₀ ≡⟨⟩
-      ⋀E (\ e → ∃ \ d → d₀ ≤D d × f d ≤E e × b e ≤D d) ≤⟨ E.bigmeet-lowerbound _ _ (a d₀ , id≤a d₀ , f'≤f d₀ , bf≤a d₀) ⟩
-      f d₀ ∎
-      where open ≤E-reasoning
-    snd (ap→r2f-f2r (f'≤f , b'≤b)) e₀ =
-      begin-≤ snd (r2f (f2r (f , b))) e₀ ≡⟨⟩
-      ⋀D (\ d → ∃ \ e → e₀ ≤E e × f d ≤E e × b e ≤D d) ≤⟨ D.bigmeet-lowerbound _ _ (p e₀ , id≤p e₀ , fb≤p e₀  , b'≤b e₀) ⟩
-      b e₀ ∎
-      where open ≤D-reasoning
 
     private
       f* : D → E
@@ -1375,21 +1366,11 @@ module transfer-function-pair
       where open ≤D-reasoning
             module E⋁ = is-complete-join-semilattice E-is-cjlat
 
-module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
-  module D-cmlat = complete-meet-semilattice D-cmlat
-  module E-cmlat = complete-meet-semilattice E-cmlat
-  open transfer-function-pair D-cmlat.carrier D-cmlat.relation D-cmlat.operation D-cmlat.property E-cmlat.carrier E-cmlat.relation E-cmlat.operation E-cmlat.property
-
-  f2r-r2f-antitone-galois-connection : is-antitone-galois-connection f2r-anti r2f-anti
-  forward (f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
-  backward (f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
-
-
 ```
 
 - Category of subsets on complete lattice X:
   - objects: subsets of X, s∈𝓟X, s'∈𝓟X, ...
-  - morphisms: inclusion s ⊆ s'
+  - morphisms: inclusion s ⊆ s' fp
 
 - Category of endo functions on complete lattice X
   - objects: endo monotone fucntions e, e', e'' : X → X
@@ -1404,6 +1385,12 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
 ```
 
 ```agda
+module _ (X : Set) where
+  endo = X → X
+
+module _ (X : preordered-set) where
+  monotone-endo = monotone-func X X
+
 module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
   private
     X-cmlat = cmlat X _≤X_ ⋀X X-is-cmlat
@@ -1428,16 +1415,16 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
   s2f-s-is-monotone : ∀ s → is-monotone X.≤-pre X.≤-pre (s2f s)
   s2f-s-is-monotone s x≤x' = X.bigmeet-monotone \ { (x'≤x'' , x''∈s) → X.≤-trans x≤x' x'≤x'' , x''∈s }
 
-  f2s : (X → X) → subset X
+  f2s : endo X → subset X
   f2s f x = f x ≤X x
 
-  _≤f_ : rel (X → X) (X → X)
+  _≤f_ : rel (endo X) (endo X)
   f ≤f f' = ∀ x → f x ≤X f' x
 
   module _ where
     open monotone-func
     open preordered-set
-    _≤mf_ : rel (monotone-func X-pre X-pre) (monotone-func X-pre X-pre)
+    _≤mf_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
     f ≤mf f' = func f ≤f func f'
 
     open is-preorder
@@ -1452,11 +1439,11 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
     _≈f_ : rel (X → X) (X → X)
     _≈f_ = iso-pair _≤f_
 
-    _≈mf_ : rel (monotone-func X-pre X-pre) (monotone-func X-pre X-pre)
+    _≈mf_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
     _≈mf_ = iso-pair _≤mf_
 
     pre-s = pre (subset X) _⊆_ ⊆-is-preorder
-    pre-mf = pre (monotone-func X-pre X-pre) _≤mf_ ≤mf-is-preorder
+    pre-mf = pre (monotone-endo X-pre) _≤mf_ ≤mf-is-preorder
 
     s2f-antitone : antitone-func pre-s pre-mf
     func s2f-antitone s = mono (s2f s) (s2f-s-is-monotone s)
@@ -1482,6 +1469,58 @@ module endo-function (X : _) (_≤X_ : _) (⋀X : _) (X-is-cmlat : _) where
 
 ```
 
+```
+module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
+  module D-cmlat = complete-meet-semilattice D-cmlat
+  module E-cmlat = complete-meet-semilattice E-cmlat
+  D-is-pre = is-complete-meet-semilattice.rel-is-preorder D-cmlat.property
+  E-is-pre = is-complete-meet-semilattice.rel-is-preorder E-cmlat.property
+
+  open transfer-function-pair D-cmlat.carrier D-cmlat.relation D-cmlat.operation D-cmlat.property E-cmlat.carrier E-cmlat.relation E-cmlat.operation E-cmlat.property
+
+  f2r-r2f-antitone-galois-connection : is-antitone-galois-connection f2r-anti r2f-anti
+  forward (f2r-r2f-antitone-galois-connection r (mfp (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
+  backward (f2r-r2f-antitone-galois-connection r (mfp (f , b) _)) = right-transpose r f b
+
+  rel-mfp-connected : galois-connection (preordered-set.opposite pre-r) pre-mfp
+  galois-connection.left-adjoint rel-mfp-connected = f2r-anti
+  galois-connection.right-adjoint rel-mfp-connected = monotone-func.dual r2f-anti
+  galois-connection.left-right-is-galois-connection rel-mfp-connected = f2r-r2f-antitone-galois-connection
+
+  module D×E-cmlat = complete-meet-semilattice (D-cmlat ×-cmlat E-cmlat)
+  D×E-is-pre = is-complete-meet-semilattice.rel-is-preorder D×E-cmlat.property
+  open endo-function D×E-cmlat.carrier D×E-cmlat.relation D×E-cmlat.operation D×E-cmlat.property
+
+  rel-mf-connected : galois-connection (preordered-set.opposite pre-r) pre-mf
+  galois-connection.left-adjoint rel-mf-connected = f2s-antitone
+  galois-connection.right-adjoint rel-mf-connected = monotone-func.dual s2f-antitone
+  galois-connection.left-right-is-galois-connection rel-mf-connected = f2s-s2f-antitone-galois-connection
+
+  f2fp : endo (D-cmlat.carrier × E-cmlat.carrier) → func-pair (D-cmlat.carrier) (E-cmlat.carrier)
+  fst (f2fp f) d = snd (f (d , E-cmlat.operation U))
+  snd (f2fp f) e = fst (f (D-cmlat.operation U , e))
+
+  mf2mfp : monotone-endo (cmlat→pre (D-cmlat ×-cmlat E-cmlat)) → monotone-func-pair D-is-pre E-is-pre
+  fst (monotone-func-pair.funcp (mf2mfp (mono h h-is-mono))) = fst (f2fp h)
+  snd (monotone-func-pair.funcp (mf2mfp (mono h h-is-mono))) = snd (f2fp h)
+  fst (monotone-func-pair.funcp-is-monotone (mf2mfp (mono h h-is-mono))) d≤d' = snd (h-is-mono (d≤d' , is-preorder.rel-is-reflexive E-is-pre _))
+  snd (monotone-func-pair.funcp-is-monotone (mf2mfp (mono h h-is-mono))) e≤e' = fst (h-is-mono (is-preorder.rel-is-reflexive D-is-pre _ , e≤e'))
+
+  fp2f : func-pair (D-cmlat.carrier) (E-cmlat.carrier) → endo (D-cmlat.carrier × E-cmlat.carrier)
+  fp2f (f , b) (d , e) = (b e , f d)
+
+  mfp2mf : monotone-func-pair D-is-pre E-is-pre → monotone-endo (cmlat→pre (D-cmlat ×-cmlat E-cmlat))
+  monotone-func.func (mfp2mf (mfp (f , b) (f-mono , b-mono))) (d , e) = fp2f (f , b) (d , e)
+  monotone-func.property (mfp2mf (mfp (f , b) (f-mono , b-mono))) (d≤d' , e≤e') = b-mono e≤e' , f-mono d≤d'
+
+  mf-mfp-connected : galois-connection pre-mfp pre-mf
+  galois-connection.left-adjoint mf-mfp-connected = mono mf2mfp (\ f≤f' → (\ d → snd (f≤f' (d , E-cmlat.operation U))) , (\ e → fst (f≤f' (D-cmlat.operation U , e))))
+  galois-connection.right-adjoint mf-mfp-connected = mono mfp2mf (\{ (f-mono , b-mono) (d , e) → b-mono e , f-mono d})
+  forward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mfp (f , b) (f-mono , b-mono)) (mono h h-mono)) mf2mfp[h]≤fb (d , e)
+    = {! D-cmlat.relation (fst (h (d , e))) (b e)!} , {!!}
+  backward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mfp (f , b) (f-mono , b-mono)) (mono h h-mono)) = {!!}
+
+```
 * fixed-points of galois-connection
 
 Let X is a poset,
@@ -1731,6 +1770,7 @@ module nary-composition where
     ⋈+ (leaf _ _) s = s -- unary case
     ⋈+ (lt ⊛ rt) (ls , rs) = (⋈+ lt ls) ⋈ (⋈+ rt rs) -- nary (n >= 2) case
 
+
 {-
   -- type of nary composition operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
   nary-comp : (lat → lat → Set) → latlist → Set
@@ -1759,6 +1799,7 @@ module nary-composition where
 -}
 ```
 
+Some refs:
 https://arxiv.org/pdf/0906.2866.pdf
 https://en.wikipedia.org/wiki/Predicate_transformer_semantics
 https://proofassistants.stackexchange.com/questions/1239/replacing-strict-positivity-with-monotonicity-on-propositions
