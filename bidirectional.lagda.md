@@ -1764,13 +1764,20 @@ module nary-composition-homogeneous
   (let lat = complete-meet-semilattice)
   where
 
+  -- homogeneous case -> bi-operads
   nary-prod : Set → Nat.ℕ → Set
   nary-prod hom Nat.zero = Data.Unit.⊤
     where import Data.Unit
   nary-prod hom (Nat.suc n) = hom × nary-prod hom n
 
-  nary-op : Set → Nat.ℕ → Set
-  nary-op hom n = nary-prod hom n → hom
+  nary-op : Set → Set
+  nary-op hom = ∀ n → nary-prod hom n → hom
+
+  is-unbiased : (X-pre : preordered-set) (let (pre X _≤_ X-is-pre) = X-pre) (op : nary-op X) → Set
+  is-unbiased X-pre op =
+    let (pre X _≤_ X-is-pre) = X-pre
+        _≈_ = iso-pair _≤_
+    in ∀ n x xs → op (Nat.suc n) (x , xs) ≈ op 2 (op 1 (x , _) , op n xs , _)
 
   module _
     (X : lat)
@@ -1782,16 +1789,23 @@ module nary-composition-homogeneous
     open endo-function X×X-carrier _≤×_ ⋀× X×X-is-cmlat
     open transfer-function-pair X-carrier _≤_ ⋀ X-is-cmlat X-carrier _≤_ ⋀ X-is-cmlat
 
-    big⋈ : ∀ n → nary-op (preordered-set.carrier pre-r) n
-    big⋈ Nat.zero _ (x , x')  = iso-pair _≤_ x x'
+    ⨝ : nary-op (preordered-set.carrier pre-r)
+    ⨝ Nat.zero _ (x , x')  = iso-pair _≤_ x x'
       where open complete-meet-semilattice
-    big⋈ (Nat.suc n) (r , rs) = r ⋈ (big⋈ n rs)
+    ⨝ (Nat.suc n) (r , rs) = r ⋈ (⨝ n rs)
 
-    gal-big⋈ : (hom-pre : preordered-set) → galois-connection (preordered-set.opposite pre-r) hom-pre → ∀ n → nary-op (preordered-set.carrier hom-pre) n
-    gal-big⋈ hom-pre (gal-conn l r g) n ps = monotone-func.func r (big⋈ _ (nmap _ ps))
-      where nmap : ∀ n → nary-prod (preordered-set.carrier hom-pre) n → nary-prod (preordered-set.carrier (preordered-set.opposite pre-r)) n
-            nmap Nat.zero _ = _
-            nmap (Nat.suc n) (p , ps) = monotone-func.func l p , nmap n ps
+    gal-⨝ : (hom-pre : preordered-set) → galois-connection (preordered-set.opposite pre-r) hom-pre → nary-op (preordered-set.carrier hom-pre)
+    gal-⨝  hom-pre (gal-conn l r g) n ps = monotone-func.func r (⨝ _ (nmap _ ps))
+      where
+      nmap : ∀ n → nary-prod (preordered-set.carrier hom-pre) n → nary-prod (preordered-set.carrier (preordered-set.opposite pre-r)) n
+      nmap Nat.zero _ = _
+      nmap (Nat.suc n) (p , ps) = monotone-func.func l p , nmap n ps
+
+    ⨝-mf : nary-op (preordered-set.carrier pre-mf)
+    ⨝-mf = gal-⨝ pre-mf (rel-mf-connected X X)
+
+    ⨝-mfp : nary-op (preordered-set.carrier pre-mfp)
+    ⨝-mfp = gal-⨝ pre-mfp (rel-mfp-connected X X)
 
 ```
 
@@ -1868,6 +1882,9 @@ module nary-composition-heterogeneous where
 ```
 
 Some refs:
-https://arxiv.org/pdf/0906.2866.pdf
-https://en.wikipedia.org/wiki/Predicate_transformer_semantics
-https://proofassistants.stackexchange.com/questions/1239/replacing-strict-positivity-with-monotonicity-on-propositions
+- https://arxiv.org/abs/math/0305049
+- https://math.stackexchange.com/questions/1688187/strongly-unbiased-symmetric-monoidal-category
+- https://mathoverflow.net/questions/193422/reference-for-multi-monoidal-categories
+- https://arxiv.org/pdf/0906.2866.pdf
+- https://en.wikipedia.org/wiki/Predicate_transformer_semantics
+- https://proofassistants.stackexchange.com/questions/1239/replacing-strict-positivity-with-monotonicity-on-propositions
