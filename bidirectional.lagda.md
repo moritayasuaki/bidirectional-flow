@@ -641,7 +641,7 @@ D-cmlat@(cmlat D _≤D_ ⋀D D-prop) ×-cmlat E-cmlat@(cmlat E _≤E_ ⋀E E-pro
   (preordered-set.relation D×E-pre)
   (\ S → ⋀D (fst-subset S) , ⋀E (snd-subset S))
   property
-  module priv where
+    where
     open is-complete-meet-semilattice D-prop renaming (rel-is-preorder to ≤D-is-preorder ; op-is-bigmeet to ⋀D-is-bigmeet ; ↑ to ↑D)
     open is-complete-meet-semilattice E-prop renaming (rel-is-preorder to ≤E-is-preorder ; op-is-bigmeet to ⋀E-is-bigmeet ; ↑ to ↑E)
     D-pre = cmlat→pre D-cmlat
@@ -714,6 +714,9 @@ is-galois-connection {C} {D} L R = ∀ (c : C.carrier) (d : D.carrier) → C.rel
 is-antitone-galois-connection : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
 is-antitone-galois-connection {C} L R = is-galois-connection {preordered-set.opposite C} L (monotone-func.dual R)
 
+is-antitone-galois-connection' : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
+is-antitone-galois-connection' {C} {D} L R = is-galois-connection {C} {preordered-set.opposite D} (monotone-func.dual L) R
+
 record galois-connection (C D : preordered-set) : Set where
   constructor gal-conn
   field
@@ -752,6 +755,19 @@ record galois-connection (C D : preordered-set) : Set where
   lr-idempotent : lr ∘ L.func ⟨ pointwise C._≅_ ⟩ L.func
   forward (lr-idempotent d) = lr-decreasing (L.func d)
   backward (lr-idempotent d) = L.mono (rl-increasing d)
+
+antitone-galois-connection : preordered-set → preordered-set → Set
+antitone-galois-connection C D = galois-connection (preordered-set.opposite C) D
+
+comp-galois-connection : {C D E : preordered-set} → galois-connection C D → galois-connection D E → galois-connection C E
+comp-galois-connection {C} {D} {E}
+  (gal-conn L R gl-LR) (gal-conn L' R' gl-LR')
+  = gal-conn (pre-comp L L') (pre-comp R' R) gl
+  where
+    gl : is-galois-connection (pre-comp L L') (pre-comp R' R)
+    forward (gl c e) LL'e≤c = forward (gl-LR' _ _) (forward (gl-LR _ _) LL'e≤c)
+    backward (gl c e) e≤R'Rc = backward (gl-LR _ _) (backward (gl-LR' _ _) e≤R'Rc)
+
 
 is-order-isomorphism : {C D : preordered-set} (L : monotone-func D C) (R : monotone-func C D) → Set
 is-order-isomorphism {C} {D} L R = (func L ∘ func R ⟨ pointwise (equiv C) ⟩ id) × (func R ∘ func L ⟨ pointwise (equiv D) ⟩ id)
@@ -1513,12 +1529,29 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) where
   monotone-func.func (mfp2mf (mfp (f , b) (f-mono , b-mono))) (d , e) = fp2f (f , b) (d , e)
   monotone-func.property (mfp2mf (mfp (f , b) (f-mono , b-mono))) (d≤d' , e≤e') = b-mono e≤e' , f-mono d≤d'
 
-  mf-mfp-connected : galois-connection pre-mfp pre-mf
-  galois-connection.left-adjoint mf-mfp-connected = mono mf2mfp (\ f≤f' → (\ d → snd (f≤f' (d , E-cmlat.operation U))) , (\ e → fst (f≤f' (D-cmlat.operation U , e))))
-  galois-connection.right-adjoint mf-mfp-connected = mono mfp2mf (\{ (f-mono , b-mono) (d , e) → b-mono e , f-mono d})
-  forward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mfp (f , b) (f-mono , b-mono)) (mono h h-mono)) mf2mfp[h]≤fb (d , e)
-    = {! D-cmlat.relation (fst (h (d , e))) (b e)!} , {!!}
-  backward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mfp (f , b) (f-mono , b-mono)) (mono h h-mono)) = {!!}
+  mf-mfp-connected : galois-connection pre-mf pre-mfp
+  galois-connection.left-adjoint mf-mfp-connected = mono mfp2mf (\{ (f-mono , b-mono) (d , e) → b-mono e , f-mono d})
+  galois-connection.right-adjoint mf-mfp-connected = mono mf2mfp (\ f≤f' → (\ d → snd (f≤f' (d , E-cmlat.operation U))) , (\ e → fst (f≤f' (D-cmlat.operation U , e))))
+  forward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mono h h-mono) (mfp (f , b) (f-mono , b-mono))) mfp2mf[fb]≤h
+    = f≤snd[h[id,⊥]] , b≤fst[h[⊥,id]]
+    where
+    f≤snd[h[id,⊥]] : ∀ d → E-cmlat.relation (f d) (snd (h (d , _)))
+    f≤snd[h[id,⊥]] d = snd (mfp2mf[fb]≤h (d , E-cmlat.operation U))
+    b≤fst[h[⊥,id]] : ∀ e → D-cmlat.relation (b e) (fst (h (_ , e)))
+    b≤fst[h[⊥,id]] e = fst (mfp2mf[fb]≤h (D-cmlat.operation U , e))
+
+  backward (galois-connection.left-right-is-galois-connection mf-mfp-connected (mono h h-mono) (mfp (f , b) (f-mono , b-mono))) (f≤snd[mf2mfp[h]] , b≤fst[mf2mfp[h]])
+    = fp2f[f,b]≤h
+    where
+    fp2f[f,b]≤h : ∀ p → D×E-cmlat.relation (fp2f (f , b) p) (h p)
+    fst (fp2f[f,b]≤h p) = begin-≤ fst (fp2f (f , b) p) ≤⟨  b≤fst[mf2mfp[h]] (snd p) ⟩ fst (h (D-cmlat.operation U , snd p)) ≤⟨ fst (h-mono ((is-complete-meet-semilattice.bigmeet-lowerbound D-cmlat.property _ _ _ ) , (is-preorder.rel-is-reflexive E-is-pre _))) ⟩ fst (h p) ∎
+      where
+      open reasoning _ D-is-pre
+    snd (fp2f[f,b]≤h p) = begin-≤ snd (fp2f (f , b) p) ≤⟨  f≤snd[mf2mfp[h]] (fst p) ⟩ snd (h (fst p , E-cmlat.operation U)) ≤⟨ snd (h-mono ((is-preorder.rel-is-reflexive D-is-pre _) , (is-complete-meet-semilattice.bigmeet-lowerbound E-cmlat.property _ _ _ ))) ⟩ snd (h p) ∎
+      where
+      open reasoning _ E-is-pre
+
+  rel-mf-mfp-connected = comp-galois-connection rel-mf-connected mf-mfp-connected
 
 ```
 * fixed-points of galois-connection
@@ -1727,7 +1760,43 @@ big-⊗_{A₁A₂A₃...Aₙ} x₁₂ x₂₃ ... xₙ₋₁ₙ = G₁ₙ ((F₁
   where each pair (Gₙₘ , Fₙₘ) is the galois connection between 𝓟(Aₙ×Aₘ) and the target poset
 
 ```agda
-module nary-composition where
+module nary-composition-homogeneous
+  (let lat = complete-meet-semilattice)
+  where
+
+  nary-prod : Set → Nat.ℕ → Set
+  nary-prod hom Nat.zero = Data.Unit.⊤
+    where import Data.Unit
+  nary-prod hom (Nat.suc n) = hom × nary-prod hom n
+
+  nary-op : Set → Nat.ℕ → Set
+  nary-op hom n = nary-prod hom n → hom
+
+  module _
+    (X : lat)
+    (let X×X = X ×-cmlat X)
+    (let (cmlat X-carrier _≤_ ⋀ X-is-cmlat) = X)
+    (let (cmlat X×X-carrier _≤×_ ⋀× X×X-is-cmlat) = X×X)
+    where
+
+    open endo-function X×X-carrier _≤×_ ⋀× X×X-is-cmlat
+    open transfer-function-pair X-carrier _≤_ ⋀ X-is-cmlat X-carrier _≤_ ⋀ X-is-cmlat
+
+    big⋈ : ∀ n → nary-op (preordered-set.carrier pre-r) n
+    big⋈ Nat.zero _ (x , x')  = iso-pair _≤_ x x'
+      where open complete-meet-semilattice
+    big⋈ (Nat.suc n) (r , rs) = r ⋈ (big⋈ n rs)
+
+    gal-big⋈ : (hom-pre : preordered-set) → galois-connection (preordered-set.opposite pre-r) hom-pre → ∀ n → nary-op (preordered-set.carrier hom-pre) n
+    gal-big⋈ hom-pre (gal-conn l r g) n ps = monotone-func.func r (big⋈ _ (nmap _ ps))
+      where nmap : ∀ n → nary-prod (preordered-set.carrier hom-pre) n → nary-prod (preordered-set.carrier (preordered-set.opposite pre-r)) n
+            nmap Nat.zero _ = _
+            nmap (Nat.suc n) (p , ps) = monotone-func.func l p , nmap n ps
+
+```
+
+```agda
+module nary-composition-heterogeneous where
   private
     lat = complete-meet-semilattice
 
@@ -1769,7 +1838,6 @@ module nary-composition where
     ⋈+ : ∀ {L R} (t : comptree L R) → nary-prod sub-lat t → sub-lat L R
     ⋈+ (leaf _ _) s = s -- unary case
     ⋈+ (lt ⊛ rt) (ls , rs) = (⋈+ lt ls) ⋈ (⋈+ rt rs) -- nary (n >= 2) case
-
 
 {-
   -- type of nary composition operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
