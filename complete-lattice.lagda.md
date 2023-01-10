@@ -235,4 +235,5 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice)
           ⋀E (snd-subset S) ∎
           where open reasoning _ ≤E-is-preorder
 
+
 ```

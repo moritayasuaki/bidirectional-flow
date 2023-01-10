@@ -3,7 +3,6 @@
 open import Level
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
--- open import Data.Bool hiding (_∨_ ; _∧_)
 import Relation.Binary.PropositionalEquality as ≡
 open ≡ using (_≡_ ; _≗_)
 open import Relation.Binary renaming (_⇔_ to _⇔₂_)
@@ -108,13 +107,104 @@ Their tensor product does different thing (e.g. adding pair of retation) from th
 ```agda
 
 module galois-connections where
+```
 
+```agda
+module _ (X : Set) where
+  endo = X → X
+
+module _ (X : preordered-set) where
+  monotone-endo = monotone-func X X
+
+module endo-function (X-cmlat : complete-meet-semilattice)
+  (let (cmlat X _≤X_ ⋀X X-is-cmlat) = X-cmlat)
+  (let X-pre = cmlat→pre X-cmlat)
+  (open is-complete-meet-semilattice X-is-cmlat
+      renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans))
+  where
+
+  private
+    module X = is-complete-meet-semilattice X-is-cmlat
+      renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
+
+  rel2endo : subset X → (X → X)
+  rel2endo s x₀ = ⋀X ｛ x ∣ x₀ ≤X x × x ∈ s ｝
+
+  rel2endo-s-is-monotone : ∀ s → is-monotone X.≤-pre X.≤-pre (rel2endo s)
+  rel2endo-s-is-monotone s x≤x' = X.bigmeet-monotone \ { (x'≤x'' , x''∈s) → X.≤-trans x≤x' x'≤x'' , x''∈s }
+
+  endo2rel : endo X → subset X
+  endo2rel f x = f x ≤X x
+
+  _≤endo_ : rel (endo X) (endo X)
+  f ≤endo f' = ∀ x → f x ≤X f' x
+
+  module _ where
+    open monotone-func
+    open preordered-set
+    _≤mendo_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
+    f ≤mendo f' = func f ≤endo func f'
+
+    open is-preorder
+    ≤endo-is-preorder : is-preorder _≤endo_
+    (rel-is-reflexive ≤endo-is-preorder f) d = X.≤-refl (f d)
+    (rel-is-transitive ≤endo-is-preorder f≤f' f'≤f'') d = X.≤-trans (f≤f' d) (f'≤f'' d)
+
+    ≤mendo-is-preorder : is-preorder _≤mendo_
+    rel-is-reflexive ≤mendo-is-preorder d = (rel-is-reflexive ≤endo-is-preorder (func d))
+    rel-is-transitive ≤mendo-is-preorder f≤f' f'≤f'' = rel-is-transitive ≤endo-is-preorder f≤f' f'≤f''
+
+    _≈endo_ : rel (X → X) (X → X)
+    _≈endo_ = iso-pair _≤endo_
+
+    _≈mendo_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
+    _≈mendo_ = iso-pair _≤mendo_
+
+    pre-subset = pre (subset X) _⊆_ ⊆-is-preorder
+    pre-mendo = pre (monotone-endo X-pre) _≤mendo_ ≤mendo-is-preorder
+
+    rel2endo-antitone : antitone-func pre-subset pre-mendo
+    func rel2endo-antitone s = mono (rel2endo s) (rel2endo-s-is-monotone s)
+    property rel2endo-antitone {s} {s'} s⊆s' x₀ = X.bigmeet-monotone \{ (x₀≤x , x∈s) → x₀≤x , s⊆s' x∈s}
+
+    endo2rel-antitone : antitone-func pre-mendo pre-subset
+    func endo2rel-antitone f = endo2rel (func f)
+    property endo2rel-antitone {f} {f'} f≤endo' {x} x∈endo2relf' = X.≤-trans (f≤endo' x) x∈endo2relf'
+
+
+  module _ where
+    endo2rel-rel2endo-antitone-galois-connection : is-antitone-galois-connection endo2rel-antitone rel2endo-antitone
+    endo2rel-rel2endo-antitone-galois-connection s f-mono =
+      begin-≈
+      flip _⊆_ (endo2relm f-mono) s ≡⟨⟩
+      (∀ {x : X} → s x → f x ≤X x) ≈⟨ hidden↔explicit _ ⟩
+      (∀ x₀ → x₀ ∈ s → f x₀ ≤X x₀) ≈⟨ X.bigmeet-mono-equivalence s (f-is-mono)  ⟩
+      (∀ x₀ → f x₀ ≤X ⋀X (\ x → x₀ ≤X x × x ∈ s)) ≡⟨⟩
+      f ≤endo rel2endo s ∎
+      where open reasoning _ (→-is-preorder)
+            open monotone-func endo2rel-antitone renaming (func to endo2relm ; property to endo2relm-is-antitone)
+            open monotone-func f-mono renaming (func to f ; property to f-is-mono)
+
+```
+
+```agda
 module transfer-function-pair
   (D-cmlat E-cmlat : complete-meet-semilattice)
   (let D-pre = cmlat→pre D-cmlat)
   (let E-pre = cmlat→pre E-cmlat)
   (let (cmlat D _≤D_ ⋀D D-is-cmlat) = D-cmlat)
   (let (cmlat E _≤E_ ⋀E E-is-cmlat) = E-cmlat)
+  (let D×E-cmlat = D-cmlat ×-cmlat E-cmlat)
+  (let (cmlat D×E _≤_ ⋀ D×E-is-cmlat) = D×E-cmlat)
+  (let D-cjlat = cmlat→cjlat D-cmlat)
+  (let E-cjlat = cmlat→cjlat E-cmlat)
+  (let D×E-cjlat = cmlat→cjlat D×E-cmlat)
+  (let (cjlat _ _ ⋁D D-is-cjlat) = D-cjlat)
+  (let (cjlat _ _ ⋁E E-is-cjlat) = E-cjlat)
+  (let (cjlat _ _ ⋁ D×E-is-cjlat) = D×E-cjlat)
+  (let _∨D_ = \ x y → ⋁D ｛ x , y ｝₂)
+  (let _∨E_ = \ x y → ⋁E ｛ x , y ｝₂)
+  (let _∨_ = \ x y → ⋁ ｛ x , y ｝₂)
   where
 
   private
@@ -124,35 +214,6 @@ module transfer-function-pair
       renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
     module ≤D-reasoning = reasoning _ D.≤-pre
     module ≤E-reasoning = reasoning _ E.≤-pre
-
-    D×E-cmlat = D-cmlat ×-cmlat E-cmlat
-
-  open complete-meet-semilattice D×E-cmlat
-    renaming (relation to _≤_ ; operation to ⋀ ; property to D×E-is-cmlat )
-
-  D-cjlat = cmlat→cjlat D-cmlat
-  open complete-join-semilattice D-cjlat
-    renaming (operation to ⋁D ; property to D-is-cjlat)
-  E-cjlat = cmlat→cjlat E-cmlat
-  open complete-join-semilattice E-cjlat
-    renaming (operation to ⋁E ; property to E-is-cjlat)
-
-  D×E-cjlat = cmlat→cjlat D×E-cmlat
-  open complete-join-semilattice D-cjlat
-    renaming (operation to ⋁ ; property to D×E-is-cjlat)
-
-  ⊤D = ⋀D ∅
-  ⊤E = ⋀E ∅
-  ⊤ = ⋀ ∅
-
-  ⊥D = ⋁D ∅
-  ⊥E = ⋁E ∅
-  ⊥ = ⋁ ∅
-
-  _∨D_ = \ x y → ⋁D ｛ x , y ｝₂
-  _∨E_ = \ x y → ⋁E ｛ x , y ｝₂
-  _∨_ = \ x y → ⋁ ｛ x , y ｝₂
-
 
   open is-complete-meet-semilattice D×E-is-cmlat
     renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
@@ -181,9 +242,6 @@ module transfer-function-pair
   backward (≈×≈→≈ ≈D ≈E) = backward ≈D , backward ≈E
 
 
-  ≅×≅→≅ : ∀ {X Y} {S S' : subset X} {T T' : subset Y} → S ≅ S' → T ≅ T' → ((S ∘ fst) ∩ (T ∘ snd)) ≅ ((S' ∘ fst) ∩ (T' ∘ snd))
-  forward (≅×≅→≅ S=S' T=T') (d , e) = (forward S=S' d) , (forward T=T' e)
-  backward (≅×≅→≅ S=S' T=T') (d , e) = (backward S=S' d) , (backward T=T' e)
 
   _≈pair_ = iso-pair _≤pair_
   _≈mpair_ = iso-pair _≤mpair_
@@ -614,90 +672,6 @@ module transfer-function-pair
             rel2endo s ≥ f
 ```
 
-```agda
-module _ (X : Set) where
-  endo = X → X
-
-module _ (X : preordered-set) where
-  monotone-endo = monotone-func X X
-
-module endo-function (X-cmlat : complete-meet-semilattice)
-  (let (cmlat X _≤X_ ⋀X X-is-cmlat) = X-cmlat)
-  (let X-pre = cmlat→pre X-cmlat) where
-
-  private
-    module X = is-complete-meet-semilattice X-is-cmlat
-      renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
-
-  X-cjlat = cmlat→cjlat X-cmlat
-  open complete-join-semilattice X-cjlat
-    renaming (operation to ⋁X ; property to X-is-cjlat)
-
-  ⊤X = ⋀X ∅
-
-  ⊥X = ⋁X ∅
-
-  _∨X_ = \ x y → ⋁X ｛ x , y ｝₂
-
-  rel2endo : subset X → (X → X)
-  rel2endo s x₀ = ⋀X ｛ x ∣ x₀ ≤X x × x ∈ s ｝
-
-  rel2endo-s-is-monotone : ∀ s → is-monotone X.≤-pre X.≤-pre (rel2endo s)
-  rel2endo-s-is-monotone s x≤x' = X.bigmeet-monotone \ { (x'≤x'' , x''∈s) → X.≤-trans x≤x' x'≤x'' , x''∈s }
-
-  endo2rel : endo X → subset X
-  endo2rel f x = f x ≤X x
-
-  _≤endo_ : rel (endo X) (endo X)
-  f ≤endo f' = ∀ x → f x ≤X f' x
-
-  module _ where
-    open monotone-func
-    open preordered-set
-    _≤mendo_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
-    f ≤mendo f' = func f ≤endo func f'
-
-    open is-preorder
-    ≤endo-is-preorder : is-preorder _≤endo_
-    (rel-is-reflexive ≤endo-is-preorder f) d = X.≤-refl (f d)
-    (rel-is-transitive ≤endo-is-preorder f≤f' f'≤f'') d = X.≤-trans (f≤f' d) (f'≤f'' d)
-
-    ≤mendo-is-preorder : is-preorder _≤mendo_
-    rel-is-reflexive ≤mendo-is-preorder d = (rel-is-reflexive ≤endo-is-preorder (func d))
-    rel-is-transitive ≤mendo-is-preorder f≤f' f'≤f'' = rel-is-transitive ≤endo-is-preorder f≤f' f'≤f''
-
-    _≈endo_ : rel (X → X) (X → X)
-    _≈endo_ = iso-pair _≤endo_
-
-    _≈mendo_ : rel (monotone-endo X-pre) (monotone-endo X-pre)
-    _≈mendo_ = iso-pair _≤mendo_
-
-    pre-subset = pre (subset X) _⊆_ ⊆-is-preorder
-    pre-mendo = pre (monotone-endo X-pre) _≤mendo_ ≤mendo-is-preorder
-
-    rel2endo-antitone : antitone-func pre-subset pre-mendo
-    func rel2endo-antitone s = mono (rel2endo s) (rel2endo-s-is-monotone s)
-    property rel2endo-antitone {s} {s'} s⊆s' x₀ = X.bigmeet-monotone \{ (x₀≤x , x∈s) → x₀≤x , s⊆s' x∈s}
-
-    endo2rel-antitone : antitone-func pre-mendo pre-subset
-    func endo2rel-antitone f = endo2rel (func f)
-    property endo2rel-antitone {f} {f'} f≤endo' {x} x∈endo2relf' = X.≤-trans (f≤endo' x) x∈endo2relf'
-
-
-  module _ where
-    endo2rel-rel2endo-antitone-galois-connection : is-antitone-galois-connection endo2rel-antitone rel2endo-antitone
-    endo2rel-rel2endo-antitone-galois-connection s f-mono =
-      begin-≈
-      flip _⊆_ (endo2relm f-mono) s ≡⟨⟩
-      (∀ {x : X} → s x → f x ≤X x) ≈⟨ hidden↔explicit _ ⟩
-      (∀ x₀ → x₀ ∈ s → f x₀ ≤X x₀) ≈⟨ X.bigmeet-mono-equivalence s (f-is-mono)  ⟩
-      (∀ x₀ → f x₀ ≤X ⋀X (\ x → x₀ ≤X x × x ∈ s)) ≡⟨⟩
-      f ≤endo rel2endo s ∎
-      where open reasoning _ (→-is-preorder)
-            open monotone-func endo2rel-antitone renaming (func to endo2relm ; property to endo2relm-is-antitone)
-            open monotone-func f-mono renaming (func to f ; property to f-is-mono)
-
-```
 
 ```
 module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre D-cmlat) (let E-pre = cmlat→pre E-cmlat) where
@@ -786,7 +760,7 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   -- mpair2mfun : monotone-func-pair D-is-pre E-is-pre → monotone-func D-is-pre E-is-pre
   -- mpair2mfun = ?
   fun2pair : fun D-cmlat.carrier E-cmlat.carrier → func-pair (D-cmlat.carrier) (E-cmlat.carrier)
-  fun2pair f = f , \ _ → ⊥D
+  fun2pair f = f , \ _ → complete-meet-semilattice.operation D-cmlat U
 
   mfun2mpair : monotone-func D-pre E-pre → monotone-func-pair D-pre E-pre
   monotone-func-pair.pair (mfun2mpair (mono func property)) = fun2pair func
@@ -797,9 +771,7 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   galois-connection.left-adjoint mpair-mfun-connected = mono mfun2mpair (\ f≤f' → (\ d → f≤f' d) , (\ e → is-complete-meet-semilattice.bigmeet-monotone D-cmlat.property (\ x → x)))
   galois-connection.right-adjoint mpair-mfun-connected = mono mpair2mfun (\ fb≤fb' d → fst fb≤fb' d)
   forward (galois-connection.left-right-is-galois-connection mpair-mfun-connected mfp mf) Lmf≤mfp d = fst Lmf≤mfp d
-  backward (galois-connection.left-right-is-galois-connection mpair-mfun-connected mfp mf) mf≤Rmfp = (\ d → mf≤Rmfp d) , (\ e → is-complete-meet-semilattice.bigmeet-lowerbound D-cmlat.property _ _ (\ _ → ⊥-elim))
-    where open import Data.Empty
-
+  backward (galois-connection.left-right-is-galois-connection mpair-mfun-connected mfp mf) mf≤Rmfp = (\ d → mf≤Rmfp d) , (\ e → is-complete-meet-semilattice.bigmeet-lowerbound D-cmlat.property _ _ _)
   mendo-mfun-connected : galois-connection pre-mendo pre-mfun
   mendo-mfun-connected = comp-galois-connection mendo-mpair-connected mpair-mfun-connected
 
@@ -991,7 +963,4 @@ module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected :
   backward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) = forward (c≤lrc→c≅lrlrlrc c≤lrc)
 
 
-open transfer-function-pair public
 ```
-
-
