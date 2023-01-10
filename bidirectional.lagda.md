@@ -859,16 +859,31 @@ module _
 https://ncatlab.org/nlab/show/2-poset
 
 - Category of relations:
-  - objects: complete lattices, D , E , F , ...
-  - morphisms: relations between objects, r , r' , r'' , ...
-  - compositions: relation composition, r;r'
+  - objects: complete lattices, D , E , ...
+  - morphisms: relations between objects, r , r' , r'' , ... (𝒫(D × E))
+  - compositions: relation composition, r ⨝ r'
   - 2-morphisms: inclusion r ⊆ r'
 
+- Category of monotone endofunctions on products
+  - objects: complete lattices, D , E , ...
+  - morphisms: monotone endofunctions on product lattice (D × E → D × E)
+  - compositions: f ∙ f' := (c , e) ↦ ⋀ { (c' , d , e') |  (c', d') = f (c , d) ∧ (d' , e') = f' (d , e) }
+  - 2-morphisms: pointwise ordering
+
 - Category of bidirectional monotone functions
-  - objects: complete lattices, D , E , F , ...
-  - morphisms: pairs of forward and backward monotone functions, (f , b) , (f' , b') , ...
-  - compositions: composition of forward and backward monotone functions, (f , b) ∘ (f' , b') = (f ∘ f' , b' ∘ b)
+  - objects: complete lattices, D , E , ...
+  - morphisms: pairs of forward and backward monotone functions, (f , b) , (f' , b') , ... (D → E × E → D)
+  - compositions: composition of forward and backward monotone functions, (f , b) ∙ (f' , b') = (f ∘ f' , b' ∘ b)
   - 2-morphisms: pointwise ordering, (f , b) ≤ (f' , b') := (∀ d, f d ≤ f' d) ∧ (∀ e , b e ≤ b' e)
+
+- Category of monotone functions
+  - objects: complete lattices, D , E , ...
+  - morphisms: monotone functions f , f' : D → E
+  - compositions: function composition f ∘ f'
+  - 2-morphisms: pointwise ordering, f ≤ f' := ∀ d, f d ≤ f' d
+
+Those 2-morphisms above are all partial order, i.e Hom categories are thin categories.
+
 
 here is an adjunction
 
@@ -964,9 +979,6 @@ module transfer-function-pair
     module ≤-reasoning = reasoning _ ≤-pre
 
   open product-order _≤D_ _≤E_ renaming (_≈₁_ to _≈D_ ; _≈₂_ to _≈E_)
-
-  private
-    _→mono_ = is-monotone
 
   _≤fp_ : rel (func-pair D E) (func-pair D E)
   (f , b) ≤fp (f' , b') = (∀ d → f d ≤E f' d) × (∀ e → b e ≤D b' e)
@@ -1574,9 +1586,9 @@ Let X is a poset,
 
 
                          L
-                      ------->            ---------->
-            (𝒫(A × B),⊆)    ⊥   A×B→A×B                 A→B × B→ A
-                      <-------            <-----------
+                      ------->            ---------->             ------------------------------>
+            (𝒫(A × B),⊆)    ⊥   A×B→A×B                 A→B × B→A                                 A→B
+                      <-------            <-----------            <------------------------------
                | ↑       R      | ↑                      | |
                | |              | |                      | |
                |⊣|              |⊢|                      | |
@@ -1594,7 +1606,7 @@ Let X is a poset,
 
 ```
 
-If we have a pair of adjuncts L, R on the top then we have
+If we have a pair of adjoints L, R on the top then we have
 a full sub category (𝒫(C),⊆)_fix of (𝒫(C),⊆) whose objects are c with an isomorphism c ≃ηc RL(c)
 and a full sub category X_fix of X whose objects are x with an isomorphism LR(x) ≃εx x
 https://ncatlab.org/nlab/show/fixed+point+of+an+adjunction
@@ -1763,17 +1775,36 @@ big-⊗_{A₁A₂A₃...Aₙ} x₁₂ x₂₃ ... xₙ₋₁ₙ = G₁ₙ ((F₁
 module nary-composition-homogeneous
   (let lat = complete-meet-semilattice)
   where
+  open import Data.Vec as Vec
+  open import Data.Fin as Fin
+  -- operad-like structure on homogeneous product semilattice X × X
 
-  -- homogeneous case -> bi-operads
   nary-prod : Set → Nat.ℕ → Set
-  nary-prod hom Nat.zero = Data.Unit.⊤
+  nary-prod C Nat.zero = Data.Unit.⊤
     where import Data.Unit
-  nary-prod hom (Nat.suc n) = hom × nary-prod hom n
+  nary-prod C (Nat.suc n) = C × nary-prod C n
 
-  nary-op : Set → Set
-  nary-op hom = ∀ n → nary-prod hom n → hom
+  nary-hom : Set → Nat.ℕ → Set
+  nary-hom C n = nary-prod C n → C
 
-  is-unbiased : (X-pre : preordered-set) (let (pre X _≤_ X-is-pre) = X-pre) (op : nary-op X) → Set
+  nary-ihom : Set → Set
+  nary-ihom C = ∀ n → nary-hom C n
+
+  fsum : ∀{n : Nat.ℕ} → Vec.Vec Nat.ℕ n → Nat.ℕ
+  fsum [] = Nat.zero
+  fsum (x ∷ k) = x Nat.+ fsum k
+
+  nary-comp : (C : Set) → (n : Nat.ℕ) → (k : Vec.Vec Nat.ℕ n) → ((i : Fin n) → nary-hom C (lookup k i)) → nary-hom C (fsum k)
+  nary-comp C n k x x₁ = {!!}
+
+  module _ (X-pre : preordered-set) (let (pre X _≤_ X-is-pre) = X-pre) (let _≈_ = iso-pair _≤_) where
+    module _ (op : nary-ihom X) (let I = op 0 _) (let _⊗_ = \ x y → op 2 (x , y , _)) where
+      associativity = ∀ x y z → ((x ⊗ y) ⊗ z) ≈ (x ⊗ (y ⊗ z))
+      l-unitality = ∀ x → (I ⊗ x) ≈ x
+      r-unitality = ∀ x → (x ⊗ I) ≈ x
+
+  -- I am not sure it is good to
+  is-unbiased : (X-pre : preordered-set) (let (pre X _≤_ X-is-pre) = X-pre) (op : nary-ihom X) → Set
   is-unbiased X-pre op =
     let (pre X _≤_ X-is-pre) = X-pre
         _≈_ = iso-pair _≤_
@@ -1789,28 +1820,31 @@ module nary-composition-homogeneous
     open endo-function X×X-carrier _≤×_ ⋀× X×X-is-cmlat
     open transfer-function-pair X-carrier _≤_ ⋀ X-is-cmlat X-carrier _≤_ ⋀ X-is-cmlat
 
-    ⨝ : nary-op (preordered-set.carrier pre-r)
-    ⨝ Nat.zero _ (x , x')  = iso-pair _≤_ x x'
+    ⨝ : nary-ihom (preordered-set.carrier pre-r)
+    ⨝ Nat.zero _ (x , x') = iso-pair _≤_ x x'
       where open complete-meet-semilattice
     ⨝ (Nat.suc n) (r , rs) = r ⋈ (⨝ n rs)
 
-    gal-⨝ : (hom-pre : preordered-set) → galois-connection (preordered-set.opposite pre-r) hom-pre → nary-op (preordered-set.carrier hom-pre)
+    -- gal-⨝ makes monotone function
+    gal-⨝ : (hom-pre : preordered-set) → galois-connection (preordered-set.opposite pre-r) hom-pre → nary-ihom (preordered-set.carrier hom-pre)
     gal-⨝  hom-pre (gal-conn l r g) n ps = monotone-func.func r (⨝ _ (nmap _ ps))
       where
       nmap : ∀ n → nary-prod (preordered-set.carrier hom-pre) n → nary-prod (preordered-set.carrier (preordered-set.opposite pre-r)) n
       nmap Nat.zero _ = _
       nmap (Nat.suc n) (p , ps) = monotone-func.func l p , nmap n ps
 
-    ⨝-mf : nary-op (preordered-set.carrier pre-mf)
+    ⨝-mf : nary-ihom (preordered-set.carrier pre-mf)
     ⨝-mf = gal-⨝ pre-mf (rel-mf-connected X X)
 
-    ⨝-mfp : nary-op (preordered-set.carrier pre-mfp)
+    ⨝-mfp : nary-ihom (preordered-set.carrier pre-mfp)
     ⨝-mfp = gal-⨝ pre-mfp (rel-mfp-connected X X)
+
 
 ```
 
 ```agda
 module nary-composition-heterogeneous where
+  -- operad with some
   private
     lat = complete-meet-semilattice
 
@@ -1822,36 +1856,30 @@ module nary-composition-heterogeneous where
   -- * type of bidirectional monotone function pair
   -- * type of unidirection monotone function
 
-  open import Data.List
-
-
   module _ {X : Set} where
-    data comptree : X → X → Set where
-      leaf : (x y : X) → comptree x y
-      _⊛_ : {x y z : X} → comptree x y → comptree y z → comptree x z
+    data comptree : Nat.ℕ → X → X → Set where
+      empty : (x : X) → comptree 0 x x
+      leaf : (x y : X) → comptree 1 x y
+      _⊛_ : {x y z : X} {n m : Nat.ℕ} → comptree n x y → comptree m y z → comptree (n Nat.+ m) x z
 
-    rot-right : ∀ {l r} → comptree l r → comptree l r
-    rot-right (leaf l r) = leaf l r
-    rot-right (leaf l m ⊛ tr) = leaf l m ⊛ tr
-    rot-right ((tl ⊛ tm) ⊛ tr) = tl ⊛ (tm ⊛ tr)
+    data complist : Nat.ℕ → X → X → Set where
+      [] : {x : X} → complist 0 x x
+      _∷_ : ((x , y) : X × X) {z : X} {n : Nat.ℕ} → complist n y z → complist (Nat.suc n) x z
 
+    import Data.Unit
     module _ (hom : X → X → Set) where
-      nary-prod : ∀ {l r} → comptree l r → Set
-      nary-prod (leaf l r) = hom l r
-      nary-prod (tl ⊛ tr) = nary-prod tl × nary-prod tr
+      nary-prod : ∀ {n l r} → complist n l r → Set
+      nary-prod [] = Data.Unit.⊤
+      nary-prod ((x , y) ∷ xs) = hom x y × nary-prod xs
 
   module _ where
     open complete-meet-semilattice
     sub-lat : lat → lat → Set
     sub-lat D E = subset (carrier D × carrier E)
 
-    -- nullary case
-    ⋈₀ : ∀ {D} → sub-lat D D
-    ⋈₀ {D} (x , x') = iso-pair (relation D) x x'
-
-    ⋈+ : ∀ {L R} (t : comptree L R) → nary-prod sub-lat t → sub-lat L R
-    ⋈+ (leaf _ _) s = s -- unary case
-    ⋈+ (lt ⊛ rt) (ls , rs) = (⋈+ lt ls) ⋈ (⋈+ rt rs) -- nary (n >= 2) case
+    ⨝ : ∀ {L R n} (l : complist n L R) → nary-prod sub-lat l → sub-lat L R
+    ⨝ ([] {D}) _ (x , x') = iso-pair (relation D) x x'
+    ⨝ ((C , D) ∷ Xs) (r , rs)  = r ⋈ (⨝ Xs rs)
 
 {-
   -- type of nary composition operation hom(X₁, X₂) → hom(X₂, X₃) → hom(X₃ , X₄) → ... hom(Xₙ₋₁ , Xₙ) → hom(X₁, Xₙ)
@@ -1879,9 +1907,13 @@ module nary-composition-heterogeneous where
     big-⋈-helper L M [ R ] r r' = r ⋈ r'
     big-⋈-helper L M (R ∷ Rs) r r' = big-⋈-helper L R Rs (r ⋈ r')
 -}
+
 ```
 
+
+
 Some refs:
+- https://ncatlab.org/nlab/show/cartesian+bicategory
 - https://arxiv.org/abs/math/0305049
 - https://math.stackexchange.com/questions/1688187/strongly-unbiased-symmetric-monoidal-category
 - https://mathoverflow.net/questions/193422/reference-for-multi-monoidal-categories
