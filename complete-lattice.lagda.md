@@ -121,6 +121,7 @@ record complete-join-semilattice : Set where
     relation : rel carrier carrier
     operation : subsetop carrier
     property : is-complete-join-semilattice relation operation
+  module property = is-complete-join-semilattice property
 
 record complete-meet-semilattice : Set where
   constructor cmlat
@@ -129,6 +130,7 @@ record complete-meet-semilattice : Set where
     relation : rel carrier carrier
     operation : subsetop carrier
     property : is-complete-meet-semilattice relation operation
+  module property = is-complete-meet-semilattice property
 
 record join-semilattice : Set where
   constructor jlat
@@ -137,6 +139,7 @@ record join-semilattice : Set where
     relation : rel carrier carrier
     operation : binop carrier
     property : is-join-semilattice relation operation
+  module property = is-join-semilattice property
 
 record meet-semilattice : Set where
   constructor m-slat
@@ -145,6 +148,7 @@ record meet-semilattice : Set where
     relation : rel carrier carrier
     operation : binop carrier
     property : is-meet-semilattice relation operation
+  open is-meet-semilattice property public
 
 cmlat→pre : complete-meet-semilattice → preordered-set
 cmlat→pre (cmlat _ _ _ X-cmlat) = pre _ _ X.rel-is-preorder
@@ -179,19 +183,23 @@ cmlat→cjlat (cmlat X _≤_ ⋀  X-prop) =
       cm2cj _≤_ ⋀ S ≤⟨ bigmeet-lowerbound (is-upperbound _≤_ S) x x∈ubS ⟩
       x ∎
 -- binary complete meet semilattice product
-_×-cmlat_ : complete-meet-semilattice → complete-meet-semilattice → complete-meet-semilattice
-D-cmlat@(cmlat D _≤D_ ⋀D D-prop) ×-cmlat E-cmlat@(cmlat E _≤E_ ⋀E E-prop) =
-  cmlat
-  (D × E)
-  (preordered-set.relation D×E-pre)
-  (\ S → ⋀D (fst-subset S) , ⋀E (snd-subset S))
-  property
+
+module _ (D-cmlat E-cmlat : complete-meet-semilattice)
+  (let (cmlat D _≤D_ ⋀D D-prop) = D-cmlat)
+  (let (cmlat E _≤E_ ⋀E E-prop) = E-cmlat)
+  (let D-pre = cmlat→pre D-cmlat)
+  (let E-pre = cmlat→pre E-cmlat)
+  (let D×E-pre = D-pre ×-pre E-pre) where
+  _×-cmlat_ : complete-meet-semilattice
+  _×-cmlat_ =
+    cmlat
+      (D × E)
+      (preordered-set.relation D×E-pre)
+      (\ S → ⋀D (fst-subset S) , ⋀E (snd-subset S))
+      property
     where
     open is-complete-meet-semilattice D-prop renaming (rel-is-preorder to ≤D-is-preorder ; op-is-bigmeet to ⋀D-is-bigmeet ; ↑ to ↑D)
     open is-complete-meet-semilattice E-prop renaming (rel-is-preorder to ≤E-is-preorder ; op-is-bigmeet to ⋀E-is-bigmeet ; ↑ to ↑E)
-    D-pre = cmlat→pre D-cmlat
-    E-pre = cmlat→pre E-cmlat
-    D×E-pre = D-pre ×-pre E-pre
     open is-complete-meet-semilattice
     module D-prop = is-complete-meet-semilattice D-prop
     module E-prop = is-complete-meet-semilattice E-prop

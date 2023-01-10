@@ -990,6 +990,8 @@ module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected :
   forward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) =  backward (c≤lrc→c≅lrlrlrc c≤lrc)
   backward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) = forward (c≤lrc→c≅lrlrlrc c≤lrc)
 
+
+open transfer-function-pair public
 ```
 
 

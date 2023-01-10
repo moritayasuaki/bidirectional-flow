@@ -208,6 +208,8 @@ record preordered-set : Set where
     relation : rel carrier carrier
     property : is-preorder relation
 
+  module property = is-preorder property
+
   lowerbounds : (S : subset carrier) → subset carrier
   lowerbounds S = is-lowerbound relation S
 
@@ -275,11 +277,9 @@ fun X Y = X → Y
 
 record monotone-func (D E : preordered-set) : Set where
   constructor mono
-  open preordered-set D renaming (carrier to |D| ; property to ≤D-pre)
-  open preordered-set E renaming (carrier to |E| ; property to ≤E-pre)
   field
-    func : fun |D| |E|
-    property : is-monotone ≤D-pre ≤E-pre func
+    func : fun (D .preordered-set.carrier) (E .preordered-set.carrier)
+    property : is-monotone (D .preordered-set.property) (E .preordered-set.property) func
 
   dual : monotone-func (preordered-set.opposite D) (preordered-set.opposite E)
   func dual = func
