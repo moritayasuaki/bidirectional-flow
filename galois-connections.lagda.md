@@ -10,7 +10,7 @@ open import Relation.Nullary
 open import Relation.Unary
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
-import Data.Nat as Nat
+open import Data.Nat using (ℕ; suc; zero)
 
 open import predicate
 open import preorder
@@ -123,18 +123,17 @@ module endo-function (X-cmlat : complete-meet-semilattice)
       renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans))
   where
 
-  private
-    module X = is-complete-meet-semilattice X-is-cmlat
-      renaming (rel-is-preorder to ≤-pre ; op-is-bigmeet to ⋀-bigmeet ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
-
   rel2endo : subset X → (X → X)
   rel2endo s x₀ = ⋀X ｛ x ∣ x₀ ≤X x × x ∈ s ｝
 
-  rel2endo-s-is-monotone : ∀ s → is-monotone X.≤-pre X.≤-pre (rel2endo s)
-  rel2endo-s-is-monotone s x≤x' = X.bigmeet-monotone \ { (x'≤x'' , x''∈s) → X.≤-trans x≤x' x'≤x'' , x''∈s }
+  rel2endo-is-pointwisely-monotone : ∀ s → is-monotone ≤-pre ≤-pre (rel2endo s)
+  rel2endo-is-pointwisely-monotone s x≤x' = bigmeet-monotone \ { (x'≤x'' , x''∈s) → ≤-trans x≤x' x'≤x'' , x''∈s }
 
   endo2rel : endo X → subset X
   endo2rel f x = f x ≤X x
+
+  mendo2rel : monotone-endo X-pre → subset X
+  mendo2rel (mono f _) x = f x ≤X x
 
   _≤endo_ : rel (endo X) (endo X)
   f ≤endo f' = ∀ x → f x ≤X f' x
@@ -147,8 +146,8 @@ module endo-function (X-cmlat : complete-meet-semilattice)
 
     open is-preorder
     ≤endo-is-preorder : is-preorder _≤endo_
-    (rel-is-reflexive ≤endo-is-preorder f) d = X.≤-refl (f d)
-    (rel-is-transitive ≤endo-is-preorder f≤f' f'≤f'') d = X.≤-trans (f≤f' d) (f'≤f'' d)
+    (rel-is-reflexive ≤endo-is-preorder f) d = ≤-refl (f d)
+    (rel-is-transitive ≤endo-is-preorder f≤f' f'≤f'') d = ≤-trans (f≤f' d) (f'≤f'' d)
 
     ≤mendo-is-preorder : is-preorder _≤mendo_
     rel-is-reflexive ≤mendo-is-preorder d = (rel-is-reflexive ≤endo-is-preorder (func d))
@@ -161,28 +160,38 @@ module endo-function (X-cmlat : complete-meet-semilattice)
     _≈mendo_ = iso-pair _≤mendo_
 
     pre-subset = pre (subset X) _⊆_ ⊆-is-preorder
+    pre-endo = pre (endo X) _≤endo_ ≤endo-is-preorder
     pre-mendo = pre (monotone-endo X-pre) _≤mendo_ ≤mendo-is-preorder
 
-    rel2endo-antitone : antitone-func pre-subset pre-mendo
-    func rel2endo-antitone s = mono (rel2endo s) (rel2endo-s-is-monotone s)
-    property rel2endo-antitone {s} {s'} s⊆s' x₀ = X.bigmeet-monotone \{ (x₀≤x , x∈s) → x₀≤x , s⊆s' x∈s}
+    rel2mendo : subset X → monotone-endo X-pre
+    func (rel2mendo s) = rel2endo s
+    property (rel2mendo s) x≤x' = rel2endo-is-pointwisely-monotone s x≤x'
 
-    endo2rel-antitone : antitone-func pre-mendo pre-subset
-    func endo2rel-antitone f = endo2rel (func f)
-    property endo2rel-antitone {f} {f'} f≤endo' {x} x∈endo2relf' = X.≤-trans (f≤endo' x) x∈endo2relf'
+    rel2mendo-is-antitone : is-antitone ⊆-is-preorder ≤mendo-is-preorder rel2mendo
+    rel2mendo-is-antitone {s} {s'} s⊆s' x = bigmeet-monotone \{ {x'} (x≤x' , x'∈s) → x≤x' , s⊆s' x'∈s }
 
+    mendo2rel-is-antitone : is-antitone ≤mendo-is-preorder ⊆-is-preorder mendo2rel
+    mendo2rel-is-antitone f≤f' {x} x∈endo2relf' = ≤-trans (f≤f' x) x∈endo2relf'
+
+    anti-rel2mendo : antitone-func pre-subset pre-mendo
+    func anti-rel2mendo s = mono (rel2endo s) (rel2endo-is-pointwisely-monotone s)
+    property anti-rel2mendo {s} {s'} = rel2mendo-is-antitone {s} {s'}
+
+    anti-mendo2rel : antitone-func pre-mendo pre-subset
+    func anti-mendo2rel f = mendo2rel f
+    property anti-mendo2rel {s} {s'} = mendo2rel-is-antitone {s} {s'}
 
   module _ where
-    endo2rel-rel2endo-antitone-galois-connection : is-antitone-galois-connection endo2rel-antitone rel2endo-antitone
+    endo2rel-rel2endo-antitone-galois-connection : is-antitone-galois-connection anti-mendo2rel anti-rel2mendo
     endo2rel-rel2endo-antitone-galois-connection s f-mono =
       begin-≈
       flip _⊆_ (endo2relm f-mono) s ≡⟨⟩
       (∀ {x : X} → s x → f x ≤X x) ≈⟨ hidden↔explicit _ ⟩
-      (∀ x₀ → x₀ ∈ s → f x₀ ≤X x₀) ≈⟨ X.bigmeet-mono-equivalence s (f-is-mono)  ⟩
+      (∀ x₀ → x₀ ∈ s → f x₀ ≤X x₀) ≈⟨ bigmeet-mono-equivalence s (f-is-mono)  ⟩
       (∀ x₀ → f x₀ ≤X ⋀X (\ x → x₀ ≤X x × x ∈ s)) ≡⟨⟩
       f ≤endo rel2endo s ∎
       where open reasoning _ (→-is-preorder)
-            open monotone-func endo2rel-antitone renaming (func to endo2relm ; property to endo2relm-is-antitone)
+            open monotone-func anti-mendo2rel renaming (func to endo2relm ; property to endo2relm-is-antitone)
             open monotone-func f-mono renaming (func to f ; property to f-is-mono)
 
 ```
@@ -409,7 +418,6 @@ module transfer-function-pair
 
   pre-mpair : preordered-set
   pre-mpair = pre (monotone-func-pair D-pre E-pre) _≤mpair_ ≤mpair-is-preorder
-
 
   pre-rel : preordered-set
   pre-rel = pre (subset (D × E)) _⊆_ ⊆-is-preorder
@@ -697,13 +705,17 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   open endo-function (D-cmlat ×-cmlat E-cmlat)
 
   rel-mendo-connected : antitone-galois-connection pre-rel pre-mendo
-  galois-connection.left-adjoint rel-mendo-connected = endo2rel-antitone
-  galois-connection.right-adjoint rel-mendo-connected = monotone-func.dual rel2endo-antitone
+  galois-connection.left-adjoint rel-mendo-connected = anti-mendo2rel
+  galois-connection.right-adjoint rel-mendo-connected = monotone-func.dual anti-rel2mendo
   galois-connection.left-right-is-galois-connection rel-mendo-connected = endo2rel-rel2endo-antitone-galois-connection
 
   endo2pair : endo (D-cmlat.carrier × E-cmlat.carrier) → func-pair (D-cmlat.carrier) (E-cmlat.carrier)
   fst (endo2pair f) d = snd (f (d , E-cmlat.operation U))
   snd (endo2pair f) e = fst (f (D-cmlat.operation U , e))
+
+  endo2pair-is-monotone : is-monotone ≤endo-is-preorder ≤pair-is-preorder endo2pair
+  fst (endo2pair-is-monotone e≤e') d = snd (e≤e' (d , E-cmlat.operation U))
+  snd (endo2pair-is-monotone e≤e') e = fst (e≤e' (D-cmlat.operation U , e))
 
 
   mendo2mpair : monotone-endo (cmlat→pre (D-cmlat ×-cmlat E-cmlat)) → monotone-func-pair D-pre E-pre
@@ -712,16 +724,38 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   fst (monotone-func-pair.pair-is-monotone (mendo2mpair (mono h h-is-mono))) d≤d' = snd (h-is-mono (d≤d' , is-preorder.rel-is-reflexive E-is-pre _))
   snd (monotone-func-pair.pair-is-monotone (mendo2mpair (mono h h-is-mono))) e≤e' = fst (h-is-mono (is-preorder.rel-is-reflexive D-is-pre _ , e≤e'))
 
+  mendo2mpair-is-monotone : is-monotone ≤mendo-is-preorder ≤mpair-is-preorder mendo2mpair
+  fst (mendo2mpair-is-monotone e≤e') d = snd (e≤e' (d , E-cmlat.operation U))
+  snd (mendo2mpair-is-monotone e≤e') e = fst (e≤e' (D-cmlat.operation U , e))
+
+  mono-mendo2mpair : monotone-func pre-mendo pre-mpair
+  monotone-func.func mono-mendo2mpair = mendo2mpair
+  monotone-func.property mono-mendo2mpair {d} {d'} = mendo2mpair-is-monotone {d} {d'}
+
+
   pair2endo : func-pair (D-cmlat.carrier) (E-cmlat.carrier) → endo (D-cmlat.carrier × E-cmlat.carrier)
   pair2endo (f , b) (d , e) = (b e , f d)
+
+  pair2endo-is-monotone : is-monotone ≤pair-is-preorder ≤endo-is-preorder pair2endo
+  fst (pair2endo-is-monotone fb≤f'b' de) = snd fb≤f'b' (snd de)
+  snd (pair2endo-is-monotone fb≤f'b' de) = fst fb≤f'b' (fst de)
 
   mpair2mendo : monotone-func-pair D-pre E-pre → monotone-endo (cmlat→pre (D-cmlat ×-cmlat E-cmlat))
   monotone-func.func (mpair2mendo (mfp' (f , b) (f-mono , b-mono))) (d , e) = pair2endo (f , b) (d , e)
   monotone-func.property (mpair2mendo (mfp' (f , b) (f-mono , b-mono))) (d≤d' , e≤e') = b-mono e≤e' , f-mono d≤d'
 
+  mpair2mendo-is-monotone : is-monotone ≤mpair-is-preorder ≤mendo-is-preorder mpair2mendo
+  mpair2mendo-is-monotone (f-mono , b-mono) (d , e) = b-mono e , f-mono d
+
+  mono-mpair2mendo : monotone-func pre-mpair pre-mendo
+  monotone-func.func mono-mpair2mendo = mpair2mendo
+  monotone-func.property mono-mpair2mendo {d} {d'} = mpair2mendo-is-monotone {d} {d'}
+
+  module _ where
+    open galois-connection
 
   mendo-mpair-connected : galois-connection pre-mendo pre-mpair
-  galois-connection.left-adjoint mendo-mpair-connected = mono mpair2mendo (\{ (f-mono , b-mono) (d , e) → b-mono e , f-mono d})
+  galois-connection.left-adjoint mendo-mpair-connected = mono-mpair2mendo
   galois-connection.right-adjoint mendo-mpair-connected = mono mendo2mpair (\ f≤f' → (\ d → snd (f≤f' (d , E-cmlat.operation U))) , (\ e → fst (f≤f' (D-cmlat.operation U , e))))
   forward (galois-connection.left-right-is-galois-connection mendo-mpair-connected (mono h h-mono) (mfp' (f , b) (f-mono , b-mono))) mpair2mendo[fb]≤h
     = f≤snd[h[id,⊥]] , b≤endost[h[⊥,id]]
@@ -762,13 +796,25 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   fun2pair : fun D-cmlat.carrier E-cmlat.carrier → func-pair (D-cmlat.carrier) (E-cmlat.carrier)
   fun2pair f = f , \ _ → complete-meet-semilattice.operation D-cmlat U
 
+  fun2pair-is-monotone : is-monotone ≤fun-is-preorder ≤pair-is-preorder fun2pair
+  fst (fun2pair-is-monotone f≤f') d = f≤f' d
+  snd (fun2pair-is-monotone _) _ = complete-meet-semilattice.property.bigmeet-monotone D-cmlat id
+
   mfun2mpair : monotone-func D-pre E-pre → monotone-func-pair D-pre E-pre
   monotone-func-pair.pair (mfun2mpair (mono func property)) = fun2pair func
   fst (monotone-func-pair.pair-is-monotone (mfun2mpair (mono func property))) = property
   snd (monotone-func-pair.pair-is-monotone (mfun2mpair (mono func property))) {d} {d'} _ = is-complete-meet-semilattice.bigmeet-monotone D-cmlat.property (\ x → x)
 
+  mfun2mpair-is-monotone : is-monotone ≤mfun-is-preorder ≤mpair-is-preorder mfun2mpair
+  mfun2mpair-is-monotone f≤f' .fst = \ d → f≤f' d
+  mfun2mpair-is-monotone f≤f' .snd = \ e → is-complete-meet-semilattice.bigmeet-monotone D-cmlat.property (\ x → x)
+
+  mono-mfun2mpair : monotone-func pre-mfun pre-mpair
+  monotone-func.func mono-mfun2mpair = mfun2mpair
+  monotone-func.property mono-mfun2mpair {d} {d'} = mfun2mpair-is-monotone {d} {d'}
+
   mpair-mfun-connected : galois-connection pre-mpair pre-mfun
-  galois-connection.left-adjoint mpair-mfun-connected = mono mfun2mpair (\ f≤f' → (\ d → f≤f' d) , (\ e → is-complete-meet-semilattice.bigmeet-monotone D-cmlat.property (\ x → x)))
+  galois-connection.left-adjoint mpair-mfun-connected = mono-mfun2mpair
   galois-connection.right-adjoint mpair-mfun-connected = mono mpair2mfun (\ fb≤fb' d → fst fb≤fb' d)
   forward (galois-connection.left-right-is-galois-connection mpair-mfun-connected mfp mf) Lmf≤mfp d = fst Lmf≤mfp d
   backward (galois-connection.left-right-is-galois-connection mpair-mfun-connected mfp mf) mf≤Rmfp = (\ d → mf≤Rmfp d) , (\ e → is-complete-meet-semilattice.bigmeet-lowerbound D-cmlat.property _ _ _)
@@ -778,8 +824,24 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   rel-mfun-connected : antitone-galois-connection pre-rel pre-mfun
   rel-mfun-connected = comp-galois-connection rel-mendo-connected mendo-mfun-connected
 
+```
+
+Order embeddings
+```agda
+
+  mfun2mpair-embedding : order-embedding pre-mfun pre-mpair
+  order-embedding.func mfun2mpair-embedding = mfun2mpair
+  is-order-embedding.func-is-monotone (order-embedding.property mfun2mpair-embedding) {d} {d'} = mfun2mpair-is-monotone {d} {d'}
+  is-order-embedding.func-is-reflecting (order-embedding.property mfun2mpair-embedding) (Lf≤Lf' , Lb≤b') d = Lf≤Lf' d
+
+  mpair2mendo-embedding : order-embedding pre-mpair pre-mendo
+  order-embedding.func mpair2mendo-embedding = mpair2mendo
+  is-order-embedding.func-is-monotone (order-embedding.property mpair2mendo-embedding) {d} {d'} = mpair2mendo-is-monotone {d} {d'}
+  is-order-embedding.func-is-reflecting (order-embedding.property mpair2mendo-embedding) {fb} {fb'} Lfb≤Lfb' .fst d = snd (Lfb≤Lfb' (d , complete-meet-semilattice.operation E-cmlat ∅))
+  is-order-embedding.func-is-reflecting (order-embedding.property mpair2mendo-embedding) {fb} {fb'} Lfb≤Lfb' .snd e = fst (Lfb≤Lfb' (complete-meet-semilattice.operation D-cmlat ∅ , e))
 
 ```
+
 * fixed-points of galois-connection
 
 Let X is a poset,

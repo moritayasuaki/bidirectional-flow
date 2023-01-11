@@ -235,5 +235,36 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice)
           ⋀E (snd-subset S) ∎
           where open reasoning _ ≤E-is-preorder
 
+module _
+  (X-cmlat : complete-meet-semilattice)
+  (let (cmlat X _≤_ ⋀ X-prop) = X-cmlat)
+  (let X-pre = cmlat→pre X-cmlat)
+  where
+
+  open complete-meet-semilattice
+  open is-complete-meet-semilattice
+  open is-preorder
+  open is-greatest
+
+  subset-complete-lattice : complete-meet-semilattice
+  carrier subset-complete-lattice = subset X
+  relation subset-complete-lattice = _⊆_
+  operation subset-complete-lattice ss x = ∀ s → s ∈ ss → x ∈ s
+  rel-is-reflexive (rel-is-preorder (property subset-complete-lattice)) r = id
+  rel-is-transitive (rel-is-preorder (property subset-complete-lattice)) s s' p = s' (s p)
+  element (op-is-bigmeet (property subset-complete-lattice) ss) s s∈ss s→s∈ss→x∈s = s→s∈ss→x∈s s s∈ss
+  property (op-is-bigmeet (property subset-complete-lattice) ss) d d-is-lowerbound x∈d s s∈ss = d-is-lowerbound s s∈ss x∈d
+
+  module _ (T : Set) where
+    endo-complete-lattice : complete-meet-semilattice
+    carrier endo-complete-lattice = T → X
+    relation endo-complete-lattice f g = ∀ x → f x ≤ g x
+    operation endo-complete-lattice S x = ⋀ \{ y → ∃ \ f → f ∈ S × f x ≤ y }
+    rel-is-reflexive (rel-is-preorder (property endo-complete-lattice)) _ _ = preordered-set.property.rel-is-reflexive X-pre _
+    rel-is-transitive (rel-is-preorder (property endo-complete-lattice)) f≤f' f'≤f'' _ = preordered-set.property.rel-is-transitive X-pre (f≤f' _) (f'≤f'' _)
+    element (op-is-bigmeet (property endo-complete-lattice) S) f f∈S x =
+      complete-meet-semilattice.property.bigmeet-lowerbound X-cmlat _ _ (f , f∈S , preordered-set.property.rel-is-reflexive X-pre _)
+    property (op-is-bigmeet (property endo-complete-lattice) S) f f-is-lowerbound x =
+      complete-meet-semilattice.property.bigmeet-greatest X-cmlat _ _ \ { y (f' , f'∈S , f'x≤y) → preordered-set.property.rel-is-transitive X-pre (f-is-lowerbound f' f'∈S x) f'x≤y}
 
 ```

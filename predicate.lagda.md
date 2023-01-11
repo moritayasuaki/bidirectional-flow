@@ -11,7 +11,9 @@ open import Relation.Nullary
 open import Relation.Unary
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
-import Data.Nat as Nat
+open import Data.Nat using (ℕ; suc; zero)
+open import Data.Fin using (Fin; suc; zero)
+open import Data.Bool using (Bool; true ; false)
 
 private variable
   ℓ : Level
@@ -21,11 +23,6 @@ level-of : {ℓ : Level} (X : Set ℓ) → Level
 level-of {ℓ} _ = ℓ
 
 prop = Set
-
-data false : prop where
-
-record true : prop where
-  constructor ⋆
 
 pred : Set → prop
 pred X = Pred X (level-of X)
@@ -75,6 +72,9 @@ subsetop X = subset X → X
 
 κ-subset : Set → Set → prop
 κ-subset κ X = κ → X
+
+finite-subset = κ-subset (ℕ)
+decidable-subset = Set → Bool
 
 _∈κ_ : ∀ {κ} → rel X (κ-subset κ X)
 x ∈κ S = Σ _ \ i → S i ≡ x

@@ -11,6 +11,8 @@ open import Relation.Nullary
 open import Relation.Unary
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
+open import Data.Empty renaming (⊥ to bot)
+open import Data.Unit renaming (⊤ to top) hiding (_≤_)
 import Data.Nat as Nat
 
 module preorder where
@@ -104,14 +106,14 @@ module _ {X : Set} where
           R≡ : (x≡y : x ≡ y) → x R y
 
         R-is-equiv : ∀ {x y} → x R y → prop
-        R-is-equiv (R≤ x≤y) = false
-        R-is-equiv (R≈ x≈y) = true
-        R-is-equiv (R≡ x≡y) = true
+        R-is-equiv (R≤ x≤y) = bot
+        R-is-equiv (R≈ x≈y) = top
+        R-is-equiv (R≡ x≡y) = top
 
         R-is-identity : ∀ {x y} → x R y → prop
-        R-is-identity (R≤ x≤y) = false
-        R-is-identity (R≈ x≈y) = false
-        R-is-identity (R≡ x≡y) = true
+        R-is-identity (R≤ x≤y) = bot
+        R-is-identity (R≈ x≈y) = bot
+        R-is-identity (R≡ x≡y) = top
 
         infix 1 begin-≤_ begin-≈_ begin-≡_
         infixr 2 step-≤ step-≈ step-≡ _≡⟨⟩_
@@ -248,6 +250,13 @@ module _ {X : Set} {Y : Set} {_≤X_ : rel X X} {_≤Y_ : rel Y Y}
   is-monotone : pred (X → Y)
   is-monotone f = ∀ {d d'} → d ≤X d' → f d ≤Y f d'
 
+  is-order-reflecting : pred (X → Y)
+  is-order-reflecting f = ∀ {d d'} → f d ≤Y f d' → d ≤X d'
+
+  record is-order-embedding (f : X → Y) : Set where
+    field
+      func-is-monotone : is-monotone f
+      func-is-reflecting : is-order-reflecting f
 
   monotone2welldefined : {f : X → Y} → is-monotone f → is-welldefined  f
   forward (monotone2welldefined {f} f-is-monotone d≈d') = f-is-monotone (forward d≈d')
@@ -258,7 +267,6 @@ module _ {X : Set} {Y : Set} {_≤X_ : rel X X} {_≤Y_ : rel Y Y}
 
 is-antitone : {X : Set} {Y : Set} {_≤X_ : rel X X} {_≤Y_ : rel Y Y} (≤X-pre : is-preorder _≤X_) (≤Y-pre : is-preorder _≤Y_) → pred (X → Y)
 is-antitone ≤X-pre ≤Y-pre f = is-monotone ≤X-pre (is-preorder.opposite ≤Y-pre) f
-
 
 ≅→∀↔∀ : {X : Set} → (P Q : pred X) → P ≅ Q → (∀ x → P x) ↔ (∀ x → Q x)
 forward (≅→∀↔∀ P Q P≅Q) ∀P x = forward P≅Q (∀P x)
@@ -284,6 +292,18 @@ record monotone-func (D E : preordered-set) : Set where
   dual : monotone-func (preordered-set.opposite D) (preordered-set.opposite E)
   func dual = func
   property dual = property
+
+record order-embedding (D E : preordered-set) : Set where
+  constructor emb
+  field
+    func : fun (D .preordered-set.carrier) (E .preordered-set.carrier)
+    property : is-order-embedding (D .preordered-set.property) (E .preordered-set.property) func
+
+  module property = is-order-embedding property
+
+  monotone : monotone-func D E
+  monotone-func.func monotone = func
+  monotone-func.property monotone = property.func-is-monotone
 
 antitone-func : (D E : preordered-set) → Set
 antitone-func D E = monotone-func D (preordered-set.opposite E)
@@ -340,6 +360,7 @@ record galois-connection (C D : preordered-set) : Set where
     module D-pre = is-preorder D.property
     module L = monotone-func left-adjoint renaming (property to mono)
     module R = monotone-func right-adjoint renaming (property to mono)
+
   field
     left-right-is-galois-connection : is-galois-connection left-adjoint right-adjoint
 
@@ -377,5 +398,6 @@ comp-galois-connection {C} {D} {E}
     gl : is-galois-connection (pre-comp L L') (pre-comp R' R)
     forward (gl c e) LL'e≤c = forward (gl-LR' _ _) (forward (gl-LR _ _) LL'e≤c)
     backward (gl c e) e≤R'Rc = backward (gl-LR _ _) (backward (gl-LR' _ _) e≤R'Rc)
+
 
 ```
