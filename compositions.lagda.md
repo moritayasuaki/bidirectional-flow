@@ -17,6 +17,7 @@ open import predicate
 open import complete-lattice
 open import preorder
 open import galois-connections
+open import function-pair
 
 module compositions where
 
@@ -45,6 +46,9 @@ module _ where
   open transfer-function-pair
 
   module _ (X Y Z : complete-meet-semilattice)
+    (let (cmlat X-carrier _≤X_ ⋀X X-prop) = X)
+    (let (cmlat Y-carrier _≤Y_ ⋀Y Y-prop) = Y)
+    (let (cmlat Z-carrier _≤Z_ ⋀Z Z-prop) = Z)
     (let X×Z = X ×-cmlat Z)
     (let X×Y = X ×-cmlat Y)
     (let Y×Z = Y ×-cmlat Z)
@@ -57,6 +61,10 @@ module _ where
     (let _≈XZ_ = iso-pair _≤XZ_)
     (let _≈XY_ = iso-pair _≤XY_)
     (let _≈YZ_ = iso-pair _≤YZ_)
+    (let _≈X_ = iso-pair _≤X_)
+    (let _≈Y_ = iso-pair _≤Y_)
+    (let _≈Z_ = iso-pair _≤Z_)
+
     where
 
     mendo-comp : monotone-func XY-pre XY-pre → monotone-func YZ-pre YZ-pre → monotone-func XZ-pre XZ-pre
@@ -70,6 +78,21 @@ module _ where
       → ∀ xz → func (rel2mendo X×Z ((mendo2rel X×Y f) ⋈ (mendo2rel Y×Z g))) xz ≈XZ func (mendo-comp f g) xz
     forward (rel2mendo∘⋈∘mendo2rel≈mendo-comp f g (x , z)) = complete-meet-semilattice.property.bigmeet-monotone X×Z id
     backward (rel2mendo∘⋈∘mendo2rel≈mendo-comp f g (x , z)) = complete-meet-semilattice.property.bigmeet-monotone X×Z id
+
+    _⋈pair_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
+    f ⋈pair g = rel2pair X Z (pair2rel X Y f ⋈ pair2rel Y Z g)
+
+    _⋈pair'_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
+    (x2y , y2x) ⋈pair' (y2z , z2y) = \where
+      .fst x → ⋀Z \{ z → ∃ \ x' → x ≤X x' × ∃ \ y → (x2y x' ≤Y y × y2x y ≤X x') × (y2z y ≤Z z × z2y z ≤Y y) }
+      .snd z → ⋀X \{ x → ∃ \ z' → z ≤Z z' × ∃ \ y → (x2y x ≤Y y × y2x y ≤X x) × (y2z y ≤Z z' × z2y z' ≤Y y) }
+
+    -- ⋀ (x ≤ f x) = (fix x. f x) ⊤
+    ⋈pair≈⋈pair' : (f : func-pair X-carrier Y-carrier) → (g : func-pair Y-carrier Z-carrier)
+      → (∀ x → fst (f ⋈pair' g) x ≈Z fst (f ⋈pair g) x)
+      → (∀ z → snd (f ⋈pair' g) z ≈X snd (f ⋈pair g) z)
+    forward (⋈pair≈⋈pair' f g x z) = complete-meet-semilattice.property.bigmeet-monotone X id
+    backward (⋈pair≈⋈pair' f g x z) = complete-meet-semilattice.property.bigmeet-monotone X id
 
   cat-rel : preorder-enriched-cat
   Ob cat-rel = complete-meet-semilattice
@@ -121,5 +144,8 @@ module _ where
     let F = rel2mendo∘⋈∘mendo2rel≈mendo-comp X X Y (mono id id) a in
     {!F _!}
   runit cat-mendo = {!!}
+
+
+
 
 ```

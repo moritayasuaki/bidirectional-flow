@@ -360,6 +360,11 @@ module transfer-function-pair
   fst (rel2pair R) d₀ = ⋀E ｛ e ∣ Σ[ d ∈ D ] (d₀ ≤D d × (d , e) ∈ R) ｝
   snd (rel2pair R) e₀ = ⋀D ｛ d ∣ Σ[ e ∈ E ] (e₀ ≤E e × (d , e) ∈ R) ｝
 
+  rel2mpair : subset (D × E) → monotone-func-pair D-pre E-pre
+  monotone-func-pair.pair (rel2mpair r) = rel2pair r
+  fst (monotone-func-pair.pair-is-monotone (rel2mpair r)) d≤d' = E.bigmeet-monotone \ { {d''} (d' , d'≤d'' , [d',d'']∈r ) → d' , D.≤-trans d≤d' d'≤d'' , [d',d'']∈r }
+  snd (monotone-func-pair.pair-is-monotone (rel2mpair r)) e≤e' = D.bigmeet-monotone \ { {e''} (e' , e'≤e'' , [e',e'']∈r ) → e' , E.≤-trans e≤e' e'≤e'' , [e',e'']∈r }
+
   -- Right adjoint
   pair2rel : func-pair D E → subset (D × E)
   pair2rel (f , b) (d , e) = f d ≤E e × b e ≤D d
@@ -606,8 +611,6 @@ module transfer-function-pair
         p e₀ ∎
         where open ≤E-reasoning
 
-
-
     private
       f* : D → E
       f* d = f (b (f d) ∨D d)
@@ -754,6 +757,7 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   module _ where
     open galois-connection
 
+  -- endo function needs to bemonotone
   mendo-mpair-connected : galois-connection pre-mendo pre-mpair
   galois-connection.left-adjoint mendo-mpair-connected = mono-mpair2mendo
   galois-connection.right-adjoint mendo-mpair-connected = mono mendo2mpair (\ f≤f' → (\ d → snd (f≤f' (d , E-cmlat.operation U))) , (\ e → fst (f≤f' (D-cmlat.operation U , e))))
@@ -787,6 +791,10 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   pair2fun : func-pair D-cmlat.carrier E-cmlat.carrier → fun D-cmlat.carrier E-cmlat.carrier
   pair2fun (f , b) = f
 
+  pair2fun-is-monotone : is-monotone ≤pair-is-preorder ≤fun-is-preorder pair2fun
+  pair2fun-is-monotone (f≤f' , b≤b') = f≤f'
+
+
   mpair2mfun : monotone-func-pair D-pre E-pre → monotone-func D-pre E-pre
   monotone-func.func (mpair2mfun (mfp' pair pair-is-monotone)) = fst pair
   monotone-func.property (mpair2mfun (mfp' pair pair-is-monotone)) = fst pair-is-monotone
@@ -812,6 +820,14 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   mono-mfun2mpair : monotone-func pre-mfun pre-mpair
   monotone-func.func mono-mfun2mpair = mfun2mpair
   monotone-func.property mono-mfun2mpair {d} {d'} = mfun2mpair-is-monotone {d} {d'}
+
+  pair-fun-connected : galois-connection pre-pair pre-fun
+  galois-connection.left-adjoint pair-fun-connected = mono fun2pair fun2pair-is-monotone
+  galois-connection.right-adjoint pair-fun-connected = mono pair2fun pair2fun-is-monotone
+  forward (galois-connection.left-right-is-galois-connection pair-fun-connected f fb) Lf≤fb d = fst Lf≤fb d
+  backward (galois-connection.left-right-is-galois-connection pair-fun-connected f fb) f≤fb = \ where
+    .fst d → f≤fb d
+    .snd e → is-complete-meet-semilattice.bigmeet-lowerbound D-cmlat.property _ _ _
 
   mpair-mfun-connected : galois-connection pre-mpair pre-mfun
   galois-connection.left-adjoint mpair-mfun-connected = mono-mfun2mpair

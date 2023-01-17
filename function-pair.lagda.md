@@ -49,7 +49,6 @@ module _ {D-cmlat E-cmlat : complete-meet-semilattice}
     module D = is-complete-meet-semilattice D-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
     module E = is-complete-meet-semilattice E-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
 
-
   open complete-meet-semilattice D×E-cmlat renaming (operation to ⋀ ; relation to _≤_)
   open is-complete-meet-semilattice D×E-is-cmlat renaming (rel-is-preorder to ≤-pre ; rel-is-reflexive to ≤-refl ; rel-is-transitive to ≤-trans)
 
@@ -87,7 +86,6 @@ module _ {D-cmlat E-cmlat : complete-meet-semilattice}
         open reasoning _ D.≤-pre
     backward (mono-pair-backforward _ d) bfd≤d = f d , E.≤-refl (f d) , bfd≤d
 
-
     -- f d ≤ e × b e ≤ d ↔ f (b e) ≤ e
     mono-pair-forwardback : (f-mono : is-monotone D.≤-pre E.≤-pre f) → ∀ e → (Σ[ d ∈ D ] (f d ≤E e) × (b e ≤D d)) ↔ (f (b e) ≤E e)
     forward (mono-pair-forwardback f-mono e) (d , fd≤e , be≤d) =
@@ -98,6 +96,5 @@ module _ {D-cmlat E-cmlat : complete-meet-semilattice}
       where
         open reasoning _ E.≤-pre
     backward (mono-pair-forwardback _ e) fbe≤e = b e , fbe≤e , D.≤-refl (b e)
-
 
 ```

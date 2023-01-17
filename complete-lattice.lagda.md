@@ -155,7 +155,6 @@ cmlat→pre (cmlat _ _ _ X-cmlat) = pre _ _ X.rel-is-preorder
   where
     module X = is-complete-meet-semilattice X-cmlat
 
-
 cm2j : ∀ {X} → rel X X → subsetop X → binop X
 cm2j _≤_ ⋀ x x' = ⋀ ((\ u → x ≤ u) ∩ (\ u → x' ≤ u))
 
