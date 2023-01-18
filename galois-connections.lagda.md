@@ -369,7 +369,6 @@ module transfer-function-pair
   pair2rel : func-pair D E → subset (D × E)
   pair2rel (f , b) (d , e) = f d ≤E e × b e ≤D d
 
-
   module _ {f : D → E} {b : E → D}
     (f-is-mono : is-monotone D.≤-pre E.≤-pre f) (b-is-mono : is-monotone E.≤-pre D.≤-pre b) where
     pair2rel-mono-join-closed : is-meet-closed-subset D×E-is-cmlat (pair2rel (f , b))
@@ -427,17 +426,25 @@ module transfer-function-pair
   pre-rel : preordered-set
   pre-rel = pre (subset (D × E)) _⊆_ ⊆-is-preorder
 
-  pair2rel-anti : antitone-func pre-mpair pre-rel
-  monotone-func.func pair2rel-anti (mfp' pair pair-is-monotone) = pair2rel pair
+  pair2rel-anti : antitone-func pre-pair pre-rel
+  monotone-func.func pair2rel-anti pair = pair2rel pair
   monotone-func.property pair2rel-anti = pair2rel-is-antitone
 
-  rel2pair-anti : antitone-func pre-rel pre-mpair
-  monotone-func.func rel2pair-anti r = mfp' (rel2pair r) (rel2pair-R-is-monotone-pair r)
+  rel2pair-anti : antitone-func pre-rel pre-pair
+  monotone-func.func rel2pair-anti r = rel2pair r
   monotone-func.property rel2pair-anti = rel2pair-is-antitone
 
-  pair2rel-rel2pair-mono = pre-comp-anti pair2rel-anti rel2pair-anti
+  mpair2rel-anti : antitone-func pre-mpair pre-rel
+  monotone-func.func mpair2rel-anti (mfp' pair pair-is-monotone) = pair2rel pair
+  monotone-func.property mpair2rel-anti = pair2rel-is-antitone
+
+  rel2mpair-anti : antitone-func pre-rel pre-mpair
+  monotone-func.func rel2mpair-anti r = mfp' (rel2pair r) (rel2pair-R-is-monotone-pair r)
+  monotone-func.property rel2mpair-anti = rel2pair-is-antitone
+
+  pair2rel-rel2pair-mono = pre-comp-anti mpair2rel-anti rel2mpair-anti
   open monotone-func pair2rel-rel2pair-mono renaming (property to pair2rel-rel2pair-is-monotone)
-  rel2pair-pair2rel-mono = pre-comp-anti rel2pair-anti pair2rel-anti
+  rel2pair-pair2rel-mono = pre-comp-anti rel2mpair-anti mpair2rel-anti
   open monotone-func rel2pair-pair2rel-mono renaming (property to rel2pair-pair2rel-is-monotone)
 
   module _
@@ -694,14 +701,30 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   D-is-pre = is-complete-meet-semilattice.rel-is-preorder D-cmlat.property
   E-is-pre = is-complete-meet-semilattice.rel-is-preorder E-cmlat.property
 
+  mpair2rel-rel2mpair-antitone-galois-connection : is-antitone-galois-connection mpair2rel-anti rel2mpair-anti
+  forward (mpair2rel-rel2mpair-antitone-galois-connection r (mfp' (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
+  backward (mpair2rel-rel2mpair-antitone-galois-connection r (mfp' (f , b) _)) = right-transpose r f b
+
+
+  {-
   pair2rel-rel2pair-antitone-galois-connection : is-antitone-galois-connection pair2rel-anti rel2pair-anti
-  forward (pair2rel-rel2pair-antitone-galois-connection r (mfp' (f , b) (f-mono , b-mono))) = left-transpose r f b f-mono b-mono
-  backward (pair2rel-rel2pair-antitone-galois-connection r (mfp' (f , b) _)) = right-transpose r f b
+  forward (pair2rel-rel2pair-antitone-galois-connection r (f , b)) x = \where
+    .fst d → {!need monotonity of f!}
+    .snd e → {!!}
+      where
+      f-wd : f ∈ is-welldefined D-is-pre E-is-pre
+      f-wd x = {!!}
+      b-wd : b ∈ is-welldefined E-is-pre D-is-pre
+      b-wd x = {!!}
+  backward (pair2rel-rel2pair-antitone-galois-connection r (f , b)) = right-transpose r f b
+  -}
+
 
   rel-mpair-connected : antitone-galois-connection pre-rel pre-mpair
-  galois-connection.left-adjoint rel-mpair-connected = pair2rel-anti
-  galois-connection.right-adjoint rel-mpair-connected = monotone-func.dual rel2pair-anti
-  galois-connection.left-right-is-galois-connection rel-mpair-connected = pair2rel-rel2pair-antitone-galois-connection
+  galois-connection.left-adjoint rel-mpair-connected = mpair2rel-anti
+  galois-connection.right-adjoint rel-mpair-connected = monotone-func.dual rel2mpair-anti
+  galois-connection.left-right-is-galois-connection rel-mpair-connected = mpair2rel-rel2mpair-antitone-galois-connection
+
 
   module D×E-cmlat = complete-meet-semilattice (D-cmlat ×-cmlat E-cmlat)
   D×E-is-pre = is-complete-meet-semilattice.rel-is-preorder D×E-cmlat.property
@@ -796,11 +819,12 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
 
 
   mpair2mfun : monotone-func-pair D-pre E-pre → monotone-func D-pre E-pre
-  monotone-func.func (mpair2mfun (mfp' pair pair-is-monotone)) = fst pair
+  monotone-func.func (mpair2mfun (mfp' pair pair-is-monotone)) = pair2fun pair
   monotone-func.property (mpair2mfun (mfp' pair pair-is-monotone)) = fst pair-is-monotone
 
-  -- mpair2mfun : monotone-func-pair D-is-pre E-is-pre → monotone-func D-is-pre E-is-pre
-  -- mpair2mfun = ?
+  mpair2mfun-mono : monotone-func pre-mpair pre-mfun
+  mpair2mfun-mono = (mono mpair2mfun (\ fb≤fb' d → fst fb≤fb' d))
+
   fun2pair : fun D-cmlat.carrier E-cmlat.carrier → func-pair (D-cmlat.carrier) (E-cmlat.carrier)
   fun2pair f = f , \ _ → complete-meet-semilattice.operation D-cmlat U
 
@@ -837,8 +861,27 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   mendo-mfun-connected : galois-connection pre-mendo pre-mfun
   mendo-mfun-connected = comp-galois-connection mendo-mpair-connected mpair-mfun-connected
 
+  rel2fun : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
+  rel2fun = pair2fun ∘ rel2pair
+
+  rel2mfun : subset (D-cmlat.carrier × E-cmlat.carrier) → monotone-func D-pre E-pre
+  rel2mfun = mpair2mfun ∘ rel2mpair
+
+  fun2rel : fun D-cmlat.carrier E-cmlat.carrier → subset (D-cmlat.carrier × E-cmlat.carrier)
+  fun2rel = pair2rel ∘ fun2pair
+
+  mfun2rel : monotone-func D-pre E-pre → subset (D-cmlat.carrier × E-cmlat.carrier)
+  mfun2rel = fun2rel ∘ monotone-func.func
+  -- (monotone-func.func mpair2rel-anti) ∘ (monotone-func.func mono-mfun2mpair)
+
+  rel2mfun-mono : antitone-func pre-rel pre-mfun
+  rel2mfun-mono = pre-comp (monotone-func.dual mpair2mfun-mono) rel2mpair-anti
+  mfun2rel-mono : antitone-func pre-mfun pre-rel
+  mfun2rel-mono = pre-comp mpair2rel-anti mono-mfun2mpair
+
   rel-mfun-connected : antitone-galois-connection pre-rel pre-mfun
   rel-mfun-connected = comp-galois-connection rel-mendo-connected mendo-mfun-connected
+
 
 ```
 

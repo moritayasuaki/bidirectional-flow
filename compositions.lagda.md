@@ -46,6 +46,9 @@ module _ where
   open transfer-function-pair
 
   module _ (X Y Z : complete-meet-semilattice)
+    (let X-pre = cmlat→pre X)
+    (let Y-pre = cmlat→pre Y)
+    (let Z-pre = cmlat→pre Z)
     (let (cmlat X-carrier _≤X_ ⋀X X-prop) = X)
     (let (cmlat Y-carrier _≤Y_ ⋀Y Y-prop) = Y)
     (let (cmlat Z-carrier _≤Z_ ⋀Z Z-prop) = Z)
@@ -83,9 +86,9 @@ module _ where
     f ⋈pair g = rel2pair X Z (pair2rel X Y f ⋈ pair2rel Y Z g)
 
     _⋈pair'_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
-    (x2y , y2x) ⋈pair' (y2z , z2y) = \where
-      .fst x → ⋀Z \{ z → ∃ \ x' → x ≤X x' × ∃ \ y → (x2y x' ≤Y y × y2x y ≤X x') × (y2z y ≤Z z × z2y z ≤Y y) }
-      .snd z → ⋀X \{ x → ∃ \ z' → z ≤Z z' × ∃ \ y → (x2y x ≤Y y × y2x y ≤X x) × (y2z y ≤Z z' × z2y z' ≤Y y) }
+    (f , b) ⋈pair' (f' , b') = \where
+      .fst x → ⋀Z \{ z → ∃ \ x' → x ≤X x' × ∃ \ y → (f x' ≤Y y × b y ≤X x') × (f' y ≤Z z × b' z ≤Y y) }
+      .snd z → ⋀X \{ x → ∃ \ z' → z ≤Z z' × ∃ \ y → (f x ≤Y y × b y ≤X x) × (f' y ≤Z z' × b' z' ≤Y y) }
 
     -- ⋀ (x ≤ f x) = (fix x. f x) ⊤
     ⋈pair≈⋈pair' : (f : func-pair X-carrier Y-carrier) → (g : func-pair Y-carrier Z-carrier)
@@ -93,6 +96,39 @@ module _ where
       → (∀ z → snd (f ⋈pair' g) z ≈X snd (f ⋈pair g) z)
     forward (⋈pair≈⋈pair' f g x z) = complete-meet-semilattice.property.bigmeet-monotone X id
     backward (⋈pair≈⋈pair' f g x z) = complete-meet-semilattice.property.bigmeet-monotone X id
+
+    _⋈fun_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
+    f ⋈fun g = rel2fun X Z (fun2rel X Y f ⋈ fun2rel Y Z g)
+
+    _⋈fun'_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
+    (f ⋈fun' g) x = ⋀Z (\z → ∃ \ x' → x ≤X x' × ∃ \y → (f x' ≤Y y) × (g y ≤Z z))
+
+    ⋈fun≈⋈fun' : (f : fun X-carrier Y-carrier) → (g : fun Y-carrier Z-carrier) → ∀ x → (f ⋈fun g) x ≈Z (f ⋈fun' g) x
+    forward (⋈fun≈⋈fun' f g x) = complete-meet-semilattice.property.bigmeet-monotone Z \where
+      (x' , x≤x' , y , fx'≤y , gy≤z) → x' , x≤x' , y , (fx'≤y , (complete-meet-semilattice.property.bigmeet-lowerbound X _ _ _)) , gy≤z , (complete-meet-semilattice.property.bigmeet-lowerbound Y _ _ _)
+    backward (⋈fun≈⋈fun' f g x) = complete-meet-semilattice.property.bigmeet-monotone Z \where
+       (x' , x≤x' , y , (fx'≤y , _) , (gy≤z , _)) → x' , x≤x' , y , fx'≤y , gy≤z
+
+    module _ (mf : monotone-func X-pre Y-pre) (mg : monotone-func Y-pre Z-pre)
+      (let (mono f f-mono) = mf) (let (mono g g-mono) = mg)
+      (let _∙_ = preordered-set.property.rel-is-transitive Z-pre)
+      (let refl = preordered-set.property.rel-is-reflexive)
+      where
+      ∘-⋀ : ∀ x → ⋀Z (\ z → g (f x) ≤Z z) ≈Z g (f x)
+      forward (∘-⋀ x) = complete-meet-semilattice.property.bigmeet-lowerbound Z _ _ (refl Z-pre _)
+      backward (∘-⋀ x) = complete-meet-semilattice.property.bigmeet-greatest Z _ _ \where
+        z z∈gfx → z∈gfx
+
+      ⋈fun'≈∘ : ∀ x → (f ⋈fun' g) x ≈Z g (f x)
+      forward (⋈fun'≈∘ x) =  complete-meet-semilattice.property.bigmeet-lowerbound Z _ _
+        (x , preordered-set.property.rel-is-reflexive X-pre _ , f x , refl Y-pre _ , refl Z-pre _)
+      backward (⋈fun'≈∘ x) = complete-meet-semilattice.property.bigmeet-greatest Z _ _ \where
+        z (x' , x≤x' , y , fx≤y , gy≤z) → g-mono (f-mono x≤x') ∙ (g-mono fx≤y ∙ gy≤z)
+
+      ⋈fun≈∘ : ∀ x → (f ⋈fun g) x ≈Z (g ∘ f) x
+      forward (⋈fun≈∘ x) = forward (⋈fun≈⋈fun' f g x) ∙ forward (⋈fun'≈∘ x)
+      backward (⋈fun≈∘ x) = backward (⋈fun'≈∘ x) ∙ backward (⋈fun≈⋈fun' f g x)
+
 
   cat-rel : preorder-enriched-cat
   Ob cat-rel = complete-meet-semilattice
@@ -123,6 +159,7 @@ module _ where
   forward (runit cat-mfun {Y = Y} {a}) x = Y .property.rel-is-reflexive (a .func x)
   backward (runit cat-mfun {Y = Y} {a}) x = Y .property.rel-is-reflexive (a .func x)
 
+
   cat-mendo : preorder-enriched-cat
   Ob cat-mendo = complete-meet-semilattice
   Hom cat-mendo D E = preordered-set.carrier (pre-mendo (D ×-cmlat E))
@@ -130,22 +167,6 @@ module _ where
   _⊗_ cat-mendo {X} {Y} {Z} f g = mendo-comp X Y Z f g
   _≤_ cat-mendo {X} {Y} f g = _≤mfun_ (X ×-cmlat Y) (X ×-cmlat Y) f g
   Hom-is-preorder cat-mendo {X} {Y} = ≤mfun-is-preorder (X ×-cmlat Y) (X ×-cmlat Y)
-  assoc cat-mendo {X} {Y} {Z} {W} {a} {b} {c} = 
-    let XYZ = rel2mendo∘⋈∘mendo2rel≈mendo-comp X Y Z a b
-        YZW = rel2mendo∘⋈∘mendo2rel≈mendo-comp Y Z W b c
-        XZW = (\ p → rel2mendo∘⋈∘mendo2rel≈mendo-comp X Z W p c)
-        XYW = (\ p → rel2mendo∘⋈∘mendo2rel≈mendo-comp X Y W a p)
-        _XWtrans_ = complete-meet-semilattice.property.rel-is-transitive (X ×-cmlat W)
-    in \where
-    .forward (x , w) → forward (XZW {!!} (x , w)) XWtrans (({!!} , {!!}) XWtrans forward (XYW {!!} (x , w)))
-    .backward (x , w) → {!!}
-
-  lunit cat-mendo {X} {Y} {a} =
-    let F = rel2mendo∘⋈∘mendo2rel≈mendo-comp X X Y (mono id id) a in
-    {!F _!}
-  runit cat-mendo = {!!}
-
-
 
 
 ```
