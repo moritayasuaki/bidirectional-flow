@@ -369,6 +369,10 @@ module transfer-function-pair
   pair2rel : func-pair D E → subset (D × E)
   pair2rel (f , b) (d , e) = f d ≤E e × b e ≤D d
 
+  mpair2rel : monotone-func-pair D-pre E-pre → subset (D × E)
+  mpair2rel (mfp' pair pair-is-monotone) = pair2rel pair
+    
+
   module _ {f : D → E} {b : E → D}
     (f-is-mono : is-monotone D.≤-pre E.≤-pre f) (b-is-mono : is-monotone E.≤-pre D.≤-pre b) where
     pair2rel-mono-join-closed : is-meet-closed-subset D×E-is-cmlat (pair2rel (f , b))
@@ -435,7 +439,7 @@ module transfer-function-pair
   monotone-func.property rel2pair-anti = rel2pair-is-antitone
 
   mpair2rel-anti : antitone-func pre-mpair pre-rel
-  monotone-func.func mpair2rel-anti (mfp' pair pair-is-monotone) = pair2rel pair
+  monotone-func.func mpair2rel-anti = mpair2rel
   monotone-func.property mpair2rel-anti = pair2rel-is-antitone
 
   rel2mpair-anti : antitone-func pre-rel pre-mpair
@@ -908,25 +912,25 @@ Let X is a poset,
 ```txt
 
                          L
-                      ------->
+                      <------
             (𝒫(C),⊆)    ⊥       X
-                      <-------
+                      ------->
                | ↑       R      | ↑
                | |              | |
                |⊣|              |⊢|
                ↓ J        α     ↓ J
-                      ------->
-        (𝒫(C),⊆)_fix     ≅     X_fix
                       <-------
+        (𝒫(C),⊆)_fix     ≅     X_fix
+                      ------->
 
-
+RL f = ~ f
                          L
-                      ------->            ---------->             ------------------------------>
-            (𝒫(A × B),⊆)    ⊥   A×B→A×B                 A→B × B→A                                 A→B
-                      <-------            <-----------            <------------------------------
-               | ↑       R      | ↑                      | |
-               | |              | |                      | |
-               |⊣|              |⊢|                      | |
+                      <------            <----------             <-----------------------------
+            (𝒫(A × B),⊆)  ⊤   A×B→A×B         ⊤       A→B × B→A                ⊤                A→B
+                      ------->  monotone  ---------->  monotone  -----------------------------> monotone
+               | ↑       R      | ↑                      | |                                      | |
+               | |              | |                      | |                                      | |
+               |⊣|              |⊢|                      | |                                      | |
                ↓ J        α     ↓ J                      | |
                       ------->                           | |
         (𝒫(A×B),⊆)_fix   ≅    A×B→A×B_fix               | |
@@ -946,10 +950,9 @@ a full sub category (𝒫(C),⊆)_fix of (𝒫(C),⊆) whose objects are c with 
 and a full sub category X_fix of X whose objects are x with an isomorphism LR(x) ≃εx x
 https://ncatlab.org/nlab/show/fixed+point+of+an+adjunction
 
-X → Y → Z
-
 p2f (f2p f ⋈ f2p g) = f ⊗ g = p2f (f2p (f * g))
 p2f (f2p (f * (g * h))) = f ⊗ g ⊗ h
+
 
 ```agda
 module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected : galois-connection C D) where

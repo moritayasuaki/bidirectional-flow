@@ -14,6 +14,7 @@ module multi-category-like where
 
 -- operad structure
 module operad (C : Set) where
+  -- domain of operad
   nary-prod : ℕ → Set
   nary-prod zero = ⊤
   nary-prod (suc n) = C × nary-prod n
@@ -29,7 +30,7 @@ module operad (C : Set) where
   nary-comp n k = ((i : Fin n) → nary-hom (Data.Vec.lookup k i)) → nary-hom n → nary-hom (fsum k)
 
   data catalan : ℕ → Set where
-    z : catalan 0
+    zero' : catalan 0
     one : catalan 1
     _∙_ : ∀ {n m} → catalan (ℕ.suc n) → catalan (ℕ.suc m) → catalan (ℕ.suc n + ℕ.suc m)
 
@@ -41,7 +42,7 @@ module operad (C : Set) where
 
   module _ (I : C) (_⊗_ : C → C → C) where
     gen : (n : ℕ) → catalan n → nary-hom n
-    gen ℕ.zero z tt = I
+    gen ℕ.zero zero' tt = I
     gen (ℕ.suc .0) one (c , tt) = c
     gen .(ℕ.suc n + ℕ.suc m) (_∙_ {n} {m} t t') cs =
       let (cs' , cs'') = nary-split cs
@@ -49,7 +50,7 @@ module operad (C : Set) where
 
 
 -- hetro-operad
-module bioperad (C : Set) where
+module hetero-operad (C : Set) where
 
   data complist (r : C) : C → Set where
     [] : complist r r
@@ -102,15 +103,19 @@ big-⊗_{A₁A₂A₃...Aₙ} x₁₂ x₂₃ ... xₙ₋₁ₙ = G₁ₙ ((F₁
 module _
   (let lat = complete-meet-semilattice)
   (X : lat)
+  (let X-pre = cmlat→pre X)
   (let X×X = X ×-cmlat X)
   (let (cmlat X-carrier _≤_ ⋀ X-is-cmlat) = X)
   (let (cmlat X×X-carrier _≤×_ ⋀× X×X-is-cmlat) = X×X)
   (let _≈_ = iso-pair _≤_)
   where
 
+  open import compositions
   open operad
   open endo-function X×X
   open transfer-function-pair X X
+  open import predicate
+  open import preorder
 
   -- operad on binary relation
   ⋈ₙ-rel : ∀ {n} → nary-hom (preordered-set.carrier pre-rel) n
@@ -140,5 +145,24 @@ module _
 
   ⋈ₙ-mfun : ∀ {n} → nary-hom (preordered-set.carrier pre-mfun) n
   ⋈ₙ-mfun {n} = nary-transposer _ _ (rel-mfun-connected X X) (⋈ₙ-rel {n})
+
+  open import function-pair
+  module _ (p q r : preordered-set.carrier pre-mpair)
+    (let op2 = ⋈ₙ-mpair {2})
+    (let op3 = ⋈ₙ-mpair {3})
+    where
+
+    thm2 = (op2 (p , op2 (q , r , _) , _)) ≤mpair (op3  (p , q , r , _))
+    proof-thm2 : thm2
+    fst proof-thm2 x0 = complete-meet-semilattice.property.bigmeet-monotone X (\ { {x'} (x , x0≤x , y , xy∈p , z , yz∈q , w , zw∈r , p) → x , x0≤x , y , xy∈p , z , (complete-meet-semilattice.property.bigmeet-lowerbound X _ _ (x , ({!!} , (z , ({!yz≤q!} , ({!!} , ({!!} , (record { forward = {!!} ; backward = {!!} }))))))) , {!!}) , record { forward = {!!} ; backward = {!!} } })
+    snd proof-thm2 x0 = complete-meet-semilattice.property.bigmeet-monotone X (\ { {x'} (x , x0≤x , y , xy∈p , z , yz∈q , w , zw∈r , p) → x , x0≤x , y , xy∈p , z , ({!!} , {!!}) , {!!} })
+
+{-
+    test2 : Set
+    test2 = ((op2 (p , op2 (q , r , _) , _)) ∩mpair ((op2 (op2 (p , q , _) , r , _)))) ≤mpair (op3 (p , q , r , _))
+    test3 : test2
+    test3 {x , y} (fx≤y , by≤x) = ({!fx≤y!} , {!!}) , ({!!} , {!!})
+-}
+
 
 ```

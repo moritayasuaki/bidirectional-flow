@@ -387,6 +387,10 @@ record galois-connection (C D : preordered-set) : Set where
   forward (lr-idempotent d) = lr-decreasing (L.func d)
   backward (lr-idempotent d) = L.mono (rl-increasing d)
 
+  comonad-functor = pre-comp left-adjoint right-adjoint
+  monad-functor = pre-comp right-adjoint left-adjoint
+
+
 antitone-galois-connection : preordered-set → preordered-set → Set
 antitone-galois-connection C D = galois-connection (preordered-set.opposite C) D
 

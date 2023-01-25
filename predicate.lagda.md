@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as ≡
 open ≡ using (_≡_ ; _≗_)
 open import Relation.Binary renaming (_⇔_ to _⇔₂_)
 open import Relation.Nullary
-open import Relation.Unary
+open import Relation.Unary public
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
 open import Data.Nat using (ℕ; suc; zero)
@@ -60,6 +60,8 @@ map-rel f g r c d = r (f c) (g d)
 
 _⋈_ : ∀{X Y Z} → subset (X × Y) → subset (Y × Z) → subset (X × Z)
 (r ⋈ r') (x , z) = Σ _ \ y → (x , y) ∈ r × (y , z) ∈ r'
+
+open Relation.Unary using (_∪_; _∩_) public
 
 _⊆₂_ : ∀ {X Y} → rel (rel X Y) (rel X Y)
 R ⊆₂ R' = ∀ {x y} → R x y → R' x y
