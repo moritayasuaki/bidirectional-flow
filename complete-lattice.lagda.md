@@ -234,6 +234,22 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice)
           ⋀E (snd-subset S) ∎
           where open reasoning _ ≤E-is-preorder
 
+module derive-∧⋁∨⊤⊥ {X} (_≤_ : rel X X) (⋀ : subsetop X) where
+  ⋁ : subsetop X
+  ⋁ S = ⋀ (is-upperbound _≤_ S)
+
+  _∧_ : binop X
+  _∧_ x x' = ⋀ ((\ u → x ≤ u) ∩ (\ u → x' ≤ u))
+
+  _∨_ : binop X
+  _∨_ x x' = ⋁ ((\ d → d ≤ x) ∩ (\ d → d ≤ x'))
+
+  ⊤ : X
+  ⊤ = ⋀ ∅
+
+  ⊥ : X
+  ⊥ = ⋀ U
+
 module _
   (X-cmlat : complete-meet-semilattice)
   (let (cmlat X _≤_ ⋀ X-prop) = X-cmlat)
