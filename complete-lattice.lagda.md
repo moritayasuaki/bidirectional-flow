@@ -131,6 +131,8 @@ record complete-meet-semilattice : Set where
     operation : subsetop carrier
     property : is-complete-meet-semilattice relation operation
   module property = is-complete-meet-semilattice property
+  is-meet-closed-subset' : pred (subset carrier)
+  is-meet-closed-subset' = is-meet-closed-subset property
 
 record join-semilattice : Set where
   constructor jlat

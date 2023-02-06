@@ -1,100 +1,129 @@
-{-# OPTIONS --prop --safe #-}
+{-# OPTIONS --prop #-}
 
 open import Agda.Primitive
-open import Agda.Builtin.Nat
+open import Agda.Builtin.Nat renaming (_<_ to _Nat<_)
+open import Agda.Builtin.Sigma
 module prop-subset where
 
 private
   variable
     𝓅 𝓅'  𝓆 𝓆' 𝓇 𝓇' : Level
-    ℓ ℓ' : Level
+    ℓ ℓ' ℓ'' : Level
 
-data Fin : Nat → Set where
-  fzero : ∀{n} → Fin (suc n)
-  fsuc : ∀{n} → Fin n → Fin (suc n)
+data pfalse {𝓅} : Prop 𝓅 where
+record ptrue {𝓅} : Prop 𝓅 where
 
-pattern #0 = fzero
-pattern #1 = fsuc #0
-pattern #2 = fsuc #1
-pattern #3 = fsuc #2
+infixr 1 ¬_
+¬_ : Prop 𝓅 → Prop 𝓅
+¬_ {𝓅} p = p → pfalse {𝓅}
 
-plist :  (n : Nat) → (Fin n → Prop 𝓅) → Prop 𝓅
-plist n props = ∀ ith → props ith
-
-data False {ℓ} : Prop ℓ where
-
-record True {ℓ} : Prop ℓ where
-
-_≤Nat_ : Nat → Nat → Prop
-zero ≤Nat _ = True
-suc m ≤Nat zero = True
+_≤Nat_ : {𝓅 : Level} → Nat → Nat → Prop 𝓅
+zero ≤Nat _ = ptrue
+suc m ≤Nat zero = ptrue
 suc m ≤Nat suc n = m ≤Nat n
 
+-- prop and
+infixr 1 _&_
 record _&_  (X : Prop 𝓅) (Y : Prop 𝓆) : Prop (𝓅 ⊔ 𝓆) where
   constructor _,_
   field
     fst : X
     snd : Y
-
-data _∪_ (X : Prop 𝓅) (Y : Prop 𝓆) : Prop (𝓅 ⊔ 𝓆) where
-  left : X → X ∪ Y
-  right : Y → X ∪ Y
 open _&_
 
-infixr 10 _,_
-record Σ {ℓ ℓ'} (A : Set ℓ) (B : A → Set ℓ') : Set (lsuc (ℓ ⊔ ℓ')) where
-  constructor _,_
-  field
-    fst : A
-    snd : B fst
-open Σ
+-- prop or
+data _∥_ (X : Prop 𝓅) (Y : Prop 𝓆) : Prop (𝓅 ⊔ 𝓆) where
+  left : X → X ∥ Y
+  right : Y → X ∥ Y
 
-_equipped-with_ = Σ
-
-_×_ : Set ℓ → Set ℓ' → Set (lsuc (ℓ ⊔ ℓ'))
+-- set product
+infixr 1 _×_
+_×_ : Set ℓ → Set ℓ' → Set (ℓ ⊔ ℓ')
 A × B = Σ A \_ → B
+
+id : {X : Set ℓ} → X → X
+id x = x
+
+flip : {X : Set ℓ} {Y : Set ℓ'} {Z : Set ℓ''} → (X → Y → Z) → Y → X → Z
+flip f y x = f x y
 
 record Subtype (A : Set ℓ) (P : A → Prop 𝓅) : Set (ℓ ⊔ lsuc 𝓅) where
   constructor _with-property_
   field
-    component : A
-    property : P component
+    structure : A
+    property : P structure
 
-_such-that_ = Subtype
+open Subtype
 
 ∣_∣ : Set ℓ → Prop (ℓ ⊔ lsuc 𝓅)
-∣_∣ {𝓅 = 𝓅} T = ∀ (P : Prop 𝓅) → (T → P) → P
+∣_∣ {𝓅 = 𝓅} T = (P : Prop 𝓅) → (T → P) → P
 
 lift : ∀ 𝓆 → Prop 𝓅 → Prop (𝓅 ⊔ 𝓆)
-lift 𝓆 P = {True {𝓆}} → P
+lift 𝓆 P = {ptrue {𝓆}} → P
 
 ∃ : {A : Set ℓ} → (P : A → Prop 𝓅) → Prop (lsuc (ℓ ⊔ lsuc 𝓅))
 ∃ {A = A} P = ∣ Subtype A P ∣
 
 
+-- types of operations
 module _ (A : Set ℓ) where
   Point = A
   Nulop = A
   Uniop = A → A
   Binop = A → A → A
 
+-- tyeps of predicates and relations
 module _ (𝓅) (A : Set ℓ) where
   Pred = A → Prop 𝓅
   Rel = A → A → Prop 𝓅
 
-  Subop = Pred → A
+
+-- types of subsets
+module _ (𝓅) (A : Set ℓ) where
+  Subset = A → Prop 𝓅
+  Subsetop = Subset → A
+
+  set-comprehension = id
+  syntax set-comprehension (\ x → p) = [[ x ∣ p ]]
+
+infix 80 _∈_
+_∈_ : {A : Set ℓ} → A → Subset 𝓅 A → Prop _
+x ∈ s = s x
+
+infix 1 _⊆_
+_⊆_ : {A : Set ℓ} → Subset 𝓅 A → Subset 𝓅' A → Prop (ℓ ⊔ 𝓅 ⊔ 𝓅')
+s ⊆ s' = ∀ a → a ∈ s → a ∈ s'
+
+∅ : {A : Set ℓ} → Subset 𝓅 A
+∅ _ = pfalse
+
+U : {A : Set ℓ} → Subset 𝓅 A
+U _ = ptrue
+
+infixr 2 _∩_
+_∩_ : {A : Set ℓ} → Subset 𝓅 A → Subset 𝓅' A → Subset _ A
+s ∩ s' = \ a → a ∈ s & a ∈ s'
+
+⋂ : {A : Set ℓ} → Subset 𝓅 (Subset 𝓅' A) → Subset (ℓ ⊔ 𝓅 ⊔ lsuc 𝓅') A
+⋂ S x = ∀ s → s ∈ S → x ∈ s
+
+infixr 2 _∪_
+_∪_ : {A : Set ℓ} → Subset 𝓅 A → Subset 𝓅' A → Subset _ A
+s ∪ s' = \ a → a ∈ s ∥ a ∈ s'
+
+⋃ : {A : Set ℓ} → Subset 𝓅 (Subset 𝓅' A) → Subset _ A
+⋃ S x = ∃ \ s → s ∈ S & x ∈ s
+
+_⋈'_ : {A : Set ℓ} {B : Set ℓ'} {C : Set ℓ''} → Subset 𝓅 (A × B) → Subset 𝓅' (B × C) → Subset _ (A × B × C)
+r ⋈' r' = \ {( x , y , z) → (x , y) ∈ r & (y , z) ∈ r'}
 
 
 liftPred : ∀ 𝓆 {A : Set ℓ} → Pred 𝓅 A → Pred (𝓅 ⊔ 𝓆) A
 liftPred 𝓆 P x = lift 𝓆 (P x)
 
-liftSubop : ∀ 𝓅 {𝓆} {A : Set ℓ} → Subop (𝓅 ⊔ 𝓆) A → Subop 𝓆 A
+liftSubop : ∀ 𝓅 {𝓆} {A : Set ℓ} → Subsetop (𝓅 ⊔ 𝓆) A → Subsetop 𝓆 A
 liftSubop 𝓅 ⋀ s = ⋀ (liftPred 𝓅 s)
 
-Structure : ∀ ℓ ℓ' → Set _
-Structure ℓ ℓ' = Set ℓ → Set ℓ'
-_⟨×⟩_ : ∀{ℓ ℓ' ℓ''} →  Structure ℓ ℓ' → Structure ℓ ℓ'' → Structure ℓ _
-($1 ⟨×⟩ $2) = \ X → $1 X × $2 X
 
 {-
 record RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
@@ -104,203 +133,500 @@ record RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
     _≤_ : Rel 𝓅 carrier
 -}
 
-RelSet : ∀ ℓ 𝓅 → Set _
-RelSet ℓ 𝓅 = Set ℓ equipped-with (Rel 𝓅)
+record RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkRelSet
+  field
+    X : Set ℓ
+    _≤_ : X → X → Prop 𝓅
 
-2RelSet : ∀ ℓ 𝓅 → Set _
-2RelSet ℓ 𝓅 = Set ℓ equipped-with (Rel 𝓅 ⟨×⟩ Rel 𝓅)
 
-RelSubopSet : ∀ ℓ 𝓅 𝓆 → Set _
-RelSubopSet ℓ 𝓅 𝓆 = Set ℓ equipped-with (Rel 𝓅 ⟨×⟩ Subop 𝓆)
+record 2RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mk2RelSet
+  field
+    X : Set ℓ
+    _≈_ : X → X → Prop 𝓅
+    _≤_ : X → X → Prop 𝓅
 
-PointedSet : ∀ ℓ → Set _
-PointedSet ℓ = Set ℓ equipped-with Point
+record RelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkRelBinopSet
+  field
+    X : Set ℓ
+    _∧_ : X → X → X
+    _≤_ : X → X → Prop 𝓅
 
-PointedRelSet : ∀ ℓ 𝓅 → Set _
-PointedRelSet ℓ 𝓅 = Set ℓ equipped-with (Point ⟨×⟩ Rel 𝓅)
+record PointedRelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkPointedRelBinopSet
+  field
+    X : Set ℓ
+    _∧_ : X → X → X
+    ⊤ : X
+    _≤_ : X → X → Prop 𝓅
 
-module _ (A-r @ (A , _~_) : RelSet ℓ 𝓅) where
-  Transitive = {a1 a2 a3 : A} → (a1~a2 : a1 ~ a2) → (a2~a3 : a2 ~ a3) → a1 ~ a3
-  Reflexive = {a : A} → a ~ a
-  Symmetric = {a1 a2 : A} → (a1~a2 : a1 ~ a2) → a2 ~ a1
+record 2PointedRel2BinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mk2PointedRel2BinopSet
+  field
+    X : Set ℓ
+    _∧_ : X → X → X
+    _∨_ : X → X → X
+    ⊤ : X
+    ⊥ : X
+    _≤_ : X → X → Prop 𝓅
 
-  record Preorder : Prop (ℓ ⊔ 𝓅) where
+record RelSubopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mkRelSubopSet
+  field
+    X : Set ℓ
+    ⋀ : Subset 𝓆 X → X
+    _≤_ : X → X → Prop 𝓅
+
+record PointedSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkPointedSet
+  field
+    X : Set ℓ
+    ⊤ : X
+
+record PointedRelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkPointedRelSet
+  field
+    X : Set ℓ
+    ⊤ : X
+    _≤_ : X → X → Prop 𝓅
+
+record PointedRelSubopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mkPointedRelSubopSet
+  field
+    X : Set ℓ
+    ⊤ : X
+    ⋀ : Subset 𝓆 X → X
+    _≤_ : X → X → Prop 𝓅
+
+record 2PointedRel2SubopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mk2PointedRel2SubopSet
+  field
+    X : Set ℓ
+    ⊥ : X
+    ⊤ : X
+    ⋀ : Subset 𝓆 X → X
+    ⋁ : Subset 𝓆 X → X
+    _≤_ : X → X → Prop 𝓅
+
+module RelSetProps (relset : RelSet ℓ 𝓅) where
+  open RelSet relset
+  is-transitive = {a1 a2 a3 : _} → (a1≤a2 : a1 ≤ a2) → (a2≤a3 : a2 ≤ a3) → a1 ≤ a3
+  is-reflexive = {a : _} → a ≤ a
+  is-symmetric = {a1 a2 : _} → (a1≤a2 : a1 ≤ a2) → a2 ≤ a1
+
+  record is-preorder : Prop (ℓ ⊔ 𝓅) where
     field
-      trans : Transitive
-      refl : Reflexive
+      trans : is-transitive
+      refl : is-reflexive
 
-  open Preorder public
+  open is-preorder public
 
-  record Equivalence : Prop (ℓ ⊔ 𝓅) where
+  record is-equivalence : Prop (ℓ ⊔ 𝓅) where
     field
-      preorder : Preorder
-      sym : Symmetric
+      preorder : is-preorder
+      sym : is-symmetric
 
-  open Equivalence public
+  open is-equivalence public
 
 
-module SymPair (A-r @ (A , _≤_) : RelSet ℓ 𝓅) where
-  record _≈_ (a1 a2 : A) : Prop 𝓅 where
+  record is-greatest (s : Subset 𝓆 X) (a : X) : Prop (ℓ ⊔ 𝓆 ⊔ 𝓅) where
     field
-      id : a1 ≤ a2
-      inv : a2 ≤ a1
+      belongs : a ∈ s
+      greatest : {x : _} → (x∈s : x ∈ s) → x ≤ a
+  open is-greatest public
+
+  record is-least (s : Subset 𝓆 X) (a : X) : Prop (ℓ ⊔ 𝓆 ⊔ 𝓅) where
+    field
+      belongs : a ∈ s
+      least : {x : _} → (x∈s : s x) → a ≤ x
+  open is-least public
+
+  module SubsetProps where
+    is-lowerbound : Subset 𝓆 X → Pred _ X
+    is-lowerbound s a = {x : _} → (x∈s : s x) → a ≤ x
+
+    is-greatest-lowerbound : Subset 𝓆 X → X → Prop _
+    is-greatest-lowerbound s a = is-greatest (is-lowerbound s) a
+
+    is-meet = is-greatest-lowerbound
+
+    is-upperbound : Subset 𝓆 X → Pred _ X
+    is-upperbound s a = {x : _} → (x∈s : x ∈ s) → x ≤ a
+
+    is-leastupperbound : Subset 𝓆 X → Pred _ X
+    is-leastupperbound s a = is-least (is-upperbound s) a
+
+    is-join = is-leastupperbound
+
+  module BinaryProps where
+    is-lowerbound : X → X → Pred _ X
+    is-lowerbound x1 x2 a = (a ≤ x1) & (a ≤ x2)
+
+    is-greatest-lowerbound : X → X → Pred _ X
+    is-greatest-lowerbound x1 x2 a = is-greatest (is-lowerbound x1 x2) a
+
+    is-meet = is-greatest-lowerbound
+
+    is-upperbound : X → X → Pred _ X
+    is-upperbound x1 x2 a = (x1 ≤ a) & (x2 ≤ a)
+
+    is-leastupperbound : X → X → Pred _ X
+    is-leastupperbound x1 x2 a = is-least (is-upperbound x1 x2) a
+
+    is-join = is-leastupperbound
+
+module PointedRelSetProps (pointedrelset : PointedRelSet ℓ 𝓅) where
+  open PointedRelSet pointedrelset renaming (⊤ to pt)
+
+  is-maximum : Prop _
+  is-maximum = ∀ x → x ≤ pt
+
+  is-minimum : Prop _
+  is-minimum = ∀ x → pt ≤ x
+
+module DeriveSymrel (relset : RelSet ℓ 𝓅) where
+  open RelSet relset
+  open RelSetProps relset
+
+  _≥_ = \x y → y ≤ x
+  record _≈_ (a1 a2 : X) : Prop 𝓅 where
+    field
+      ≤ : a1 ≤ a2
+      ≥ : a1 ≥ a2
+
+  _<_ : Rel 𝓅 X
+  x < y = x ≤ y & (¬ x ≥ y)
+
+  _>_ : Rel 𝓅 X
+  x > y = (¬ x ≤ y) & x ≥ y
 
   open _≈_ public
 
-module _ (A-2r @ (A , _≈_ , _≤_) : 2RelSet ℓ 𝓅) where
+module 2RelSetProps (2relset : 2RelSet ℓ 𝓅) where
+  open 2RelSet 2relset
+  module ≈ = RelSetProps (record { X = X ; _≤_ = _≈_})
+  module ≤ = RelSetProps (record { X = X ; _≤_ = _≤_})
 
-  AntiSymmetric = {a1 a2 : _} → (a1≤a2 : a1 ≤ a2) → (a2≤a1 : a2 ≤ a1) → a1 ≈ a2
+  is-antisymmetric = {a1 a2 : _} → (a1≤a2 : a1 ≤ a2) → (a2≤a1 : a2 ≤ a1) → a1 ≈ a2
 
-  record PartialOrder : Prop (ℓ ⊔ 𝓅) where
+  record is-partialorder : Prop (ℓ ⊔ 𝓅) where
     field
-      equiv : Equivalence (A , _≈_)
-      preorder : Preorder (A , _≤_)
-      antisym : AntiSymmetric
+      equiv : ≈.is-equivalence
+      preorder : ≤.is-preorder
+      antisym : is-antisymmetric
 
-  open PartialOrder public
+  open is-partialorder public
 
-module _ (A-2r @ (A , _≤_) : RelSet ℓ 𝓅) where
-  open SymPair (A , _≤_)
+record Preoset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkPreoset
+  field
+    relset : RelSet ℓ 𝓅
+    preorder : RelSetProps.is-preorder relset
 
-  symmetric-pair-equiv : Preorder (A , _≤_) → Equivalence (A , _≈_)
-  symmetric-pair-equiv ≤-preorder = \where
-    .preorder .trans a1~a2 a2~a3 .id → ≤-preorder .trans (a1~a2 .id) (a2~a3 .id) -- transitivity
-    .preorder .trans a1~a2 a2~a3 .inv → ≤-preorder .trans (a2~a3 .inv) (a1~a2 .inv) -- transitivity
-    .preorder .refl .id → ≤-preorder .refl -- reflexivity
-    .preorder .refl .inv → ≤-preorder .refl -- reflexivity
-    .sym a1~a2 .id → a1~a2 .inv -- symmetry
-    .sym a1~a2 .inv → a1~a2 .id -- symmetry
+  open RelSet relset public
+  module Preorder = RelSetProps.is-preorder preorder
 
-  preorder-to-partialorder : Preorder (A , _≤_) → PartialOrder (A , _≈_ , _≤_)
-  preorder-to-partialorder ≤-preorder = \where
-    .equiv → symmetric-pair-equiv ≤-preorder -- equivalence
-    .preorder → ≤-preorder -- preorder
-    .antisym a1≤a2 a2≤a1 .id → a1≤a2 --
-    .antisym a1≤a2 a2≤a1 .inv → a2≤a1 --
+record Setoid ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkSetoid
+  field
+    relset : RelSet ℓ 𝓅
+    equiv : RelSetProps.is-equivalence relset
 
-Preord : ∀ ℓ 𝓅 → Set _
-Preord ℓ 𝓅 = RelSet ℓ 𝓅 such-that Preorder
+  open RelSet relset renaming (_≤_ to _≈_) public
+  module Equiv = RelSetProps.is-equivalence equiv
 
-Setoid : ∀ ℓ 𝓅 → Set _
-Setoid ℓ 𝓅 = RelSet ℓ 𝓅 such-that Equivalence
+record Poset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkPoset
+  field
+    2relset : 2RelSet ℓ 𝓅
+    po : 2RelSetProps.is-partialorder 2relset
 
-Poset : ∀ ℓ 𝓅 → Set _
-Poset ℓ 𝓅 = 2RelSet ℓ 𝓅 such-that PartialOrder
+  open 2RelSet 2relset public
+  module Po = 2RelSetProps.is-partialorder po
 
-module _ (A-r @ (A , _≤A_) : RelSet ℓ 𝓅) (B-r @ (B , _≤B_) : RelSet ℓ' 𝓅')  where
-  RelPreserving : (f : A → B) → Prop _
-  RelPreserving f = {a1 a2 : _} → (a1≤a2 : a1 ≤A a2) → f a1 ≤B f a2
+DerivePoset : (preoset : Preoset ℓ 𝓅) → Poset ℓ 𝓅
+DerivePoset preoset = poset
+  module DerivePoset where
+    open Preoset preoset
+    open DeriveSymrel (mkRelSet X _≤_)
+    open 2RelSetProps (record {X = X; _≤_ = _≤_ ; _≈_ = _≈_})
+    open ≤.is-preorder (preoset .Preoset.preorder)
 
-RelPreservingFun : RelSet ℓ 𝓅 → RelSet ℓ' 𝓅' → Set _
-RelPreservingFun (A-r @ (A , _≤A_)) (B-r @(B , _≤B_)) = (A → B) such-that RelPreserving A-r B-r
+    ≈-equiv : ≈.is-equivalence
+    ≈-equiv .≈.preorder .≈.trans a1≈a2 a2≈a3 .≤ = trans (a1≈a2 .≤) (a2≈a3 .≤)
+    ≈-equiv .≈.preorder .≈.trans a1≈a2 a2≈a3 .≥ = trans (a2≈a3 .≥) (a1≈a2 .≥)
+    ≈-equiv .≈.preorder .≈.refl .≤ = refl
+    ≈-equiv .≈.preorder .≈.refl .≥ = refl
+    ≈-equiv .≈.sym a1≈a2 .≤ = a1≈a2 .≥
+    ≈-equiv .≈.sym a1≈a2 .≥ = a1≈a2 .≤
 
-module _ (A-rs @ (A , _≤_) : RelSet ℓ 𝓅) where
-  LowerBound : ∀{𝓆} → Pred 𝓆 A → A → Prop _
-  LowerBound s a =  {x : _} → (x∈s : s x) → a ≤ x
+    ≤-≈-antisym : is-antisymmetric
+    ≤-≈-antisym a1≤a2 a2≤a1 .≤ = a1≤a2
+    ≤-≈-antisym a1≤a2 a2≤a1 .≥ = a2≤a1
 
-module _ {𝓆 : Level} (A-rs @ (A , _≤_) : RelSet ℓ 𝓅) where
-  record Greatest (s : Pred 𝓆 A) (a : A) : Prop (ℓ ⊔ 𝓆 ⊔ 𝓅) where
+    poset : Poset _ _
+    poset = mkPoset (mk2RelSet X _≈_ _≤_) \where
+      .equiv → ≈-equiv
+      .preorder → (preoset .Preoset.preorder)
+      .antisym → ≤-≈-antisym
+
+module _ (relX : RelSet ℓ 𝓅) (relY : RelSet ℓ' 𝓅') where
+  open RelSet relX renaming (X to X; _≤_ to _≤X_)
+  open RelSet relY renaming (X to Y; _≤_ to _≤Y_)
+  is-preserving : (f : X → Y) → Prop _
+  is-preserving f = {a1 a2 : _} → (a1≤a2 : a1 ≤X a2) → f a1 ≤Y f a2
+
+record PreservingFunction (relset : RelSet ℓ 𝓅) (relset' : RelSet ℓ' 𝓅') : Set (ℓ ⊔ ℓ' ⊔ 𝓅 ⊔ 𝓅') where
+  constructor mkPreservingFunction
+  open RelSet relset renaming (X to X; _≤_ to _≤X_)
+  open RelSet relset' renaming (X to Y; _≤_ to _≤Y_)
+  field
+    f : X → Y
+    preserving : is-preserving relset relset' f
+
+module RelBinopSetProps (relbinopset : RelBinopSet ℓ 𝓅) where
+  open RelBinopSet relbinopset renaming (_∧_ to _op_)
+  open RelSetProps.BinaryProps (mkRelSet X _≤_)
+
+  is-meetclosed = (x x' : X) → is-meet x x' (x op x')
+  is-joinclosed = (x x' : X) → is-meet x x' (x op x')
+
+module RelSubopSetProps (relsubopset : RelSubopSet ℓ 𝓅 𝓆) where
+  open RelSubopSet relsubopset renaming (⋀ to Op)
+  open RelSetProps.SubsetProps (mkRelSet X _≤_)
+
+  is-meetclosed = (s : Subset 𝓆 X) → is-meet s (Op s)
+  is-joinclosed = (s : Subset 𝓆 X) → is-join s (Op s)
+
+record MeetSemilattice ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkMeetSemilat
+  field
+    relbinopset : RelBinopSet ℓ 𝓅
+    meetclosed : RelBinopSetProps.is-meetclosed relbinopset
+
+record CompleteMeetSemilattice ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mkCompleteMeetSemilattice
+  field
+    relsubopset : RelSubopSet ℓ 𝓅 𝓆
+    meetclosed : RelSubopSetProps.is-meetclosed relsubopset
+
+  open RelSubopSet relsubopset public
+  module MeetClosed s = RelSetProps.is-greatest (meetclosed s)
+
+module PointedRelBinopSetProps (ptrelbinopset : PointedRelBinopSet ℓ 𝓅) where
+  open PointedRelBinopSet ptrelbinopset renaming (_∧_ to _op_ ; ⊤ to pt)
+  open PointedRelSetProps (mkPointedRelSet X pt _≤_)
+  open RelBinopSetProps (mkRelBinopSet X _op_ _≤_)
+
+  record is-bounded-meetsemilattice : Prop (ℓ ⊔ 𝓅) where
     field
-      belongs : s a
-      greatest : {x : _} → (x∈s : s x) → x ≤ a
-  open Greatest public
+      ∧-meet : is-meetclosed
+      ⊤-maximum : is-maximum
 
-module _ (A-rs @ (A , _≤_) : RelSet ℓ 𝓅) where
-  GreatestLowerBound : Pred 𝓆 A → A → Prop _
-  GreatestLowerBound s a =  Greatest A-rs (LowerBound A-rs s) a
-  Meet = GreatestLowerBound
+  open is-bounded-meetsemilattice public
 
-module _ (A-rs @ (A , _≤_) : RelSet ℓ 𝓅) where
-  UpperBound : ∀{𝓆} → Pred 𝓆 A → A → Prop _
-  UpperBound s a = {x : _} → (x∈s : s x) → x ≤ a
-  record Least (s : Pred 𝓆 A) (a : A) : Prop (ℓ ⊔ 𝓆 ⊔ 𝓅) where
+  record is-bounded-joinsemilattice : Prop (ℓ ⊔ 𝓅) where
     field
-      belongs : s a
-      least : {x : _} → (x∈s : s x) → a ≤ x
-  open Least public
+      ∨-join : is-joinclosed
+      ⊥-minimum : is-minimum
 
-module _ (A-rs @ (A , _≤_) : RelSet ℓ 𝓅) where
-  LeastUpperBound : ∀ {𝓆} → Pred 𝓆 A → A → Prop _
-  LeastUpperBound s a = Least A-rs (UpperBound A-rs s) a
+  open is-bounded-joinsemilattice public
 
-  Join = LeastUpperBound
+record BoundedMeetSemilattice ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkBoundMeetSemilat
+  field
+    ptrelbinopset : PointedRelBinopSet ℓ 𝓅
+    bounded-meetsemialttice : PointedRelBinopSetProps.is-bounded-meetsemilattice ptrelbinopset
 
-  LowerBound2 = \(x y a : A) → (a ≤ x) & (a ≤ y)
-  GreatestLowerBound2 = \(x y a : A) → LowerBound2 x y a & ∀ z → LowerBound2 x y z → z ≤ a
-  UpperBound2 = \(x y a : A) → (x ≤ a) & (y ≤ a)
-  LeastUpperBound2 = \(x y a : A) → UpperBound2 x y a & ∀ z → UpperBound2 x y z → a ≤ z
+module PointedRelSubopSetProps (ptrelsubopset : PointedRelSubopSet ℓ 𝓅 𝓆) where
+  open PointedRelSubopSet ptrelsubopset renaming (⋀ to Op ; ⊤ to pt)
+  open PointedRelSetProps (mkPointedRelSet X pt _≤_)
+  open RelSubopSetProps (mkRelSubopSet X Op _≤_)
 
-module _ (A-pr @ (A , p , _≤_) : PointedRelSet ℓ 𝓅)  where
-  Minimum = (x : _) → p ≤ x
-  Maximum = (x : _) → x ≤ p
+  record is-bounded-meetsemilattice : Prop (ℓ ⊔ 𝓅 ⊔ lsuc 𝓆) where
+    field
+      ⋀-meet : is-meetclosed
+      ⊤-maximum : is-maximum
 
-module _ {𝓆} (A-rsop @ (A , _≤_ , ⋀) : RelSubopSet ℓ 𝓅 𝓆) where
-  MeetClosed = (s : Pred 𝓆 A) → Meet (A , _≤_) s (⋀ s)
+  open is-bounded-meetsemilattice public
 
-module _ {𝓆} (A-rsop @ (A , _≤_ , ⋁) : RelSubopSet ℓ 𝓅 𝓆) where
-  JoinClosed = (s : Pred 𝓆 A) → Join (A , _≤_) s (⋁ s)
+  record is-bounded-joinsemilattice : Prop (ℓ ⊔ 𝓅 ⊔ lsuc 𝓆) where
+    field
+      ⋁-join : is-joinclosed
+      ⊥-minimum : is-minimum
 
-module DeriveBinaryOp (A-sop @ (A , _≈_ , ⋀) : RelSubopSet ℓ 𝓅 𝓅) where
-  _∧_ : A → A → A
-  a1 ∧ a2 = ⋀ \ x → ((x ≈ a1) ∪ (x ≈ a2))
+  open is-bounded-joinsemilattice public
 
-module DeriveCompleteLattice {𝓅} (A-rsop @ (A , _≤_ , ⋀) : RelSubopSet ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) (⋀-meet : MeetClosed A-rsop) where
-  ⋁ : Pred (ℓ ⊔ 𝓅) A → A
-  ⋁ s = ⋀ (UpperBound (A , _≤_) {𝓆 = ℓ ⊔ 𝓅} s)
-  ⊥ = ⋀ \_ → True
-  ⊤ = ⋀ \_ → False
+module derive-binaryop (relsubopset : RelSubopSet ℓ 𝓅 𝓅) where
+  open RelSubopSet relsubopset
+  open DeriveSymrel (mkRelSet X _≤_)
 
-  ⋁-join : JoinClosed (A , _≤_ , ⋁)
-  ⋁-join s .belongs x∈s = ⋀-meet (UpperBound (A , _≤_) s) .greatest \ x∈↑s → x∈↑s x∈s
-  ⋁-join s .least x∈↓s = ⋀-meet (UpperBound (A , _≤_) s) .belongs \ x∈s → x∈↓s x∈s
+  _∧_ : X → X → X
+  a1 ∧ a2 = ⋀ \ x → ((x ≈ a1) ∥ (x ≈ a2))
 
-  ⊥-minimum : Minimum (A , ⊥ , _≤_)
-  ⊥-minimum _ = ⋀-meet _ .belongs _
+module 2PointedRel2SubopSetProps (2pointedrel2subopset : 2PointedRel2SubopSet ℓ 𝓅 𝓆) where
+  open 2PointedRel2SubopSet 2pointedrel2subopset
+  open PointedRelSubopSetProps (mkPointedRelSubopSet X ⊤ ⋀ _≤_) using (is-bounded-meetsemilattice)
+  open PointedRelSubopSetProps (mkPointedRelSubopSet X ⊥ ⋁ _≤_) using (is-bounded-joinsemilattice)
 
-  ⊤-maximum : Maximum (A , ⊤ , _≤_)
-  ⊤-maximum _ = ⋀-meet _ .greatest \()
+  record is-complete-lattice : Prop (ℓ ⊔ 𝓅 ⊔ lsuc 𝓆) where
+    field
+      ⋀-⊤-lattice : is-bounded-meetsemilattice
+      ⋁-⊥-lattice : is-bounded-joinsemilattice
+  open is-complete-lattice public
 
-  -- open SymPair (A , _≤_)
+record CompleteLattice ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mkCompleteLttice
+  field
+    2pointedrel2subopset : 2PointedRel2SubopSet ℓ 𝓅 𝓆
+    completelattice : 2PointedRel2SubopSetProps.is-complete-lattice 2pointedrel2subopset
 
-MeetSemilattice : ∀ ℓ 𝓅 𝓆 → Set _
-MeetSemilattice ℓ 𝓅 𝓆 = Subtype (RelSubopSet ℓ 𝓅 𝓆) \where
-  (A , _≤_ , ⋀) → Preorder (A , _≤_) & MeetClosed (A , _≤_ , ⋀)
+  open 2PointedRel2SubopSet 2pointedrel2subopset public
+  module CompLat = 2PointedRel2SubopSetProps.is-complete-lattice completelattice
+  module MeetSemiLat = PointedRelSubopSetProps.is-bounded-meetsemilattice (CompLat.⋀-⊤-lattice)
+  module JoinSemiLat = PointedRelSubopSetProps.is-bounded-joinsemilattice (CompLat.⋁-⊥-lattice)
+  module MeetClosed s = RelSetProps.is-greatest (MeetSemiLat.⋀-meet s)
+  module JoinClosed s = RelSetProps.is-least (JoinSemiLat.⋁-join s)
 
-module _ {ℓ} {𝓅} (A-meetclosed @ ((A , _≤_ , ⋀) with-property (≤-preorder , ⋀-meet)) : MeetSemilattice ℓ (𝓅 ⊔ ℓ) (𝓅 ⊔ ℓ))
-  (let 𝓊 = (𝓅 ⊔ ℓ))
-  (f-rp @ (f with-property f-mono) : RelPreservingFun (A , _≤_) (A , _≤_))
-  where
-  open SymPair (A , _≤_)
-  ⋀-mono : {s s' : Pred 𝓊 A} → (s⊆s' : {a : A} → s a → s' a) → ⋀ s' ≤ ⋀ s
-  ⋀-mono s⊆s' = ⋀-meet _ .greatest \ x∈s → ⋀-meet _ .belongs (s⊆s' x∈s)
+DeriveCompleteLattice : (complete-meet-semilattice : CompleteMeetSemilattice ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) → CompleteLattice ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)
+DeriveCompleteLattice complete-meet-semilattice = complete-lattice
+  module DeriveCompleteLattice where
+    open CompleteMeetSemilattice complete-meet-semilattice
+    open RelSubopSetProps
+    open RelSetProps
+    open PointedRelSetProps
 
-  FixedPoint : Pred (ℓ ⊔ 𝓅) A
-  FixedPoint = \ x → f x ≈ x
+    ⋁ : Pred _ X → X
+    ⋁ s = ⋀ (SubsetProps.is-upperbound (mkRelSet X _≤_) s)
 
-  LeastFixedPoint : Pred (ℓ ⊔ 𝓅) A
-  LeastFixedPoint = Least (A , _≤_) FixedPoint
+    ⊥ = ⋀ U
+    ⊤ = ⋀ ∅
 
-  PostfixPoint : Pred (𝓅 ⊔ ℓ) A
-  PostfixPoint = \ x → f x ≤ x
+    open 2PointedRel2SubopSetProps
+    open PointedRelSubopSetProps.is-bounded-meetsemilattice
+    open PointedRelSubopSetProps.is-bounded-joinsemilattice
+    open is-complete-lattice
+    open CompleteLattice using (2pointedrel2subopset ; completelattice)
+    complete-lattice : CompleteLattice _ _ _
+    complete-lattice .2pointedrel2subopset = mk2PointedRel2SubopSet X ⊥ ⊤ ⋀ ⋁ _≤_
+    complete-lattice .completelattice .⋀-⊤-lattice .⋀-meet = meetclosed
+    complete-lattice .completelattice .⋀-⊤-lattice .⊤-maximum _ = MeetClosed.greatest _ \()
+    complete-lattice .completelattice .⋁-⊥-lattice .⋁-join s .belongs x∈s = MeetClosed.greatest (SubsetProps.is-upperbound (mkRelSet X _≤_) s) \ x∈↑s → x∈↑s x∈s
+    complete-lattice .completelattice .⋁-⊥-lattice .⋁-join s .least x∈↓s = MeetClosed.belongs (SubsetProps.is-upperbound (mkRelSet X _≤_) s)  \ x∈s → x∈↓s x∈s
+    complete-lattice .completelattice .⋁-⊥-lattice .⊥-minimum _ = MeetClosed.belongs _ _
 
-  PrefixPoint : Pred (ℓ ⊔ 𝓅)  A
-  PrefixPoint = \ x → x ≤ f x
+-- DeriveSemilattice : (complete-semilattice : CompleteMeetSemilattice ℓ 𝓅 𝓆) → BoundedMeetSemilattice ℓ (ℓ
 
-  -- ∀ x ∈ { x | f x ≤ x } , f (⋀ { x | f x ≤ x}) ≤ f x ≤ x
-  f⋀postfp∈↓postfp : LowerBound (A , _≤_) PostfixPoint (f (⋀ PostfixPoint ))
-  f⋀postfp∈↓postfp x∈postfp = ≤-preorder .trans
-    (f-mono (⋀-meet _ .belongs x∈postfp))
-    x∈postfp
+module Endo (setoid : Setoid ℓ 𝓅) where
+  open Setoid setoid renaming (_≈_ to _≈_)
+  EndoFunction : Set _
+  EndoFunction = PreservingFunction (mkRelSet X _≈_) (mkRelSet X _≈_)
 
-  -- lfp f
-  lfp-⋀-post : LeastFixedPoint (⋀ PostfixPoint)
-  lfp-⋀-post .belongs .id = ⋀-meet _ .greatest f⋀postfp∈↓postfp
-  lfp-⋀-post .belongs .inv = ⋀-meet _ .belongs (f-mono (⋀-meet _ .greatest f⋀postfp∈↓postfp))
-  lfp-⋀-post .least x∈s = ⋀-meet _ .belongs (x∈s .id)
+  FixedPoint : EndoFunction → Subset _ X
+  FixedPoint endo x = f x ≈ x
+    where open PreservingFunction endo renaming (f to f)
 
-  ⋀fix≈⋀post : ⋀ FixedPoint ≈ ⋀ PostfixPoint
-  ⋀fix≈⋀post .id = ⋀-meet _ .belongs \where
-    .id → ⋀-meet _ .greatest f⋀postfp∈↓postfp
-    .inv → ⋀-meet _ .belongs (f-mono (⋀-meet _ .greatest f⋀postfp∈↓postfp))
-  ⋀fix≈⋀post .inv = ⋀-mono \ fx≈x → fx≈x .id
+module Endo≤ (preoset : Preoset ℓ 𝓅) where
+  open Preoset preoset
+  MonotoneFunction = PreservingFunction relset relset
 
+  PostfixPoint : MonotoneFunction → Subset _ X
+  PostfixPoint endo x = f x ≤ x
+    where open PreservingFunction endo renaming (f to f)
+
+  PrefixPoint : MonotoneFunction → Subset _ X
+  PrefixPoint endo x = x ≤ f x
+    where open PreservingFunction endo renaming (f to f)
+
+  open Poset (DerivePoset preoset)
+  open Endo (mkSetoid (mkRelSet _ _≈_) Po.equiv) public
+
+  DeriveEndo : MonotoneFunction → EndoFunction
+  DeriveEndo mono = endo
+    module DeriveEndo where
+      open DeriveSymrel
+      open PreservingFunction mono
+      endo : EndoFunction
+      endo .f = f
+      endo .preserving a1≈a2 .≤ = preserving (a1≈a2 .≤)
+      endo .preserving a1≈a2 .≥ = preserving (a1≈a2 .≥)
+
+module EndoRel (preoset : Preoset ℓ 𝓅) where
+  open Poset (DerivePoset preoset)
+  open Endo≤ preoset public
+
+  module _ (e : EndoFunction) where
+    LeastFixedPoint : Subset _ X
+    LeastFixedPoint = RelSetProps.is-least (mkRelSet X _≤_) (FixedPoint e)
+
+    GreatestFixedPoint : Subset _ X
+    GreatestFixedPoint = RelSetProps.is-greatest (mkRelSet X _≤_) (FixedPoint e)
+
+module LatticeTheory (completemeetsemilattice : CompleteMeetSemilattice ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) where
+  open CompleteLattice (DeriveCompleteLattice {ℓ = ℓ} {𝓅 = 𝓅} completemeetsemilattice)
+
+  ⋀-monotone : ∀ s s' → (s⊆s' : s ⊆ s') → ⋀ s' ≤ ⋀ s
+  ⋀-monotone s s' s⊆s' = MeetClosed.greatest s \ x∈s → MeetClosed.belongs s' (s⊆s' _ x∈s)
+
+  ⋁-monotone : ∀ s s' → (s⊆s' : s ⊆ s') → ⋁ s ≤ ⋁ s'
+  ⋁-monotone s s' s⊆s' = JoinClosed.least s \ x∈s → JoinClosed.belongs s' (s⊆s' _ x∈s)
+
+  module _ (preorder : RelSetProps.is-preorder (mkRelSet X _≤_)) where
+    private
+      X≤ = (mkRelSet X _≤_)
+      module X≤ = RelSetProps X≤
+
+    open EndoRel (mkPreoset X≤ preorder)
+    module _ (m : MonotoneFunction) where
+      open PreservingFunction m renaming (f to f)
+      open DeriveSymrel X≤
+      f[⋀post]∈↓post : X≤.SubsetProps.is-lowerbound (PostfixPoint m) (f (⋀ (PostfixPoint m)))
+      f[⋀post]∈↓post x∈s = preserving (MeetClosed.belongs _ x∈s) ∙ x∈s
+        where open X≤.is-preorder preorder renaming (trans to _∙_)
+
+      private e = DeriveEndo m
+
+      lfp⋀post : ⋀ (PostfixPoint m) ∈ LeastFixedPoint e
+      lfp⋀post .X≤.belongs .≤ = MeetClosed.greatest (PostfixPoint m) f[⋀post]∈↓post
+      lfp⋀post .X≤.belongs .≥ = MeetClosed.belongs (PostfixPoint m) (preserving (MeetClosed.greatest (PostfixPoint m) f[⋀post]∈↓post))
+      lfp⋀post .X≤.least x∈s = MeetClosed.belongs (PostfixPoint m) (x∈s .≤)
+
+      ⋀fix≈⋀post : ⋀ (FixedPoint e) ≈ ⋀ (PostfixPoint m)
+      ⋀fix≈⋀post .≤ = MeetClosed.belongs (FixedPoint e) \where
+        .≤ → MeetClosed.greatest (PostfixPoint m) f[⋀post]∈↓post
+        .≥ → MeetClosed.belongs (PostfixPoint m) (preserving (MeetClosed.greatest (PostfixPoint m) f[⋀post]∈↓post))
+      ⋀fix≈⋀post .≥ = ⋀-monotone (FixedPoint e) (PostfixPoint m) \ x x∈fix → x∈fix .≤
+
+module RelConnection (relset : RelSet ℓ 𝓅) (relset' : RelSet ℓ' 𝓅') (prefun : PreservingFunction relset relset') (prefun' : PreservingFunction relset' relset) where
+  module C = RelSet relset
+  module D = RelSet relset'
+  module R = PreservingFunction prefun
+  module L = PreservingFunction prefun'
+
+  record Connection : Set (ℓ ⊔ 𝓅 ⊔ ℓ' ⊔ 𝓅') where
+    field
+      r : (c : C.X) (d : D.X) → L.f d C.≤ c → d D.≤ R.f c
+      l : (c : C.X) (d : D.X) → d D.≤ R.f c → L.f d C.≤ c
+
+module SubsetTheory (X : Set ℓ) where
+  subset⊆ : RelSet _ _
+  RelSet.X subset⊆ = Subset ℓ X
+  RelSet._≤_ subset⊆ s s' = s ⊆ s'
+
+  subset⊆preo : Preoset _ _
+  Preoset.relset subset⊆preo = subset⊆
+  RelSetProps.trans (Preoset.preorder subset⊆preo) a1⊆a2 a2⊆a3 x x∈a1 = a2⊆a3 _ (a1⊆a2 _ x∈a1)
+  RelSetProps.refl (Preoset.preorder subset⊆preo) x x∈a = x∈a
+
+  subset⊆∩ : RelBinopSet (lsuc 𝓅 ⊔ ℓ) (𝓅 ⊔ ℓ)
+  RelBinopSet.X (subset⊆∩ {𝓅 = 𝓅}) = Subset 𝓅 X
+  RelBinopSet._∧_ subset⊆∩ = _∩_
+  RelBinopSet._≤_ subset⊆∩ = _⊆_
+
+  subset⊆∩⊤ : PointedRelBinopSet (lsuc 𝓅 ⊔ ℓ) (𝓅 ⊔ ℓ)
+  PointedRelBinopSet.X (subset⊆∩⊤ {𝓅 = 𝓅}) = Subset 𝓅 X
+  PointedRelBinopSet._∧_ subset⊆∩⊤ = _∩_
+  PointedRelBinopSet._≤_ subset⊆∩⊤ = _⊆_
+  PointedRelBinopSet.⊤ subset⊆∩⊤ = U

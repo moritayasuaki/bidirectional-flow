@@ -58,8 +58,17 @@ pointwise _~_ f g = ∀ c → f c ~ g c
 map-rel : ∀ {C D X Y} → (C → X) → (D → Y) → rel X Y → rel C D
 map-rel f g r c d = r (f c) (g d)
 
+_⋈'_ : ∀{X Y Z} → subset (X × Y) → subset (Y × Z) → subset (Y × X × Z)
+(r ⋈' r') (y , x , z) = (x , y) ∈ r × (y , z) ∈ r'
+
 _⋈_ : ∀{X Y Z} → subset (X × Y) → subset (Y × Z) → subset (X × Z)
 (r ⋈ r') (x , z) = Σ _ \ y → (x , y) ∈ r × (y , z) ∈ r'
+
+_><_ : ∀{X Y Z} → subset (X × Y) → subset (Y × Z) → subset Y
+(r >< r') y = Σ (_ × _) \ {(x , z) → (x , y) ∈ r × (y , z) ∈ r'}
+
+
+
 
 open Relation.Unary using (_∪_; _∩_) public
 
@@ -109,6 +118,11 @@ record iso-pair (_~_ : rel X X) (x y : X) : prop where
 
 open iso-pair public
 
+refl-iso : {X : Set} {_~_ : rel X X} → (~-reflexive : ∀ {x} → x ~ x) → ∀ {x y} → x ≡ y → iso-pair _~_ x y
+refl-iso ~-reflexive ≡.refl = \where
+  .forward → ~-reflexive
+  .backward → ~-reflexive
+
 infix 0 _↔_
 _↔_ : rel prop prop
 _↔_ = iso-pair (\X Y → X → Y)
@@ -150,6 +164,17 @@ fst-subset S d = Σ _ \ e → (d , e) ∈ S
 
 snd-subset : ∀ {D E} → subset (D × E) → subset E
 snd-subset S e = Σ _ \ d → (d , e) ∈ S
+
+fst-fst-subset : ∀ {D E F} → subset (D × E × F) → subset (D × E)
+fst-fst-subset S (d , e) = Σ _ \ f → (d , e , f) ∈ S
+
+fst-snd-subset : ∀ {D E F} → subset (D × E × F) → subset (D × F)
+fst-snd-subset S (d , f) = Σ _ \ e → (d , e , f) ∈ S
+
+⋈'≅⋈ : ∀{X Y Z} → (r : subset (X × Y)) → (r' : subset (Y × Z)) → snd-subset (r ⋈' r') ≅ r ⋈ r'
+forward (⋈'≅⋈ r r') {x , z} (y , x∈ , z∈) = y , x∈ , z∈
+backward (⋈'≅⋈ r r') {x , z} (y , x∈ , z∈) = y , x∈ , z∈
+
 
 fst-rel : ∀ {D E} → rel D E → subset D
 fst-rel R d = Σ _ \ e → R d e

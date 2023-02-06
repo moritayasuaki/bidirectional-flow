@@ -1,6 +1,6 @@
 ```agda
 {-# OPTIONS --type-in-type --exact-split #-}
-open import Level
+open import Level renaming (_⊔_ to _l⊔_)
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
 import Relation.Binary.PropositionalEquality as ≡
@@ -868,6 +868,9 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   rel2fun : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
   rel2fun = pair2fun ∘ rel2pair
 
+  -- rel2fun' : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
+  -- rel2fun' r d = ⋀E \ e → Σ _ \ d → d ≤D d' × r (d , e)
+
   rel2mfun : subset (D-cmlat.carrier × E-cmlat.carrier) → monotone-func D-pre E-pre
   rel2mfun = mpair2mfun ∘ rel2mpair
 
@@ -1086,5 +1089,146 @@ module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected :
   forward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) =  backward (c≤lrc→c≅lrlrlrc c≤lrc)
   backward (snd C*2D*-D*2C*-is-order-isomorphism (c , c≤lrc)) = forward (c≤lrc→c≅lrlrlrc c≤lrc)
 
+module derive-subset-galois
+  {D : complete-meet-semilattice → complete-meet-semilattice → preordered-set}
+  (⊆-D-gal : (X Y : complete-meet-semilattice) → antitone-galois-connection (pre (subset (complete-meet-semilattice.carrier X × complete-meet-semilattice.carrier Y)) _⊆_ ⊆-is-preorder) (D X Y))
+  (left-meet-closing : (X Y : complete-meet-semilattice) → ∀ r → complete-meet-semilattice.is-meet-closed-subset' (X ×-cmlat Y) (galois-connection.left-adjoint (⊆-D-gal X Y) .monotone-func.func r))
+  where
+  module _ (X : complete-meet-semilattice) where
+    private
+      module X = complete-meet-semilattice X
+      module X-pre = preordered-set (cmlat→pre X) renaming (relation to _≤_ ; equiv to _≈_)
+
+    Δ : (r : subset X.carrier) → subset (X.carrier × X.carrier)
+    Δ r (x , x') = x X-pre.≈ x'
+
+  module _ (X Y : complete-meet-semilattice) where
+    private
+      module X = complete-meet-semilattice X
+      module Y = complete-meet-semilattice Y
+      module X×Y = complete-meet-semilattice (X ×-cmlat Y)
+      module G = galois-connection (⊆-D-gal X Y)
+      module D = preordered-set (D X Y) renaming (relation to _≤_; equiv to _≈_; property to ≤-preorder)
+
+    LR : (r : subset (X.carrier × Y.carrier)) → subset (X.carrier × Y.carrier)
+    LR r = G.comonad-functor .monotone-func.func r
+
+
+    id⊆LR : (r : subset (X.carrier × Y.carrier)) → r ⊆ LR r
+    id⊆LR r {x} x∈r = G.lr-decreasing r x∈r
+
+    LRLR≅LR : (r : subset (X.carrier × Y.carrier)) → LR (LR r) ≅ LR r
+    LRLR≅LR r .backward x = G.lr-idempotent (G.right-adjoint .monotone-func.func r) .forward x
+    LRLR≅LR r .forward x = G.lr-idempotent (G.right-adjoint .monotone-func.func r) .backward x
+
+    RL : (d : D.carrier) → D.carrier
+    RL d = G.monad-functor .monotone-func.func d
+
+    id≤RL : (d : D.carrier) → d D.≤ RL d
+    id≤RL d = G.rl-increasing d
+
+    _⊓_ : (x y : D.carrier) → D.carrier
+    _⊓_ = \ (x y : D.carrier) → G.right-adjoint .monotone-func.func (G.left-adjoint .monotone-func.func x ∪ G.left-adjoint .monotone-func.func y)
+
+    _⊔_ : (x y : D.carrier) → D.carrier
+    _⊔_ = \ (x y : D.carrier) → G.right-adjoint .monotone-func.func (G.left-adjoint .monotone-func.func x ∩ G.left-adjoint .monotone-func.func y)
+
+  module _ {X Y Z : complete-meet-semilattice} where
+    private
+      module X = complete-meet-semilattice X renaming (operation to ⋀; relation to _≤_)
+      module Y = complete-meet-semilattice Y renaming (operation to ⋀; relation to _≤_)
+      module Z = complete-meet-semilattice Z renaming (operation to ⋀; relation to _≤_)
+      module G {a} {b} = galois-connection (⊆-D-gal a b)
+      Dobj = \ a b → preordered-set.carrier (D a b)
+      module D {a} {b} = preordered-set (D a b) renaming (relation to _≤_; equiv to _≈_; property to ≤-preorder)
+      module R {a} {b} = monotone-func (G.right-adjoint {a} {b})
+      module L {a} {b} = monotone-func (G.left-adjoint {a} {b})
+      open R renaming (func to R; property to R-mono)
+      open L renaming (func to L; property to L-mono)
+      P = \ a b → subset (complete-meet-semilattice.carrier a × complete-meet-semilattice.carrier b)
+
+      module X×Y = complete-meet-semilattice (X ×-cmlat Y) renaming (operation to ⋀ ; relation to _≤_)
+      module Y×Z = complete-meet-semilattice (Y ×-cmlat Z) renaming (operation to ⋀ ; relation to _≤_)
+      module X×Z = complete-meet-semilattice (X ×-cmlat Z) renaming (operation to ⋀ ; relation to _≤_)
+      module Y×X×Z = complete-meet-semilattice (Y ×-cmlat (X ×-cmlat Z)) renaming (operation to ⋀ ; relation to _≤_)
+      module X×Y×Z = complete-meet-semilattice (X ×-cmlat (Y ×-cmlat Z)) renaming (operation to ⋀ ; relation to _≤_)
+      module X×Y×Y×Z = complete-meet-semilattice ((X ×-cmlat Y) ×-cmlat (Y ×-cmlat Z)) renaming (operation to ⋀ ; relation to _≤_)
+
+
+    _⊗_ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → Dobj X Z
+    dxy ⊗ dyz = R (L dxy ⋈ L dyz)
+
+    ⋈-monotone : ∀ {X Y Z} {a a' : subset (X × Y)} {b b' : subset (Y × Z)} → a ⊆ a' → b ⊆ b' → a ⋈ b ⊆ a' ⋈ b'
+    ⋈-monotone a⊆a' b⊆b' (y , ∈a , ∈b) = y , (a⊆a' ∈a) , (b⊆b' ∈b)
+
+    RL∘⊗≈⊗ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → (RL X Z (dxy ⊗ dyz)) D.≈ (dxy ⊗ dyz)
+    RL∘⊗≈⊗ dxy dyz = G.rl-idempotent (L dxy ⋈ L dyz)
+
+    ⊗∘RL≈⊗ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → (RL X Y dxy ⊗ RL Y Z dyz) D.≈ (dxy ⊗ dyz)
+    ⊗∘RL≈⊗ dxy dyz .forward = R-mono Q
+      where
+      Q : L dxy ⋈ L dyz ⊆ L (RL X Y dxy) ⋈ L (RL Y Z dyz)
+      Q (y , xy∈Ldxy , yz∈Ldyz) = y , G.lr-idempotent _ .forward xy∈Ldxy , G.lr-idempotent _ .forward yz∈Ldyz
+    ⊗∘RL≈⊗ dxy dyz .backward = R-mono Q
+      where
+      Q : L (RL X Y dxy) ⋈ L (RL Y Z dyz) ⊆ L dxy ⋈ L dyz
+      Q (y , xy∈LRLdxy , yz∈LRLdyz) = y , G.lr-idempotent _ .backward xy∈LRLdxy , G.lr-idempotent _ .backward yz∈LRLdyz
+
+    ⊗∘RL≈RL∘⊗ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → (RL X Y dxy ⊗ RL Y Z dyz) D.≈ (RL X Z (dxy ⊗ dyz))
+    ⊗∘RL≈RL∘⊗ dxy dyz .forward = ≤.rel-is-transitive (⊗∘RL≈⊗ dxy dyz .forward) (! (RL∘⊗≈⊗ dxy dyz) .forward)
+      where module ≤ = D.≤-preorder
+    ⊗∘RL≈RL∘⊗ dxy dyz .backward = ≤.rel-is-transitive (! (RL∘⊗≈⊗ dxy dyz) .backward) (⊗∘RL≈⊗ dxy dyz .backward)
+      where module ≤ = D.≤-preorder
+
+    ⋈⊆LR∘⋈ : (rxy : P X Y) → (ryz : P Y Z) → rxy ⋈ ryz ⊆ LR X Z (rxy ⋈ ryz)
+    ⋈⊆LR∘⋈ rxy ryz = G.lr-decreasing  (rxy ⋈ ryz)
+
+    ⋈⊆⋈∘LR : (rxy : P X Y) → (ryz : P Y Z) → rxy ⋈ ryz ⊆ (LR X Y rxy ⋈ LR Y Z ryz)
+    ⋈⊆⋈∘LR rxy ryz  = ⋈-monotone {a = rxy} {b = ryz} (G.lr-decreasing rxy) (G.lr-decreasing ryz)
+
+    -- this condition is too strong?
+    prop-⋈-LR-commute = (rxy : P X Y) → (ryz : P Y Z) → LR X Z (rxy ⋈ ryz) ≅ (LR X Y rxy ⋈ LR Y Z ryz)
+    -- this condition makes ⊗ associative (but is this necesary condition?)
+    prop-⋈-LR-commute' = (dxy : Dobj X Y) (dyz : Dobj Y Z) → L dxy ⋈ L dyz ≅ LR X Z (L dxy ⋈ L dyz)
+
+  module _ {X Y Z W : complete-meet-semilattice} where
+    private
+      module X = complete-meet-semilattice X renaming (operation to ⋀; relation to _≤_)
+      module Y = complete-meet-semilattice Y renaming (operation to ⋀; relation to _≤_)
+      module Z = complete-meet-semilattice Z renaming (operation to ⋀; relation to _≤_)
+      module G a b = galois-connection (⊆-D-gal a b)
+      Dobj = \ a b → preordered-set.carrier (D a b)
+      module D {a} {b} = preordered-set (D a b) renaming (relation to _≤_; equiv to _≈_; property to ≤-preorder)
+      module R {a} {b} = monotone-func (G.right-adjoint a b)
+      module L {a} {b} = monotone-func (G.left-adjoint a b)
+      open R renaming (func to R; property to R-mono)
+      open L renaming (func to L; property to L-mono)
+      P = \ a b → subset (complete-meet-semilattice.carrier a × complete-meet-semilattice.carrier b)
+
+    ⋈-associative : (rxy : P X Y) (ryz : P Y Z) (rzw : P Z W) → (rxy ⋈ ryz) ⋈ rzw ≅ rxy ⋈ (ryz ⋈ rzw)
+    ⋈-associative rxy ryz rzw .forward {x , w} (z , (y , xy∈rxy , yz∈ryz) , zw∈rzw) = (y , xy∈rxy , z , yz∈ryz , zw∈rzw)
+    ⋈-associative rxy ryz rzw .backward {x , w} (y , xy∈rxy , z , yz∈ryz , zw∈rzw) = (z , (y , xy∈rxy , yz∈ryz) , zw∈rzw)
+
+    ⊗-associative = (dxy : Dobj X Y) (dyz : Dobj Y Z) (dzw : Dobj Z W) → ((dxy ⊗ dyz) ⊗ dzw) D.≈ (dxy ⊗ (dyz ⊗ dzw))
+
+    L-⊗-⋈-assoc : ({X Y Z : complete-meet-semilattice} → prop-⋈-LR-commute' {X = X} {Y = Y} {Z = Z})
+      → (dxy : Dobj X Y) (dyz : Dobj Y Z) (dzw : Dobj Z W) → L dxy ⋈ L (dyz ⊗ dzw) ≅ L (dxy ⊗ dyz) ⋈ L dzw
+    L-⊗-⋈-assoc α dxy dyz dzw .forward {x , w} (y , xy∈Ldxy , yw∈L[dyz⊗dzw]) =
+      let
+        (z , yz∈Ldyz , zw∈Ldzw) = α dyz dzw .backward yw∈L[dyz⊗dzw]
+        xz∈L[dxy⊗dyz] = α dxy dyz .forward (y , xy∈Ldxy , yz∈Ldyz)
+      in (z , xz∈L[dxy⊗dyz] , zw∈Ldzw)
+
+    L-⊗-⋈-assoc α dxy dyz dzw .backward {x , w} (z , xz∈L[dxy⊗dyz] , zw∈Ldzw) =
+      let
+        (y , xy∈Ldxy , yz∈Ldyz) = α dxy dyz .backward xz∈L[dxy⊗dyz]
+        yw∈L[dyz⊗dzw] = α dyz dzw .forward (z , yz∈Ldyz , zw∈Ldzw)
+      in y , xy∈Ldxy , yw∈L[dyz⊗dzw]
+
+    lemma-⊗-assoc : ({X Y Z : complete-meet-semilattice} → prop-⋈-LR-commute' {X = X} {Y = Y} {Z = Z}) → ⊗-associative
+    lemma-⊗-assoc α dxy dyz dzw .forward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .forward)
+    lemma-⊗-assoc α dxy dyz dzw .backward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .backward)
+
+  -- So far, we have not used the complete-meet-semilattice condition at all
 
 ```

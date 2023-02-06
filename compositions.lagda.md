@@ -58,30 +58,23 @@ module _ where
     (let _≈Y_ = iso-pair _≤Y_)
     where
 
-    ~-pair : subset (X-carrier × Y-carrier) → subset (X-carrier × Y-carrier)
-    ~-pair r = pair2rel X Y (rel2pair X Y r)
+    ~pair : subset (X-carrier × Y-carrier) → subset (X-carrier × Y-carrier)
+    ~pair r = pair2rel X Y (rel2pair X Y r)
 
-    ~-fun : subset (X-carrier × Y-carrier) → subset (X-carrier × Y-carrier)
-    ~-fun r = fun2rel X Y (rel2fun X Y r)
+    ~f : subset (X-carrier × Y-carrier) → subset (X-carrier × Y-carrier)
+    ~f r = fun2rel X Y (rel2fun X Y r)
 
-    _∩pair_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
-    f ∩pair g = rel2pair X Y (pair2rel X Y f ∩ pair2rel X Y g)
+    _∨f_ : fun X-carrier Y-carrier → fun X-carrier Y-carrier → fun X-carrier Y-carrier
+    f ∨f g = rel2fun X Y (fun2rel X Y f ∩ fun2rel X Y g)
 
-    _∪pair_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
-    f ∪pair g = rel2pair X Y (pair2rel X Y f ∪ pair2rel X Y g)
+    _∧f_ : fun X-carrier Y-carrier → fun X-carrier Y-carrier → fun X-carrier Y-carrier
+    f ∧f g = rel2fun X Y (fun2rel X Y f ∪ fun2rel X Y g)
 
-    _∩mpair_ : monotone-func-pair X-pre Y-pre → monotone-func-pair X-pre Y-pre → monotone-func-pair X-pre Y-pre
-    (mfp' f f-mono) ∩mpair (mfp' g g-mono) = mfp' (f ∪pair g) P
-      where
-      ⋀-mono = complete-meet-semilattice.property.bigmeet-monotone
-      ≤-trans = complete-meet-semilattice.property.rel-is-transitive
-      P : is-monotone-pair (cmlat→pre X) (cmlat→pre Y) (f ∪pair g)
-      P .fst {x} {x'} x≤x' = ⋀-mono Y \where
-        (x'' , x'≤x'' , left l) → x'' , ≤-trans X x≤x' x'≤x'' , left l
-        (x'' , x'≤x'' , right r) → x'' ,  ≤-trans X x≤x' x'≤x'' , right r
-      P .snd {y} {y'} y≤y' = ⋀-mono X \where
-        (y'' , y'≤y'' , left l) → y'' ,  ≤-trans Y y≤y' y'≤y'' , left l
-        (y'' , y'≤y'' , right r) → y'' ,  ≤-trans Y y≤y' y'≤y'' , right r
+    _∨p_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
+    f ∨p g = rel2pair X Y (pair2rel X Y f ∩ pair2rel X Y g)
+
+    _∧p_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
+    f ∧p g = rel2pair X Y (pair2rel X Y f ∪ pair2rel X Y g)
 
   module _ (X Y Z : complete-meet-semilattice)
     (let X-pre = cmlat→pre X)
@@ -115,6 +108,7 @@ module _ where
     module preprop (P : preordered-set) where
       open preordered-set.property P public
 
+
     mendo-comp : monotone-func XY-pre XY-pre → monotone-func YZ-pre YZ-pre → monotone-func XZ-pre XZ-pre
     func (mendo-comp f g) (x , z) = ⋀XZ \{ (x' , z') → (x , z) ≤XZ (x' , z') × ∃ \ y' → f .func (x' , y') ≤XY (x' , y') × g .func (y' , z') ≤YZ (y' , z')  }
     property (mendo-comp f g) {xz} {x'z'} (xz≤x'z') = latprop.bigmeet-monotone X×Z \{ {(x''z'')} ((x'z'≤x''z'') , Ey') → XZ-trans xz≤x'z' x'z'≤x''z'' , Ey'}
@@ -128,25 +122,25 @@ module _ where
     backward (rel2mendo∘⋈∘mendo2rel≈mendo-comp f g (x , z)) = latprop.bigmeet-monotone X×Z id
 
 
-    _⋈pair_ : subset (X-carrier × Y-carrier) → subset (Y-carrier × Z-carrier) → subset (X-carrier × Z-carrier)
-    r ⋈pair r' = pair2rel X Z (rel2pair X Z (r ⋈ r'))
+    _⋈p_ : subset (X-carrier × Y-carrier) → subset (Y-carrier × Z-carrier) → subset (X-carrier × Z-carrier)
+    r ⋈p r' = pair2rel X Z (rel2pair X Z (r ⋈ r'))
 
-    _⊗pair_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
-    f ⊗pair g = rel2pair X Z (pair2rel X Y f ⋈ pair2rel Y Z g)
+    _⊗p_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
+    f ⊗p g = rel2pair X Z (pair2rel X Y f ⋈ pair2rel Y Z g)
 
-    _⊗pair'_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
-    (f , b) ⊗pair' (f' , b') = \where
+    _⊗p'_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
+    (f , b) ⊗p' (f' , b') = \where
       .fst x → ⋀Z \{ z → ∃ \ x' → x ≤X x' × ∃ \ y → (f x' ≤Y y × b y ≤X x') × (f' y ≤Z z × b' z ≤Y y) }
       .snd z → ⋀X \{ x → ∃ \ z' → z ≤Z z' × ∃ \ y → (f x ≤Y y × b y ≤X x) × (f' y ≤Z z' × b' z' ≤Y y) }
 
-    ⊗pair≈⊗pair' : (f : func-pair X-carrier Y-carrier) → (g : func-pair Y-carrier Z-carrier)
-      → (∀ x → fst (f ⊗pair' g) x ≈Z fst (f ⊗pair g) x)
-      → (∀ z → snd (f ⊗pair' g) z ≈X snd (f ⊗pair g) z)
-    forward (⊗pair≈⊗pair' f g x z) = latprop.bigmeet-monotone X id
-    backward (⊗pair≈⊗pair' f g x z) = latprop.bigmeet-monotone X id
+    ⊗p≈⊗p' : (f : func-pair X-carrier Y-carrier) → (g : func-pair Y-carrier Z-carrier)
+      → (∀ x → fst (f ⊗p' g) x ≈Z fst (f ⊗p g) x)
+      → (∀ z → snd (f ⊗p' g) z ≈X snd (f ⊗p g) z)
+    forward (⊗p≈⊗p' f g x z) = latprop.bigmeet-monotone X id
+    backward (⊗p≈⊗p' f g x z) = latprop.bigmeet-monotone X id
 
-    _⊗pair-fix_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
-    (f , b) ⊗pair-fix (f' , b') = \where
+    _⊗p-fix_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
+    (f , b) ⊗p-fix (f' , b') = \where
        .fst x₀ →  (⋀XYZ \ xyz → xyz ≤XYZ (h x₀ ⊥Z) xyz) .snd .snd
        .snd z₀ → (⋀XYZ \ xyz → xyz ≤XYZ (h ⊥X z₀) xyz) .fst
       where
@@ -157,17 +151,30 @@ module _ where
         h : X-carrier → Z-carrier → X-carrier × Y-carrier × Z-carrier → X-carrier × Y-carrier × Z-carrier
         h x₀ z₀ (x , y , z) = (x₀ ∨X b y , f x ∨Y b' z , z₀ ∨Z f' y)
 
-    _⊗fun_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
-    f ⊗fun g = rel2fun X Z (fun2rel X Y f ⋈ fun2rel Y Z g)
+    _⊗f_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
+    f ⊗f g = rel2fun X Z (fun2rel X Y f ⋈ fun2rel Y Z g)
 
-    _⊗fun'_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
-    (f ⊗fun' g) x = ⋀Z (\z → ∃ \ x' → x ≤X x' × ∃ \y → (f x' ≤Y y) × (g y ≤Z z))
+    _⊗f'_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
+    (f ⊗f' g) x = ⋀Z (\z → ∃ \ x' → x ≤X x' × ∃ \y → (f x' ≤Y y) × (g y ≤Z z))
 
-    ⊗fun≈⊗fun' : (f : fun X-carrier Y-carrier) → (g : fun Y-carrier Z-carrier) → ∀ x → (f ⊗fun g) x ≈Z (f ⊗fun' g) x
-    forward (⊗fun≈⊗fun' f g x) = latprop.bigmeet-monotone Z \where
+    _⊗f-fix_ : fun X-carrier Y-carrier → fun Y-carrier Z-carrier → fun X-carrier Z-carrier
+    (f ⊗f-fix g) x = (⋀XYZ (\xyz → xyz ≤XYZ h x xyz)) .snd .snd
+      where
+        open derive-∧⋁∨⊤⊥ _≤X_ ⋀X renaming (_∨_ to _∨X_; ⊥ to ⊥X)
+        open derive-∧⋁∨⊤⊥ _≤Y_ ⋀Y renaming (_∨_ to _∨Y_; ⊥ to ⊥Y)
+        open derive-∧⋁∨⊤⊥ _≤Z_ ⋀Z renaming (_∨_ to _∨Z_; ⊥ to ⊥Z)
+        h : X-carrier → X-carrier × Y-carrier × Z-carrier → X-carrier × Y-carrier × Z-carrier
+        h x₀ (x , y , z) = (x₀ , f x , g y)
+
+    ⊗f-fix≈⊗f : (f : fun X-carrier Y-carrier) → (g : fun Y-carrier Z-carrier) → ∀ x → (f ⊗f-fix g) x ≈Z (f ⊗f' g) x
+    ⊗f-fix≈⊗f f g x .forward = {!!}
+    ⊗f-fix≈⊗f f g x .backward = {!!}
+
+    ⊗f≈⊗f' : (f : fun X-carrier Y-carrier) → (g : fun Y-carrier Z-carrier) → ∀ x → (f ⊗f g) x ≈Z (f ⊗f' g) x
+    forward (⊗f≈⊗f' f g x) = latprop.bigmeet-monotone Z \where
       (x' , x≤x' , y , fx'≤y , gy≤z) → x' , x≤x' , y , (fx'≤y , (latprop.bigmeet-lowerbound X _ _ _)) , gy≤z , (latprop.bigmeet-lowerbound Y _ _ _)
-    backward (⊗fun≈⊗fun' f g x) = latprop.bigmeet-monotone Z \where
-       (x' , x≤x' , y , (fx'≤y , _) , (gy≤z , _)) → x' , x≤x' , y , fx'≤y , gy≤z
+    backward (⊗f≈⊗f' f g x) = latprop.bigmeet-monotone Z \where
+      (x' , x≤x' , y , (fx'≤y , _) , (gy≤z , _)) → x' , x≤x' , y , fx'≤y , gy≤z
 
     module _ (mf : monotone-func X-pre Y-pre) (mg : monotone-func Y-pre Z-pre)
       (let (mono f f-mono) = mf) (let (mono g g-mono) = mg)
@@ -180,15 +187,52 @@ module _ where
         z z∈gfx → z∈gfx
 
       -- ⊗fun is the same as ordinal function composition
-      ⊗fun'≈∘ : ∀ x → (f ⊗fun' g) x ≈Z g (f x)
-      forward (⊗fun'≈∘ x) =  latprop.bigmeet-lowerbound Z _ _
+      ⊗f'≈∘ : ∀ x → (f ⊗f' g) x ≈Z g (f x)
+      forward (⊗f'≈∘ x) =  latprop.bigmeet-lowerbound Z _ _
         (x , preprop.rel-is-reflexive X-pre _ , f x , refl Y-pre _ , refl Z-pre _)
-      backward (⊗fun'≈∘ x) = latprop.bigmeet-greatest Z _ _ \where
+      backward (⊗f'≈∘ x) = latprop.bigmeet-greatest Z _ _ \where
+
         z (x' , x≤x' , y , fx≤y , gy≤z) → g-mono (f-mono x≤x') ∙ (g-mono fx≤y ∙ gy≤z)
 
-      ⊗fun≈∘ : ∀ x → (f ⊗fun g) x ≈Z (g ∘ f) x
-      forward (⊗fun≈∘ x) = forward (⊗fun≈⊗fun' f g x) ∙ forward (⊗fun'≈∘ x)
-      backward (⊗fun≈∘ x) = backward (⊗fun'≈∘ x) ∙ backward (⊗fun≈⊗fun' f g x)
+      ⊗f≈∘ : ∀ x → (f ⊗f g) x ≈Z (g ∘ f) x
+      forward (⊗f≈∘ x) = forward (⊗f≈⊗f' f g x) ∙ forward (⊗f'≈∘ x)
+      backward (⊗f≈∘ x) = backward (⊗f'≈∘ x) ∙ backward (⊗f≈⊗f' f g x)
+
+    module _
+      (let refl = preprop.rel-is-reflexive)
+      (let _∙_ = preprop.rel-is-transitive X-pre)
+      (r : subset (X-carrier × Y-carrier))
+      (r' : subset (Y-carrier × Z-carrier))
+      (r-meetclosed : complete-lattice.is-meet-closed-subset XY-prop r)
+      (r'-meetclosed : complete-lattice.is-meet-closed-subset YZ-prop r')
+      where
+
+      ~f-⋈-commute : (~f X Y r ⋈ ~f Y Z r') ≅ ~f X Z (r ⋈ r')
+      forward ~f-⋈-commute {x , z} (y , xy∈~r , yz∈~r' ) = \where
+        .fst → latprop.bigmeet-lowerbound Z _ _ (x , refl X-pre _ , ((⋀Y \y → r (x , y) × r' (y , z))) , {!!} , {!!})
+        .snd → latprop.bigmeet-lowerbound X _ _ _
+      backward ~f-⋈-commute {x , z} (≤z , ≤x) = (⋀Y \y → r (x , y) × r' (y , z)) , \where
+        .fst .fst → latprop.bigmeet-greatest Y _ _ \ y y∈xrr'z → latprop.bigmeet-lowerbound Y _ _ (x , (refl X-pre _ , y∈xrr'z .fst))
+        .fst .snd → latprop.bigmeet-lowerbound X _ _ _
+        .snd .fst → latprop.bigmeet-lowerbound Z _ _ ((⋀XYZ \{ (x , y , z) → (x , y) ∈ r × (y , z) ∈ r'}) .snd .fst , {!!} , {!!})
+        .snd .snd → latprop.bigmeet-greatest Y _ _ \ y y∈xrr'z → latprop.bigmeet-lowerbound Y _ _ _
+
+  module _ (X Y : complete-meet-semilattice)
+    (let X-pre = cmlat→pre X)
+    (let Y-pre = cmlat→pre Y)
+    (let (cmlat X-carrier _≤X_ ⋀X X-prop) = X)
+    (let (cmlat Y-carrier _≤Y_ ⋀Y Y-prop) = Y)
+    (let _≈X_ = iso-pair _≤X_)
+    (let _≈Y_ = iso-pair _≤Y_)
+    (mf : monotone-func X-pre Y-pre)
+    (let (mono f f-mono) = mf)
+    (let _∙_ = preprop.rel-is-transitive Y)
+    (let refl = preprop.rel-is-reflexive) where
+    ⊗fun-unitl : ∀ x → ( _⊗f_ X X Y id f) x ≈Y f x
+    ⊗fun-unitl x = ⊗f≈∘ X X Y (mono id id) mf x
+
+    ⊗fun-unitr : ∀ x → ( _⊗f_ X Y Y f id) x ≈Y f x
+    ⊗fun-unitr x = ⊗f≈∘ X Y Y mf (mono id id) x
 
   module _ (X : complete-meet-semilattice)
     (let X-pre = cmlat→pre X)
