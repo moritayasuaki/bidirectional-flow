@@ -133,6 +133,8 @@ record complete-meet-semilattice : Set where
   module property = is-complete-meet-semilattice property
   is-meet-closed-subset' : pred (subset carrier)
   is-meet-closed-subset' = is-meet-closed-subset property
+  is-welldefined-subset' : pred (subset carrier)
+  is-welldefined-subset' = is-welldefined-subset (pre carrier relation property.rel-is-preorder )
 
 record join-semilattice : Set where
   constructor jlat

@@ -30,6 +30,7 @@ pred X = Pred X (level-of X)
 subset : Set → prop
 subset = pred
 
+
 ⊆-refl : ∀ {X} (S : subset X) → S ⊆ S
 ⊆-refl S x∈S = x∈S
 

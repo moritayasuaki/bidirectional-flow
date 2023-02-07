@@ -272,13 +272,14 @@ is-antitone ≤X-pre ≤Y-pre f = is-monotone ≤X-pre (is-preorder.opposite ≤
 forward (≅→∀↔∀ P Q P≅Q) ∀P x = forward P≅Q (∀P x)
 backward (≅→∀↔∀ P Q P≅Q) ∀Q x = backward P≅Q (∀Q x)
 
-module _ {X : Set} {_≤_ : rel X X} (≤-pre : is-preorder _≤_)
+module _ (X : preordered-set)
   where
+  open preordered-set X renaming (relation to _≤_; property to ≤-preorder)
   private
     _≈_ = iso-pair _≤_
 
-  is-welldefined-subset : pred (subset X)
-  is-welldefined-subset S = is-welldefined ≤-pre →-is-preorder S
+  is-welldefined-subset : pred (subset carrier)
+  is-welldefined-subset S = is-welldefined ≤-preorder →-is-preorder S
 
 fun : Set → Set → Set
 fun X Y = X → Y
@@ -292,6 +293,18 @@ record monotone-func (D E : preordered-set) : Set where
   dual : monotone-func (preordered-set.opposite D) (preordered-set.opposite E)
   func dual = func
   property dual = property
+
+module _ (p q : preordered-set) (R : subset (preordered-set.carrier p × preordered-set.carrier q)) where
+  open preordered-set p renaming (carrier to X ; relation to _≤X_)
+  open preordered-set q renaming (carrier to Y ; relation to _≤Y_)
+  private
+    _≈X_ = iso-pair _≤X_
+    _≈Y_ = iso-pair _≤Y_
+
+  injective = (x x' : X) (y : Y) → (x , y) ∈ R → (x' , y) ∈ R → x ≈X x'
+  coinjective = (x : X) (y y' : Y) → (x , y) ∈ R → (x , y') ∈ R → y ≈Y y
+  surjective = (y : Y) → ∃ \(x : X) → (x , y) ∈ R -- fiber
+  cosurjective = (x : X) → ∃ \(y : Y) → (x , y) ∈ R -- fiber
 
 record order-embedding (D E : preordered-set) : Set where
   constructor emb
