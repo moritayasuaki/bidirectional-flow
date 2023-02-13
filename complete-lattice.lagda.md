@@ -304,5 +304,4 @@ record complete-meet-semilat-hom (X Y : complete-meet-semilattice) : Set where
     f-preserves-≤ : (x x' : X.carrier) → x X.≤ x' → f x Y.≤ f x'
     f-preserves-⋀ : (s : subset X.carrier) → f (X.⋀ s) ≡ Y.⋀ (fimage f s) -- strict
 
-
 ```

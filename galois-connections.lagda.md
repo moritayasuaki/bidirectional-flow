@@ -891,6 +891,13 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   fun2rel : fun D-cmlat.carrier E-cmlat.carrier → subset (D-cmlat.carrier × E-cmlat.carrier)
   fun2rel = pair2rel ∘ fun2pair
 
+  fun2rel' : fun D-cmlat.carrier E-cmlat.carrier → subset (D-cmlat.carrier × E-cmlat.carrier)
+  fun2rel' f (d , e) = f d ≤E e
+    where open E-cmlat renaming (relation to _≤E_)
+
+  mfun2rel' : monotone-func D-pre E-pre → subset (D-cmlat.carrier × E-cmlat.carrier)
+  mfun2rel' (mono f f-mono) = fun2rel' f
+
   mfun2rel : monotone-func D-pre E-pre → subset (D-cmlat.carrier × E-cmlat.carrier)
   mfun2rel = fun2rel ∘ monotone-func.func
   -- (monotone-func.func mpair2rel-anti) ∘ (monotone-func.func mono-mfun2mpair)
