@@ -56,11 +56,11 @@ module _ {X : Set} where
     forward (bigmeet-up-iso x) = bigmeet-greatest (↑ x) x \_ → id
     backward (bigmeet-up-iso x) = bigmeet-lowerbound (↑ x) x (rel-is-reflexive x)
 
-    bigmeet-up-intersection-iso : ∀ x S → S x → x ≈ ⋀ (↑ x ∩ S)
+    bigmeet-up-intersection-iso : ∀ x S → x ∈ S → x ≈ ⋀ (↑ x ∩ S)
     forward (bigmeet-up-intersection-iso x S x∈S) = bigmeet-greatest (↑ x ∩ S) x \ _ → fst
     backward (bigmeet-up-intersection-iso x S x∈S) = bigmeet-lowerbound (↑ x ∩ S) x (rel-is-reflexive x , x∈S)
 
-    bigmeet-up-intersection-iso-r : ∀ x S → S x → x ≈ ⋀ (S ∩ ↑ x)
+    bigmeet-up-intersection-iso-r : ∀ x S → x ∈ S → x ≈ ⋀ (S ∩ ↑ x)
     forward (bigmeet-up-intersection-iso-r x S x∈S) = bigmeet-greatest (S ∩ ↑ x) x \ _ → snd
     backward (bigmeet-up-intersection-iso-r x S x∈S) = bigmeet-lowerbound (S ∩ ↑ x) x (x∈S , rel-is-reflexive x)
 
@@ -135,6 +135,16 @@ record complete-meet-semilattice : Set where
   is-meet-closed-subset' = is-meet-closed-subset property
   is-welldefined-subset' : pred (subset carrier)
   is-welldefined-subset' = is-welldefined-subset (pre carrier relation property.rel-is-preorder )
+
+
+module sublattice (cmlat : complete-meet-semilattice) where
+  open complete-meet-semilattice cmlat renaming (carrier to X; relation to _≤_ ; operation to ⋀; property to X-is-cmlat)
+  module _ (U : subset X) (U-meet-closed : is-meet-closed-subset' U) where
+    ⋀∅∈ : ⋀ ∅ ∈ U
+    ⋀∅∈ = U-meet-closed ∅ \()
+
+    ⋀U∈ : ⋀ U ∈ U
+    ⋀U∈ = U-meet-closed U id
 
 record join-semilattice : Set where
   constructor jlat
@@ -285,5 +295,14 @@ module _
       complete-meet-semilattice.property.bigmeet-lowerbound X-cmlat _ _ (f , f∈S , preordered-set.property.rel-is-reflexive X-pre _)
     property (op-is-bigmeet (property endo-complete-lattice) S) f f-is-lowerbound x =
       complete-meet-semilattice.property.bigmeet-greatest X-cmlat _ _ \ { y (f' , f'∈S , f'x≤y) → preordered-set.property.rel-is-transitive X-pre (f-is-lowerbound f' f'∈S x) f'x≤y}
+
+record complete-meet-semilat-hom (X Y : complete-meet-semilattice) : Set where
+  module X = complete-meet-semilattice X renaming (relation to _≤_; operation to ⋀)
+  module Y = complete-meet-semilattice Y renaming (relation to _≤_; operation to ⋀)
+  field
+    f : X.carrier → Y.carrier
+    f-preserves-≤ : (x x' : X.carrier) → x X.≤ x' → f x Y.≤ f x'
+    f-preserves-⋀ : (s : subset X.carrier) → f (X.⋀ s) ≡ Y.⋀ (fimage f s) -- strict
+
 
 ```

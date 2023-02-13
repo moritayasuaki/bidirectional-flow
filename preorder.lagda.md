@@ -224,6 +224,7 @@ record preordered-set : Set where
   property opposite = is-preorder.opposite property
   equiv = iso-pair relation
 
+
 module _ where
   open is-preorder
   →-is-preorder : is-preorder (\ X Y → (X → Y))
@@ -280,6 +281,18 @@ module _ (X : preordered-set)
 
   is-welldefined-subset : pred (subset carrier)
   is-welldefined-subset S = is-welldefined ≤-preorder →-is-preorder S
+
+  is-upperset : pred (subset carrier)
+  is-upperset S = is-monotone ≤-preorder →-is-preorder S
+
+  is-lowerset : pred (subset carrier)
+  is-lowerset S = is-monotone (is-preorder.opposite ≤-preorder) →-is-preorder S
+
+  record wd-subset : Set where
+    open preordered-set X renaming (carrier to X-carrier)
+    field
+      sub : subset X-carrier
+      property : is-welldefined-subset sub
 
 fun : Set → Set → Set
 fun X Y = X → Y

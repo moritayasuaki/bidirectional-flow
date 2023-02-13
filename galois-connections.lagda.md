@@ -91,7 +91,6 @@ The bottom two categories in the diagram are fixed point of adjunction.
 Their tensor product does different thing (e.g. adding pair of retation) from the top two.
 
 - rel2pair ∘ pair2rel adds pairs on the relation for butterfly shape relation
-
 ```txt
     d     e
     |\   /|
@@ -135,6 +134,7 @@ module endo-function (X-cmlat : complete-meet-semilattice)
   mendo2rel : monotone-endo X-pre → subset X
   mendo2rel (mono f _) x = f x ≤X x
 
+
   _≤endo_ : rel (endo X) (endo X)
   f ≤endo f' = ∀ x → f x ≤X f' x
 
@@ -172,6 +172,9 @@ module endo-function (X-cmlat : complete-meet-semilattice)
 
     mendo2rel-is-antitone : is-antitone ≤mendo-is-preorder ⊆-is-preorder mendo2rel
     mendo2rel-is-antitone f≤f' {x} x∈endo2relf' = ≤-trans (f≤f' x) x∈endo2relf'
+
+    img-mendo2rel-meetclosed : ∀ e → is-meet-closed-subset X-is-cmlat (mendo2rel e)
+    img-mendo2rel-meetclosed (mono f f-mono) s s⊆ = ≤-trans (mono-meet≤meet-mono {X-cmlat} {X-cmlat} f-mono s) (≤-trans (bigmeet-≡-≤ f s .forward) (bigmeet-monotone \ {x} x∈s → x , x∈s , s⊆ x∈s))
 
     anti-rel2mendo : antitone-func pre-subset pre-mendo
     func anti-rel2mendo s = mono (rel2endo s) (rel2endo-is-pointwisely-monotone s)
@@ -281,6 +284,7 @@ module transfer-function-pair
   module _ {R : subset (D × E)}
     (R-welldefined : is-welldefined-subset (pre _ _ ≤-pre) R)
     (R-meet-closed : is-meet-closed-subset D×E-is-cmlat R) where
+
     R-subst : ∀{p q} → (iso : p ≈ q) → R p → R q
     R-subst iso = transport ≤-pre →-is-preorder R-welldefined iso
 
@@ -375,8 +379,8 @@ module transfer-function-pair
 
   module _ {f : D → E} {b : E → D}
     (f-is-mono : is-monotone D.≤-pre E.≤-pre f) (b-is-mono : is-monotone E.≤-pre D.≤-pre b) where
-    pair2rel-mono-join-closed : is-meet-closed-subset D×E-is-cmlat (pair2rel (f , b))
-    fst (pair2rel-mono-join-closed S' S'⊆) =
+    pair2rel-mono-meet-closed : is-meet-closed-subset D×E-is-cmlat (pair2rel (f , b))
+    fst (pair2rel-mono-meet-closed S' S'⊆) =
       begin-≤
       f (fst (⋀ S')) ≡⟨⟩
       f (⋀D ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝) ≤⟨ mono-meet≤meet-mono {D-cmlat} {E-cmlat} f-is-mono ｛ d ∣ Σ[ e ∈ E ] ((d , e) ∈ S')｝ ⟩
@@ -386,7 +390,7 @@ module transfer-function-pair
       ⋀E ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝ ≡⟨⟩
       snd (⋀ S') ∎
       where open ≤E-reasoning
-    snd (pair2rel-mono-join-closed S' S'⊆) =
+    snd (pair2rel-mono-meet-closed S' S'⊆) =
       begin-≤
       b (snd (⋀ S')) ≡⟨⟩
       b (⋀E ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝) ≤⟨ mono-meet≤meet-mono {E-cmlat} {D-cmlat} b-is-mono ｛ e ∣ Σ[ d ∈ D ] ((d , e) ∈ S')｝ ⟩
@@ -567,7 +571,7 @@ module transfer-function-pair
     module _ where
       R' = pair2rel (rel2pair R)
       R'-meet-closed : is-meet-closed-subset D×E-is-cmlat (pair2rel (rel2pair R))
-      R'-meet-closed = pair2rel-mono-join-closed (fst (rel2pair-R-is-monotone-pair R)) (snd (rel2pair-R-is-monotone-pair R))
+      R'-meet-closed = pair2rel-mono-meet-closed (fst (rel2pair-R-is-monotone-pair R)) (snd (rel2pair-R-is-monotone-pair R))
 
     module _ (R-meet-closed : is-meet-closed-subset D×E-is-cmlat R) where
 
@@ -730,7 +734,7 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   galois-connection.left-right-is-galois-connection rel-mpair-connected = mpair2rel-rel2mpair-antitone-galois-connection
 
 
-  module D×E-cmlat = complete-meet-semilattice (D-cmlat ×-cmlat E-cmlat)
+  private module D×E-cmlat = complete-meet-semilattice (D-cmlat ×-cmlat E-cmlat)
   D×E-is-pre = is-complete-meet-semilattice.rel-is-preorder D×E-cmlat.property
   open endo-function (D-cmlat ×-cmlat E-cmlat)
 
@@ -868,11 +872,21 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   rel2fun : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
   rel2fun = pair2fun ∘ rel2pair
 
-  -- rel2fun' : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
-  -- rel2fun' r d = ⋀E \ e → Σ _ \ d → d ≤D d' × r (d , e)
+  rel2fun' : subset (D-cmlat.carrier × E-cmlat.carrier) → fun D-cmlat.carrier E-cmlat.carrier
+  rel2fun' r d = ⋀E \ e → Σ _ \ d' → d ≤D d' × r (d' , e)
+    where open E-cmlat renaming (operation to ⋀E)
+          open D-cmlat renaming (relation to _≤D_)
 
   rel2mfun : subset (D-cmlat.carrier × E-cmlat.carrier) → monotone-func D-pre E-pre
   rel2mfun = mpair2mfun ∘ rel2mpair
+
+  rel2mfun' : subset (D-cmlat.carrier × E-cmlat.carrier) → monotone-func D-pre E-pre
+  rel2mfun' r = mono (rel2fun' r) \ d≤d' → bigmeet-monotone \where
+    {e'} (d'' , d'≤d'' , d''e'∈r) → d'' , D-is-pre .is-preorder.rel-is-transitive d≤d' d'≤d'' , d''e'∈r
+      where
+      open E-cmlat renaming (carrier to E;property to E-is-cmlat)
+      open is-complete-meet-semilattice E-is-cmlat
+      open D-cmlat renaming (carrier to D;relation to _≤D_)
 
   fun2rel : fun D-cmlat.carrier E-cmlat.carrier → subset (D-cmlat.carrier × E-cmlat.carrier)
   fun2rel = pair2rel ∘ fun2pair
@@ -1092,8 +1106,8 @@ module fixed-points-of-galois-connection {C D : preordered-set} (C-D-connected :
 module derive-subset-galois
   {D : complete-meet-semilattice → complete-meet-semilattice → preordered-set}
   (⊆-D-gal : (X Y : complete-meet-semilattice) → antitone-galois-connection (pre (subset (complete-meet-semilattice.carrier X × complete-meet-semilattice.carrier Y)) _⊆_ ⊆-is-preorder) (D X Y))
-  (L-welldefine : (X Y : complete-meet-semilattice) → ∀ r → complete-meet-semilattice.is-welldefined-subset' (X ×-cmlat Y) (galois-connection.left-adjoint (⊆-D-gal X Y) .monotone-func.func r))
-  (L-meet-closing : (X Y : complete-meet-semilattice) → ∀ r → complete-meet-semilattice.is-meet-closed-subset' (X ×-cmlat Y) (galois-connection.left-adjoint (⊆-D-gal X Y) .monotone-func.func r))
+  (imgL-welldefined : (X Y : complete-meet-semilattice) → ∀ r → complete-meet-semilattice.is-welldefined-subset' (X ×-cmlat Y) (galois-connection.left-adjoint (⊆-D-gal X Y) .monotone-func.func r))
+  (imgL-meet-closed : (X Y : complete-meet-semilattice) → ∀ r → complete-meet-semilattice.is-meet-closed-subset' (X ×-cmlat Y) (galois-connection.left-adjoint (⊆-D-gal X Y) .monotone-func.func r))
   where
   private
     module G {a} {b} = galois-connection (⊆-D-gal a b)
@@ -1124,9 +1138,9 @@ module derive-subset-galois
     RLδ≈δ : RL X X δ D.≈ δ
     RLδ≈δ = G.rl-idempotent Δ
 
-  L⊗δ-unit-monoidal-strength = ∀{X} → Δ {X} ≅ L (δ {X})
+  Lδ-monoidal-strength = ∀{X} → Δ {X} ≅ L (δ {X})
 
-  module _ (X Y : complete-meet-semilattice) where
+  module _ {X Y : complete-meet-semilattice} where
     private
       module X = complete-meet-semilattice X
       module Y = complete-meet-semilattice Y
@@ -1177,6 +1191,71 @@ module derive-subset-galois
       Q (left x∈LRLa) = left (G.lr-idempotent a .backward x∈LRLa)
       Q (right x∈LRLb) = right (G.lr-idempotent b .backward x∈LRLb)
 
+    ∪⊆LR∘∪ : (r : ℛ X Y) → (r' : ℛ X Y) → r ∪ r' ⊆ LR X Y (r ∪ r')
+    ∪⊆LR∘∪ r r' = G.lr-decreasing _
+
+    ∪⊆∪∘LR : (r : ℛ X Y) → (r' : ℛ X Y) → r ∪ r' ⊆ (LR X Y r ∪ LR X Y r')
+    ∪⊆∪∘LR r r' = ∪-monotone {a = r} {b = r'} (G.lr-decreasing r) (G.lr-decreasing r')
+
+    prop-∪-LR-commute = (r r' : ℛ X Y) → LR X Y (r ∪ r') ≅ LR X Y r ∪ LR X Y r'
+
+  Ltop-monoidal-strength = ∀ {X Y} → (d : Dobj X Y) → ∅ ≅ L {a = X} {b = Y} top
+  L⊓-monoidal-strength = ∀ {X Y} → (d : Dobj X Y) (d' : Dobj X Y) → L d ∪ L d' ≅ L (d ⊓ d')
+
+  module _ {X Y : complete-meet-semilattice} where
+    private
+      module X = complete-meet-semilattice X
+      module Y = complete-meet-semilattice Y
+      module X×Y = complete-meet-semilattice (X ×-cmlat Y)
+
+    ∅-lunit : (r : ℛ X Y) → ∅ ∪ r ≅ r
+    forward (∅-lunit r) (right x∈r) = x∈r
+    backward (∅-lunit r) x∈r = right x∈r
+
+    top-lunit = (d : Dobj X Y) → (top ⊓ d) D.≈ d
+    top-laxlunit = (d : Dobj X Y) → d D.≤ (top ⊓ d)
+    top-oplaxlunit = (d : Dobj X Y) → (top ⊓ d) D.≤ d
+
+    ∪-associative : (r r' r'' : ℛ X Y) → ((r ∪ r') ∪ r'') ≅ (r ∪ (r' ∪ r''))
+    forward (∪-associative r r' r'') (left (left x)) = left x
+    forward (∪-associative r r' r'') (left (right y)) = right (left y)
+    forward (∪-associative r r' r'') (right y) = right (right y)
+    backward (∪-associative r r' r'') (left x) = left (left x)
+    backward (∪-associative r r' r'') (right (left x)) = left (right x)
+    backward (∪-associative r r' r'') (right (right y)) = right y
+
+    ⊓-associative = (d : Dobj X Y) (d' : Dobj X Y) (d'' : Dobj X Y) → ((d ⊓ d') ⊓ d'') D.≈ (d ⊓ (d' ⊓ d''))
+
+    lemma-top-laxlunit : Ltop-monoidal-strength → top-laxlunit
+    lemma-top-laxlunit ∅≅Ltop d = G.rl-increasing d ∙ (R-mono Q)
+      where _∙_ = D.≤-preorder.rel-is-transitive
+            Q : L top ∪ L d ⊆ L d
+            Q (left x∈Ltop) = case ∅≅Ltop d .backward x∈Ltop of \()
+            Q (right x∈Ld) = x∈Ld
+
+    L-⊓-∪-assoc : L⊓-monoidal-strength → (d : Dobj X Y) (d' : Dobj X Y) (d'' : Dobj X Y) → L d ∪ L (d' ⊓ d'') ≅ L (d ⊓ d') ∪ L d''
+    L-⊓-∪-assoc α d d' d'' .forward {x} x∈Ld∪L[d'⊓d''] = x∈L[d⊓d']∪Ld''
+      where
+      x∈Ld∪[Ld'∪Ld''] : x ∈ L d ∪ (L d' ∪ L d'')
+      x∈Ld∪[Ld'∪Ld''] = ∪-monotone {X = X} {Y = Y} {a = L d} {b = L (d' ⊓ d'')} id (α d' d'' .backward) x∈Ld∪L[d'⊓d'']
+      x∈[Ld∪Ld']∪Ld'' : x ∈ (L d ∪ L d') ∪ L d''
+      x∈[Ld∪Ld']∪Ld'' = ∪-associative (L d) (L d') (L d'') .backward x∈Ld∪[Ld'∪Ld'']
+      x∈L[d⊓d']∪Ld'' : x ∈ L (d ⊓ d') ∪ L d''
+      x∈L[d⊓d']∪Ld'' = ∪-monotone {X = X} {Y = Y} {a = L d ∪ L d'} {b = L d''} (α d d' .forward) id x∈[Ld∪Ld']∪Ld''
+
+    L-⊓-∪-assoc α d d' d'' .backward {x} x∈[Ld⊓Ld']∪Ld'' = x∈Ld∪L[d'⊓d'']
+      where
+      x∈[Ld∪Ld']∪Ld'' : x ∈ (L d ∪ L d') ∪ L d''
+      x∈[Ld∪Ld']∪Ld'' = ∪-monotone {X = X} {Y = Y} {a = L (d ⊓ d')} {b = L d''} (α d d' .backward) id x∈[Ld⊓Ld']∪Ld''
+      x∈Ld∪[Ld'∪Ld''] : x ∈ L d ∪ (L d' ∪ L d'')
+      x∈Ld∪[Ld'∪Ld''] =  ∪-associative (L d) (L d') (L d'') .forward x∈[Ld∪Ld']∪Ld''
+      x∈Ld∪L[d'⊓d''] : x ∈ L d ∪ L (d' ⊓ d'')
+      x∈Ld∪L[d'⊓d''] = ∪-monotone {X = X} {Y = Y} {a = L d} {b = L d' ∪ L d''} id (α d' d'' .forward) x∈Ld∪[Ld'∪Ld'']
+
+    lemma-⊓-assoc : L⊓-monoidal-strength → ⊓-associative
+    lemma-⊓-assoc α d d' d'' .forward = R-mono (L-⊓-∪-assoc α d d' d'' .forward)
+    lemma-⊓-assoc α d d' d'' .backward = R-mono (L-⊓-∪-assoc α d d' d'' .backward)
+
   module _ {X Y Z : complete-meet-semilattice} where
     private
       module X = complete-meet-semilattice X renaming (operation to ⋀; relation to _≤_)
@@ -1208,18 +1287,16 @@ module derive-subset-galois
     ⊗∘RL≈RL∘⊗ dxy dyz .backward = trans (! (RL∘⊗≈⊗ dxy dyz) .backward) (⊗∘RL≈⊗ dxy dyz .backward)
       where trans = D.≤-preorder.rel-is-transitive
 
-
     ⋈⊆LR∘⋈ : (rxy : ℛ X Y) → (ryz : ℛ Y Z) → rxy ⋈ ryz ⊆ LR X Z (rxy ⋈ ryz)
     ⋈⊆LR∘⋈ rxy ryz = G.lr-decreasing  (rxy ⋈ ryz)
 
     ⋈⊆⋈∘LR : (rxy : ℛ X Y) → (ryz : ℛ Y Z) → rxy ⋈ ryz ⊆ LR X Y rxy ⋈ LR Y Z ryz
     ⋈⊆⋈∘LR rxy ryz  = ⋈-monotone {a = rxy} {b = ryz} (G.lr-decreasing rxy) (G.lr-decreasing ryz)
 
-    -- this condition is too strong?
     prop-⋈-LR-commute = (rxy : ℛ X Y) → (ryz : ℛ Y Z) → LR X Z (rxy ⋈ ryz) ≅ LR X Y rxy ⋈ LR Y Z ryz
     -- this condition makes ⊗ associative (but is this necessary condition?)
 
-  L⊗δ-assoc-monoidal-strength = ∀ {X Y Z} → (dxy : Dobj X Y) (dyz : Dobj Y Z) → L dxy ⋈ L dyz ≅ L (dxy ⊗ dyz)
+  L⊗-monoidal-strength = ∀ {X Y Z} → (dxy : Dobj X Y) (dyz : Dobj Y Z) → L dxy ⋈ L dyz ≅ L (dxy ⊗ dyz)
 
   module _ (X Y : complete-meet-semilattice)  where
     private
@@ -1231,9 +1308,13 @@ module derive-subset-galois
     Δ-lunit r r-is-wd .backward {x , y} xy∈r = x , refl-iso (≤.preorder.rel-is-reflexive X _) ≡.refl , xy∈r
 
     δ-lunit = (dxy : Dobj X Y) → (δ ⊗ dxy) D.≈ dxy
+    -- a morphism in D is a relation d ≥ d' so δ ⊗ d ≥ d' is lax condition
+    -- you can check terminology on lax monoidal category (such as lax-, oplax, biased, unbiased and skew)
+    -- https://ncatlab.org/nlab/show/lax+monoidal+category
     δ-laxlunit = (dxy : Dobj X Y) → dxy D.≤ (δ ⊗ dxy)
     -- RΔ ⊗ dxy = R(LRΔ ⋈ Ldxy) = R(Δ ⋈ Ldxy) = RLdxy ≥ dxy
-    lemma-δ-laxlunit : L⊗δ-unit-monoidal-strength → δ-laxlunit
+
+    lemma-δ-laxlunit : Lδ-monoidal-strength → δ-laxlunit
     lemma-δ-laxlunit Δ≅Lδ dxy = G.rl-increasing dxy ∙ (R-mono Q)
       where _∙_ = D.≤-preorder.rel-is-transitive
             Q : L δ ⋈ L dxy ⊆ L dxy
@@ -1241,8 +1322,8 @@ module derive-subset-galois
               xΔx' = Δ≅Lδ .backward xLRΔx'
               in Δ-lunit (L dxy) wd .forward (x' , xΔx' , x'yLdxy)
               where wd : is-welldefined-subset (cmlat→pre X ×-pre cmlat→pre Y) (L dxy)
-                    wd = L-welldefine X Y dxy
-            -- (Δ-lunit (L dxy) (\ d=d' → record { forward = \ d∈Ldxy → L-mono {! (d=d' .forward)!} {!!} ; backward = {!!} }) .forward ) ∙ {!⋈-monotone {a = RL _ _ dxy) (!})
+                    wd = imgL-welldefined X Y dxy
+
   module _ {X Y Z W : complete-meet-semilattice} where
     private
       module X = complete-meet-semilattice X renaming (operation to ⋀; relation to _≤_)
@@ -1255,7 +1336,7 @@ module derive-subset-galois
 
     ⊗-associative = (dxy : Dobj X Y) (dyz : Dobj Y Z) (dzw : Dobj Z W) → ((dxy ⊗ dyz) ⊗ dzw) D.≈ (dxy ⊗ (dyz ⊗ dzw))
 
-    L-⊗-⋈-assoc : L⊗δ-assoc-monoidal-strength → (dxy : Dobj X Y) (dyz : Dobj Y Z) (dzw : Dobj Z W) → L dxy ⋈ L (dyz ⊗ dzw) ≅ L (dxy ⊗ dyz) ⋈ L dzw
+    L-⊗-⋈-assoc : L⊗-monoidal-strength → (dxy : Dobj X Y) (dyz : Dobj Y Z) (dzw : Dobj Z W) → L dxy ⋈ L (dyz ⊗ dzw) ≅ L (dxy ⊗ dyz) ⋈ L dzw
     L-⊗-⋈-assoc α dxy dyz dzw .forward {x , w} (y , xy∈Ldxy , yw∈L[dyz⊗dzw]) =
       let
         (z , yz∈Ldyz , zw∈Ldzw) = α dyz dzw .backward yw∈L[dyz⊗dzw]
@@ -1268,11 +1349,35 @@ module derive-subset-galois
         yw∈L[dyz⊗dzw] = α dyz dzw .forward (z , yz∈Ldyz , zw∈Ldzw)
       in y , xy∈Ldxy , yw∈L[dyz⊗dzw]
 
-    lemma-⊗-assoc : L⊗δ-assoc-monoidal-strength → ⊗-associative
+    lemma-⊗-assoc : L⊗-monoidal-strength → ⊗-associative
     lemma-⊗-assoc α dxy dyz dzw .forward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .forward)
     lemma-⊗-assoc α dxy dyz dzw .backward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .backward)
 
-  -- So far, we have not used the complete-meet-semilattice condition at all
-  -- meet-closed-relation : {X Y Z W : complete-meet-semilattice}
 
+{-
+    -- So far, I have not used the complete-meet-semilattice condition at all
+  P = derive-subset-galois.L-⊗-⋈-assoc rel-mfun-connected wd cl \ f g → (\where
+    .forward {xz} (y , xy∈Lf , yz∈Lg) → \where
+      .fst → rel-is-transitive _ {!!} (derive-subset-galois.Δ-lunit rel-mfun-connected wd)
+      .snd → rel-is-transitive _ {!!} (derive-subset-galois.Δ-lunit rel-mfun-connected wd)
+    .backward → {!!})
+    where
+      module rf-con X Y = galois-connection (rel-mfun-connected X Y)
+      open rf-con
+      module ×-cmlat X Y = complete-meet-semilattice (X ×-cmlat Y)
+      open ×-cmlat
+      module cmlat-pre X = preordered-set (cmlat→pre X)
+      module tmp X = is-preorder (cmlat-pre.property X)
+      open tmp
+      wd : (X Y : complete-meet-semilattice)
+             (r : transfer-function-pair.pre-mfun X Y .preordered-set.carrier) →
+               is-welldefined-subset' X Y (left-adjoint X Y .monotone-func.func r)
+      wd X Y (mono f f-mono) {d = xy} {d' = xy'} xy≈xy' .forward  xy∈Lf
+        = left-adjoint X Y .monotone-func.property (\ _ → f-mono (xy≈xy' .backward .fst)) ({!!} , {!!})
+      wd X Y (mono f f-mono) xy≈xy' .backward = {!!}
+      cl : (X Y : complete-meet-semilattice)
+             (r : transfer-function-pair.pre-mfun X Y .preordered-set.carrier) →
+             {!!}
+      cl = {!!}
+-}
 ```

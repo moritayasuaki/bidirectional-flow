@@ -38,6 +38,8 @@ record preorder-enriched-cat : Set where
     lunit : {X Y : Ob} {a : Hom X Y} → (I ⊗ a) ≈ a
     runit : {X Y : Ob} {a : Hom X Y} → (a ⊗ I) ≈ a
 
+
+
 module _ where
   open preorder-enriched-cat
   open monotone-func
@@ -165,6 +167,7 @@ module _ where
         open derive-∧⋁∨⊤⊥ _≤Z_ ⋀Z renaming (_∨_ to _∨Z_; ⊥ to ⊥Z)
         h : X-carrier → X-carrier × Y-carrier × Z-carrier → X-carrier × Y-carrier × Z-carrier
         h x₀ (x , y , z) = (x₀ , f x , g y)
+
 
     ⊗f-fix≈⊗f : (f : fun X-carrier Y-carrier) → (g : fun Y-carrier Z-carrier) → ∀ x → (f ⊗f-fix g) x ≈Z (f ⊗f' g) x
     ⊗f-fix≈⊗f f g x .forward = {!!}
@@ -346,3 +349,4 @@ module _ where
   cat-mendo .runit = {!!}
 -}
 ```
+P = derive-subset-galois.L-⊗-⋈-assoc {! !} {!!} {!!} {!!}
