@@ -176,36 +176,31 @@ s ∪ s' = \ a → s a ⊎ s' a
 ⋃ : {A : Set ℓ} → Subset 𝓅 (Subset 𝓅' A) → Subset _ A
 ⋃ S x = Σ _ \ s → S s × s x
 
-
+infixr 10 _⋈_
 _⋈_ : {A : Set ℓ} {B : Set ℓ'} {C : Set ℓ''} → Subset 𝓅 (A × B) → Subset 𝓅' (B × C) → Subset _ (A × C)
 r ⋈ r' = \ {(x , z) → Σ _ \ y → r (x , y) × r' (y , z)}
 
 Δ : {A : Set ℓ} → Subset ℓ (A × A)
 Δ (x , x') = x ≡ x'
 
-
-{-
-record RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
-  constructor [_,_]
-  field
-    carrier : Set ℓ
-    _≤_ : Rel 𝓅 carrier
--}
-
 record RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mkRelSet
+  infix 5 _≤_
   field
     X : Set ℓ
     _≤_ : Binrel 𝓅 X
 
 record 2RelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mk2RelSet
+  infix 5 _≈_ _≤_
   field
     X : Set ℓ
     _≈_ _≤_ : Binrel 𝓅 X
 
 record RelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mkRelBinopSet
+  infixr 10 _∧_
+  infix 5 _≤_
   field
     X : Set ℓ
     _∧_ : Binop X
@@ -213,6 +208,8 @@ record RelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 
 record PointedRelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mkPointedRelBinopSet
+  infixr 10 _∧_
+  infix 5 _≤_
   field
     X : Set ℓ
     _∧_ : Binop X
@@ -221,21 +218,23 @@ record PointedRelBinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 
 record 2PointedRel2BinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mk2PointedRel2BinopSet
+  infix 10 _∧_
+  infix 5 _≤_
   field
     X : Set ℓ
     _∧_ _∨_ : Binop X
     ⊤ ⊥ : X
     _≤_ : Binrel 𝓅 X
 
-record RelPowopSet' ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
-  constructor mkRelPowopSet
+record PowopSet ℓ 𝓆 : Set (lsuc (ℓ ⊔ 𝓆)) where
+  constructor mkPowopSet
   field
     X : Set ℓ
     ⋀ : Powop 𝓆 X
-    _≤_ : X → X → Prop 𝓅
 
 record RelPowopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
   constructor mkRelPowopSet
+  infix 5 _≤_
   field
     X : Set ℓ
     ⋀ : Powop 𝓆 X
@@ -249,6 +248,7 @@ record PointedSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 
 record PointedRelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
   constructor mkPointedRelSet
+  infix 5 _≤_
   field
     X : Set ℓ
     ⊤ : X
@@ -256,6 +256,7 @@ record PointedRelSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 
 record PointedRelPowopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
   constructor mkPointedRelPowopSet
+  infix 5 _≤_
   field
     X : Set ℓ
     ⊤ : X
@@ -264,18 +265,42 @@ record PointedRelPowopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) whe
 
 record 2PointedRel2PowopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
   constructor mk2PointedRel2PowopSet
+  infix 5 _≤_
   field
     X : Set ℓ
     ⊥ ⊤ : X
     ⋀ ⋁ : Powop 𝓆 X
     _≤_ : Binrel 𝓅 X
 
+record 2PointedRel2PowopBinopSet ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ 𝓆)) where
+  constructor mk2PointedRel2PowopBinopSet
+  infix 5 _≤_
+  infixr 10 _⊢_
+  field
+    X : Set ℓ
+    ⊥ ⊤ : X
+    _⊢_ : Binop X
+    ⋀ ⋁ : Powop 𝓆 X
+    _≤_ : Binrel 𝓅 X
+
+record 2PointedRel3BinopSet ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mk2PointedRel3BinopSet
+  infix 5 _≤_
+  infixr 10 _∧_ _∨_ _⊢_
+  field
+    X : Set ℓ
+    ⊥ ⊤ : X
+    _∧_ _∨_ _⊢_ : Binop X
+    _≤_ : Binrel 𝓅 X
+
+
 module RelSetProps (relset : RelSet ℓ 𝓅) where
   open RelSet relset
   is-transitive = {a1 a2 a3 : _} → (a1≤a2 : a1 ≤ a2) → (a2≤a3 : a2 ≤ a3) → a1 ≤ a3
   is-reflexive = {a : _} → a ≤ a
   is-symmetric = {a1 a2 : _} → (a1≤a2 : a1 ≤ a2) → a2 ≤ a1
-
+  is-right-euclidean = {a1 a2 a3 : _} → a1 ≤ a2 → a1 ≤ a3 → a2 ≤ a3
+  is-left-euclidean = {a1 a2 a3 : _} → a2 ≤ a1 → a3 ≤ a1 → a2 ≤ a3
   is-antisymmetric = {a1 a2 : _} → (a1≤a2 : a1 ≤ a2) → (a2≤a1 : a2 ≤ a1) → Idp 𝓅 a1 a2
 
   is-pid = {a1 a2 : _} → a1 ≤ a2 → a1 ≡ a2
@@ -372,6 +397,7 @@ module DeriveSymrel (relset : RelSet ℓ 𝓅) where
   open RelSet relset
   open RelSetProps relset
 
+  infix 5 _≥_ _<_ _>_
   _≥_ = \x y → y ≤ x
   record _≈_ (a1 a2 : X) : Prop 𝓅 where
     field
@@ -387,12 +413,23 @@ module DeriveSymrel (relset : RelSet ℓ 𝓅) where
   open _≈_ public
 
 module _ {𝓅} {X : Set ℓ} where
-  open DeriveSymrel (mkRelSet (Subset 𝓅 X) _⊆_) public
-    renaming (_≥_ to _⊇_; _>_ to _⊃_ ; _<_ to _⊂_ ; _≈_ to _≅_)
+  private
+    module M = DeriveSymrel (mkRelSet (Subset 𝓅 X) _⊆_)
+  infix 2 _⊇_ _⊃_ _⊂_ _≅_
+  _⊇_ = M._≥_
+  _⊃_ = M._>_
+  _⊂_ = M._<_
+  _≅_ = M._≈_
+
 
 module _ {𝓅} where
-  open DeriveSymrel (mkRelSet (Prop 𝓅) (\ X Y → X → Y)) public
-    renaming (_≥_ to _←_; _<_ to _←absurd_; _>_ to _absurd→_ ; _≈_ to _↔_)
+  private
+    module M = DeriveSymrel (mkRelSet (Prop 𝓅) (\ X Y → X → Y))
+  infix 0 _←_  _←absurd_  _absurd→_ _↔_
+  _←_ = M._≥_
+  _absurd→_ = M._<_
+  _←absurd_ = M._>_
+  _↔_ = M._≈_
 
 module _ {X : Set ℓ} {𝓅} where
   open DeriveSymrel (mkRelSet (Pred 𝓅 X) _⇒_) public
@@ -422,8 +459,8 @@ module 2RelSetProps (2relset : 2RelSet ℓ 𝓅) where
 
   open is-partialorder public
 
-record Preoset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
-  constructor mkPreoset
+record Proset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
+  constructor mkProset
   field
     relset : RelSet ℓ 𝓅
 
@@ -434,8 +471,8 @@ record Preoset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 
   module Preorder = RelSetProps.is-preorder ≤-preorder
 
-module PreosetProps (preoset : Preoset ℓ 𝓅) where
-  open Preoset preoset
+module ProsetProps (proset : Proset ℓ 𝓅) where
+  open Proset proset
   open RelSetProps (mkRelSet X _≤_) public
   ≡⇒≤ : {x y : _} → x ≡ y → x ≤ y
   ≡⇒≤ Id-refl = Preorder.refl
@@ -469,21 +506,21 @@ record Posetoid ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
 module PosetoidProps (posetoid : Posetoid ℓ 𝓅) where
   open Posetoid posetoid
 
-  preoset : Preoset ℓ 𝓅
-  Preoset.relset preoset = mkRelSet X _≤_
-  Preoset.≤-preorder preoset = ≈-≤-po.preorder
+  proset : Proset ℓ 𝓅
+  Proset.relset proset = mkRelSet X _≤_
+  Proset.≤-preorder proset = ≈-≤-po.preorder
 
-  open PreosetProps preoset public
+  open ProsetProps proset public
 
 
 
-DerivePosetoid : (preoset : Preoset ℓ 𝓅) → Posetoid ℓ 𝓅
-DerivePosetoid preoset = posetoid
+DerivePosetoid : (proset : Proset ℓ 𝓅) → Posetoid ℓ 𝓅
+DerivePosetoid proset = posetoid
   module DerivePosetoid where
-    open Preoset preoset
+    open Proset proset
     open DeriveSymrel (mkRelSet X _≤_)
     open 2RelSetProps (record {X = X; _≤_ = _≤_ ; _≈_ = _≈_})
-    open ≤.is-preorder (preoset .Preoset.≤-preorder)
+    open ≤.is-preorder (proset .Proset.≤-preorder)
 
     ≈-equiv : ≈.is-equivalence
     ≈-equiv .≈.preorder .≈.trans a1≈a2 a2≈a3 .proj≤ = trans (a1≈a2 .proj≤) (a2≈a3 .proj≤)
@@ -500,7 +537,7 @@ DerivePosetoid preoset = posetoid
     posetoid : Posetoid _ _
     posetoid = mkPosetoid (mk2RelSet X _≈_ _≤_) \where
       .equiv → ≈-equiv
-      .preorder → (preoset .Preoset.≤-preorder)
+      .preorder → (proset .Proset.≤-preorder)
       .antisym → ≤-≈-antisym
 
 record Poset ℓ 𝓅 : Set (lsuc (ℓ ⊔ 𝓅)) where
@@ -546,8 +583,8 @@ module RelBinopSetProps (relbinopset : RelBinopSet ℓ 𝓅) where
   is-meetclosed = (x x' : X) → is-meet x x' (x op x')
   is-joinclosed = (x x' : X) → is-join x x' (x op x')
 
-module RelPowopSetProps (relsubopset : RelPowopSet ℓ 𝓅 𝓆) where
-  open RelPowopSet relsubopset renaming (⋀ to Op)
+module RelPowopSetProps (relpowopset : RelPowopSet ℓ 𝓅 𝓆) where
+  open RelPowopSet relpowopset renaming (⋀ to Op)
   open RelSetProps.SubsetProps (mkRelSet X _≤_)
 
   is-meetclosed = (p : Pred 𝓆 X) → is-meet p (Op p)
@@ -599,9 +636,9 @@ module CompleteMeetSemilatProps (completemeetsemilat : CompleteMeetSemilat ℓ �
   completemeetclosed : CompleteMeetClosed ℓ 𝓅 𝓅
   completemeetclosed = record { CompleteMeetSemilat completemeetsemilat }
 
-  preorder : Preoset ℓ 𝓅
-  Preoset.relset preorder = mkRelSet X _≤_
-  Preoset.≤-preorder preorder = ≤-preorder
+  preorder : Proset ℓ 𝓅
+  Proset.relset preorder = mkRelSet X _≤_
+  Proset.≤-preorder preorder = ≤-preorder
 
   posetoid = DerivePosetoid preorder
 
@@ -696,10 +733,10 @@ module PointedRelPowopSetProps (ptrelsubopset : PointedRelPowopSet ℓ 𝓅 𝓆
 
   open is-bounded-joinclosed public
 
-module DeriveBinop {ℓ} {𝓅} (relsubopset : RelPowopSet ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) where
-  open RelPowopSet relsubopset
-  open DeriveSymrel (mkRelSet X _≤_)
+module DeriveBinop {ℓ} {𝓅} (powopset : PowopSet ℓ (ℓ ⊔ 𝓅)) where
+  open PowopSet powopset
 
+  infixr 10 _∧_
   _∧_ : X → X → X
   _∧_ a1 a2 = ⋀ \ x → (Idp (ℓ ⊔ 𝓅) x a1 ∥ Idp (ℓ ⊔ 𝓅) x a2)
 
@@ -744,6 +781,19 @@ record StrictCompleteLattice ℓ 𝓅 𝓆 : Set (lsuc (ℓ ⊔ 𝓅 ⊔ lsuc �
     ⋀-⋁-closed : 2PointedRel2PowopSetProps.is-complete-closed 2pointedrel2subopset
     ≤-po : RelSetProps.is-po (mkRelSet X _≤_)
 
+record CompleteHeytingAlgebra ℓ 𝓅 : Set (lsuc (lsuc (ℓ ⊔ 𝓅))) where
+  constructor mkCompHA
+  field
+    2pointedrel2subopbinopset : 2PointedRel2PowopBinopSet ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)
+
+  open 2PointedRel2PowopBinopSet 2pointedrel2subopbinopset public
+  field
+    ⋀-⋁-closed : 2PointedRel2PowopSetProps.is-complete-closed (mk2PointedRel2PowopSet X ⊥ ⊤ ⋀ ⋁ _≤_)
+    ≤-po : RelSetProps.is-po (mkRelSet X _≤_)
+
+  open DeriveBinop {𝓅 = 𝓅} (mkPowopSet X ⋀)
+  field
+    ∧-⊢-iso : ∀ x a b → (x ∧ a) ≤ b ↔ x ≤ (a ⊢ b)
 
 DeriveCompleteClosed : (complete-meet-semilattice : CompleteMeetClosed ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) → CompleteClosed ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)
 DeriveCompleteClosed {ℓ = ℓ} {𝓅 = 𝓅} complete-meet-semilattice = complete-closed
@@ -796,8 +846,8 @@ module Endo (setoid : Setoid ℓ 𝓅) where
   FixedPoint endo x = f x ≈ x
     where open PreservingFunction endo renaming (f to f)
 
-module Endo≤ (preoset : Preoset ℓ 𝓅) where
-  open Preoset preoset
+module Endo≤ (proset : Proset ℓ 𝓅) where
+  open Proset proset
   MonotoneEndoFunction = PreservingFunction relset relset
 
   PostfixPoint : MonotoneEndoFunction → Pred _ X
@@ -808,7 +858,7 @@ module Endo≤ (preoset : Preoset ℓ 𝓅) where
   PrefixPoint endo x = x ≤ f x
     where open PreservingFunction endo renaming (f to f)
 
-  open Posetoid (DerivePosetoid preoset)
+  open Posetoid (DerivePosetoid proset)
   open Endo (mkSetoid (mkRelSet _ _≈_) ≈-≤-po.equiv) public
 
   DeriveEndo : MonotoneEndoFunction → EndoFunction
@@ -821,9 +871,9 @@ module Endo≤ (preoset : Preoset ℓ 𝓅) where
       endo .preserving a1≈a2 .proj≤ = preserving (a1≈a2 .proj≤)
       endo .preserving a1≈a2 .proj≥ = preserving (a1≈a2 .proj≥)
 
-module EndoRel (preoset : Preoset ℓ 𝓅) where
-  open Posetoid (DerivePosetoid preoset)
-  open Endo≤ preoset public
+module EndoRel (proset : Proset ℓ 𝓅) where
+  open Posetoid (DerivePosetoid proset)
+  open Endo≤ proset public
 
   module _ (e : EndoFunction) where
     LeastFixedPoint : Pred _ X
@@ -832,7 +882,7 @@ module EndoRel (preoset : Preoset ℓ 𝓅) where
     GreatestFixedPoint : Pred _ X
     GreatestFixedPoint = RelSetProps.is-greatest (mkRelSet X _≤_) (FixedPoint e)
 
-module LatticeTheory (completemeetsemilattice : CompleteMeetClosed ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) where
+module Fixpoints (completemeetsemilattice : CompleteMeetClosed ℓ (ℓ ⊔ 𝓅) (ℓ ⊔ 𝓅)) where
   open CompleteClosed (DeriveCompleteClosed {ℓ = ℓ} {𝓅 = 𝓅} completemeetsemilattice)
 
   ⋀-monotone : ∀ s s' → (s⊆s' : s ⇒ s') → ⋀ s' ≤ ⋀ s
@@ -846,7 +896,7 @@ module LatticeTheory (completemeetsemilattice : CompleteMeetClosed ℓ (ℓ ⊔ 
       X≤ = (mkRelSet X _≤_)
       module X≤ = RelSetProps X≤
 
-    open EndoRel (mkPreoset X≤ preorder)
+    open EndoRel (mkProset X≤ preorder)
     module _ (m : MonotoneEndoFunction) where
       open PreservingFunction m renaming (f to f)
       open DeriveSymrel X≤
@@ -884,11 +934,11 @@ record RelConnection ℓ ℓ' 𝓅 𝓅' : Set (lsuc (ℓ ⊔ ℓ' ⊔ 𝓅' ⊔
 
 record GaloisConnection ℓ ℓ' 𝓅 𝓅' : Set (lsuc (ℓ ⊔ ℓ' ⊔ 𝓅' ⊔ 𝓅)) where
   field
-    C : Preoset ℓ 𝓅
-    D : Preoset ℓ' 𝓅'
+    C : Proset ℓ 𝓅
+    D : Proset ℓ' 𝓅'
 
-  module C = Preoset C
-  module D = Preoset D
+  module C = Proset C
+  module D = Proset D
 
   field
     L : PreservingFunction D.relset C.relset
@@ -900,16 +950,35 @@ record GaloisConnection ℓ ℓ' 𝓅 𝓅' : Set (lsuc (ℓ ⊔ ℓ' ⊔ 𝓅' 
     L-transpose : (c : C.X) (d : D.X) → (d D.≤ R.f c) → (L.f d C.≤ c)
     R-transpose : (c : C.X) (d : D.X) → (L.f d C.≤ c) → (d D.≤ R.f c)
 
-module PredLattice {𝓅} (X : Set ℓ) where
-  2ptrel2binopset : 2PointedRel2BinopSet (lsuc 𝓅 ⊔ ℓ) (𝓅 ⊔ ℓ)
-  2PointedRel2BinopSet.X 2ptrel2binopset = Pred 𝓅 X
-  2PointedRel2BinopSet._∧_ 2ptrel2binopset = _&'_
-  2PointedRel2BinopSet._∨_ 2ptrel2binopset = _∥'_
-  2PointedRel2BinopSet.⊤ 2ptrel2binopset = ptrue'
-  2PointedRel2BinopSet.⊥ 2ptrel2binopset = pfalse'
-  2PointedRel2BinopSet._≤_ 2ptrel2binopset = _⇒_
+module PropHeytingAlgebra {ℓ} {𝓅} where
+  struct : 2PointedRel3BinopSet (lsuc ℓ) ℓ
+  2PointedRel3BinopSet.X struct = Prop ℓ
+  2PointedRel3BinopSet.⊥ struct = pfalse
+  2PointedRel3BinopSet.⊤ struct = ptrue
+  2PointedRel3BinopSet._∧_ struct = _&_
+  2PointedRel3BinopSet._∨_ struct = _∥_
+  2PointedRel3BinopSet._⊢_ struct = \ X Y → X → Y
+  2PointedRel3BinopSet._≤_ struct = \ X Y → X → Y
 
-  open 2PointedRel2BinopSetProps
+  open 2PointedRel3BinopSet struct hiding (X)
+  open DeriveSymrel (mkRelSet (Prop ℓ) _≤_)
+  α : ∀ (a b c : Prop ℓ) → (a ∧ b ≤ c) ↔ (a ≤ b ⊢ c)
+  α a b c .proj≤ a∧b≤c pa pb = a∧b≤c (pa , pb)
+  α a b c .proj≥ a≤b⊢c (pa , pb) = a≤b⊢c pa pb
+
+module PowersetHytingAlgebra {𝓅} (X : Set ℓ) where
+  2ptrel2binopset : 2PointedRel3BinopSet (lsuc 𝓅 ⊔ ℓ) (𝓅 ⊔ ℓ)
+  2PointedRel3BinopSet.X 2ptrel2binopset = Pred 𝓅 X
+  2PointedRel3BinopSet._∧_ 2ptrel2binopset = _&'_
+  2PointedRel3BinopSet._∨_ 2ptrel2binopset = _∥'_
+  2PointedRel3BinopSet.⊤ 2ptrel2binopset = ptrue'
+  2PointedRel3BinopSet.⊥ 2ptrel2binopset = pfalse'
+  2PointedRel3BinopSet._⊢_ 2ptrel2binopset = \ P Q x → P x → Q x
+  2PointedRel3BinopSet._≤_ 2ptrel2binopset = _⇒_
+
+  open 2PointedRel3BinopSet 2ptrel2binopset hiding (X)
+  open DeriveSymrel (mkRelSet (Pred 𝓅 X) _≤_)
+  α : ∀ (a b c : _) → (a ∧ b ≤ c) ↔ (a ≤ b ⊢ c)
+  α a b c .proj≤ a∧b≤c x ax bx = a∧b≤c x (ax , bx)
+  α a b c .proj≥ a≤b⊢c x (ax , bx) = a≤b⊢c x ax bx
   open BoundedClosed
-
-module _ (X : StrictCompleteLattice ℓ 𝓅 𝓆) where

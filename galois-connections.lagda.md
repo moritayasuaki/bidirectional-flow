@@ -1360,7 +1360,13 @@ module derive-subset-galois
     lemma-⊗-assoc α dxy dyz dzw .forward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .forward)
     lemma-⊗-assoc α dxy dyz dzw .backward = R-mono (L-⊗-⋈-assoc α dxy dyz dzw .backward)
 
+    ⊗₃ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → (dzw : Dobj Z W) → Dobj X W
+    ⊗₃ dxy dyz dzw = R ((L dxy ⋈ L dyz) ⋈ L dzw)
 
+{-
+    ⊗⊗≤⊗₃ : (dxy : Dobj X Y) → (dyz : Dobj Y Z) → (dzw : Dobj Z W) → ((dxy ⊗ dyz) ⊗ dzw) D.≤ ⊗₃ dxy dyz dzw
+    ⊗⊗≤⊗₃ dxy dyz dzw = R-mono \{ x → {!!} , {!!} }
+-}
 {-
     -- So far, I have not used the complete-meet-semilattice condition at all
   P = derive-subset-galois.L-⊗-⋈-assoc rel-mfun-connected wd cl \ f g → (\where

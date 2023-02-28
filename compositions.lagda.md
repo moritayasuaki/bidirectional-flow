@@ -140,11 +140,36 @@ module _ where
     forward (⊗p≈⊗p' f g x z) = latprop.bigmeet-monotone X id
     backward (⊗p≈⊗p' f g x z) = latprop.bigmeet-monotone X id
 
-    pair2rel-⊗-monoidal-strength : ∀ f g → (pair2rel X Z (f ⊗p' g)) ≅ pair2rel X Y f ⋈ pair2rel Y Z g
-    forward (pair2rel-⊗-monoidal-strength (f , b) (f' , b')) {x , z} (fst-fb⊗fb'[x]≤z , snd-fb⊗fb'[z]≤x) = \where
-      .fst → ⋀Y \{ y → ∃ \ x' → ∃ \ z' → x ≤X x' × z ≤Z z' × (f x' ≤Y y × b y ≤X x') × (f' y ≤Z z × b' z ≤Y y)}
-      .snd → {!!} , {!!}
-    backward (pair2rel-⊗-monoidal-strength f g) (fst₁ , snd₁) = {!!}
+    _⊗mp_ : monotone-func-pair X-pre Y-pre → monotone-func-pair Y-pre Z-pre → monotone-func-pair X-pre Z-pre
+    monotone-func-pair.pair (mfp' fb fb-mono ⊗mp mfp' fb' fb'-mono) = fb ⊗p' fb'
+    fst (monotone-func-pair.pair-is-monotone (mfp' fb fb-mono ⊗mp mfp' fb' fb'-mono)) {x} {x'} x≤x' = latprop.bigmeet-monotone Z \{ (_ , x'≤x'' , P) → (_ , trans X-pre x≤x' x'≤x'' , P)}
+        where trans = preprop.rel-is-transitive
+    snd (monotone-func-pair.pair-is-monotone (mfp' fb fb-mono ⊗mp mfp' fb' fb'-mono)) {z} {z'} z≤z' = latprop.bigmeet-monotone X \{ (_ , z'≤z'' , P) → (_ , trans Z-pre z≤z' z'≤z'' , P) }
+        where trans = preprop.rel-is-transitive
+
+    pair2rel-⊗-monoidal-strength-⊇ : ∀ f g → mpair2rel X Y f ⋈ mpair2rel Y Z g ⊆ (mpair2rel X Z (f ⊗mp g))
+    pair2rel-⊗-monoidal-strength-⊇ (mfp' (f , b) (f-mono , b-mono)) (mfp' (f' , b') (f'-mono , b'-mono)) {x , z} (y , xy∈p2r[f] , yz∈p2r[g]) .fst
+      = latprop.bigmeet-lowerbound Z _ _ (x , refl X-pre _ , y , xy∈p2r[f] , yz∈p2r[g])
+        where refl = preprop.rel-is-reflexive
+    pair2rel-⊗-monoidal-strength-⊇ (mfp' (f , b) (f-mono , b-mono)) (mfp' (f' , b') (f'-mono , b'-mono)) {x , z} (y , xy∈p2r[f] , yz∈p2r[g]) .snd
+      = latprop.bigmeet-lowerbound X _ _ (z , refl Z-pre _ , y , xy∈p2r[f] , yz∈p2r[g])
+        where refl = preprop.rel-is-reflexive
+
+    pair2rel-⊗-monoidal-strength-⊆ : ∀ f g → mpair2rel X Z (f ⊗mp g) ⊆ mpair2rel X Y f ⋈ mpair2rel Y Z g
+    pair2rel-⊗-monoidal-strength-⊆ (mfp' (f , b) (f-mono , b-mono)) (mfp' (f' , b') (f'-mono , b'-mono)) {x , z} (fst⊗≤z , snd⊗≤x)
+      = ⋀Y s , \where
+        .fst .fst → latprop.bigmeet-greatest Y _ _ (\{ y (fx≤y , b'z≤y , _) → fx≤y})
+        .fst .snd → trans X-pre {y = ⋀X (fimage b s)} (mono-meet≤meet-mono b-mono s)
+          (trans X-pre
+            (latprop.bigmeet-monotone X (\{ {x'} (z' , z≤z' , y , (fx'≤y , by≤x') , (f'y≤z' , b'z'≤y)) → (⋀Y \y' → f x ≤Y y' × b' z ≤Y y') , ((latprop.bigmeet-greatest Y  _ _ (\ _ → fst) , latprop.bigmeet-greatest Y _ _ (\ y' → (\{(fx≤y' , b'z≤y') → trans Y-pre (b'-mono z≤z') (trans Y-pre {!!}  b'z≤y')})) , {!!}) , {!!})}))
+            snd⊗≤x)
+-- (trans X-pre {y = ⋀X (fimage b s)} (mono-meet≤meet-mono b-mono s) (latprop.bigmeet-monotone X (\ { {x'} (_ , _ , z≤z' , P)  → f x' , ({!!} , ({!!} , {!!})) , {!!}})))
+        .snd → ({!!} , {!!})
+      where refl = preprop.rel-is-reflexive
+            trans = preprop.rel-is-transitive
+            py : pred Y-carrier
+            py = {!!}
+            s = \ y → f x ≤Y y × b' z ≤Y y × py y
 
     _⊗p-fix_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
     (f , b) ⊗p-fix (f' , b') = \where
