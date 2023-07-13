@@ -131,6 +131,7 @@ module endo-function (X-cmlat : complete-meet-semilattice)
   endo2rel : endo X → subset X
   endo2rel f x = f x ≤X x
 
+
   mendo2rel : monotone-endo X-pre → subset X
   mendo2rel (mono f _) x = f x ≤X x
 
@@ -174,7 +175,10 @@ module endo-function (X-cmlat : complete-meet-semilattice)
     mendo2rel-is-antitone f≤f' {x} x∈endo2relf' = ≤-trans (f≤f' x) x∈endo2relf'
 
     img-mendo2rel-meetclosed : ∀ e → is-meet-closed-subset X-is-cmlat (mendo2rel e)
-    img-mendo2rel-meetclosed (mono f f-mono) s s⊆ = ≤-trans (mono-meet≤meet-mono {X-cmlat} {X-cmlat} f-mono s) (≤-trans (bigmeet-≡-≤ f s .forward) (bigmeet-monotone \ {x} x∈s → x , x∈s , s⊆ x∈s))
+    img-mendo2rel-meetclosed (mono f f-mono) s s⊆ =
+      ≤-trans (mono-meet≤meet-mono {X-cmlat} {X-cmlat} f-mono s)
+        (≤-trans (bigmeet-≡-≤ f s .forward)
+                 (bigmeet-monotone \ {x} x∈s → x , x∈s , s⊆ x∈s))
 
     anti-rel2mendo : antitone-func pre-subset pre-mendo
     func anti-rel2mendo s = mono (rel2endo s) (rel2endo-is-pointwisely-monotone s)
@@ -183,6 +187,23 @@ module endo-function (X-cmlat : complete-meet-semilattice)
     anti-mendo2rel : antitone-func pre-mendo pre-subset
     func anti-mendo2rel f = mendo2rel f
     property anti-mendo2rel {s} {s'} = mendo2rel-is-antitone {s} {s'}
+
+    module fixedpoint (f : monotone-endo X-pre) (let X-cjlat = cmlat→cjlat X-cmlat) (let (cjlat _ _ ⋁X X-is-cjlat) = X-cjlat) (let _∨X_ = \ x y → ⋁X ｛ x , y ｝₂)  where
+      {-
+        f' : monotone-endo X-pre
+        f' = (rel2mendo ∘ mendo2rel) f
+        f* : monotone-endo X-pre
+        func f* d = func f (func f d) ∨X d
+        property f* = {!!}
+
+        test' : func f' ≡ \x₀ → ⋀X \x → x₀ ≤X x × func f x ≤X x
+        test' = ≡.refl
+        prop1 : ∀ x₀ → func f' x₀ ≤X x₀
+        prop1 x₀ = {!P.bigmeet-greatest _ _ _!}
+          where
+          module M = complete-meet-semilattice X-cmlat
+          module P = is-complete-meet-semilattice M.property
+          -}
 
   module _ where
     endo2rel-rel2endo-antitone-galois-connection : is-antitone-galois-connection anti-mendo2rel anti-rel2mendo
@@ -814,10 +835,10 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   rel-mpair-connected' : antitone-galois-connection pre-rel pre-mpair
   rel-mpair-connected' = comp-galois-connection rel-mendo-connected mendo-mpair-connected
 
-  test : (let (gal-conn l' r' _) = rel-mpair-connected') (let (gal-conn l r _) = rel-mpair-connected) →
+  test2 : (let (gal-conn l' r' _) = rel-mpair-connected') (let (gal-conn l r _) = rel-mpair-connected) →
     ∀ pair →  monotone-func.func l pair ≅ monotone-func.func l' pair
-  forward (test (mfp' fp fp-is-monotone)) {p} x = (snd x , fst x)
-  backward (test (mfp' fp fp-is-monotone)) {p} x = (snd x , fst x)
+  forward (test2 (mfp' fp fp-is-monotone)) {p} x = (snd x , fst x)
+  backward (test2 (mfp' fp fp-is-monotone)) {p} x = (snd x , fst x)
 
   pair2fun : func-pair D-cmlat.carrier E-cmlat.carrier → fun D-cmlat.carrier E-cmlat.carrier
   pair2fun (f , b) = f
@@ -902,13 +923,16 @@ module _ (D-cmlat E-cmlat : complete-meet-semilattice) (let D-pre = cmlat→pre 
   mfun2rel = fun2rel ∘ monotone-func.func
   -- (monotone-func.func mpair2rel-anti) ∘ (monotone-func.func mono-mfun2mpair)
 
+  -- rel2mfun : (𝒫(C × D) , ⊆)^op ⇒ (C × D → C × D)
   rel2mfun-mono : antitone-func pre-rel pre-mfun
   rel2mfun-mono = pre-comp (monotone-func.dual mpair2mfun-mono) rel2mpair-anti
+  -- mfun2rel : (𝒫(C × D) , ⊆)^op ⇒ EndoMonoFun (C × D)
   mfun2rel-mono : antitone-func pre-mfun pre-rel
   mfun2rel-mono = pre-comp mpair2rel-anti mono-mfun2mpair
 
   rel-mfun-connected : antitone-galois-connection pre-rel pre-mfun
   rel-mfun-connected = comp-galois-connection rel-mendo-connected mendo-mfun-connected
+
 
 
 ```
@@ -968,6 +992,10 @@ RL f = ~ f
                         ------------------------------
 
 ```
+
+(R ⋈ P) ⋈ Q ⊂ R ⋈ (P ⋈ Q) and
+(R ⋈ P) ⋈ Q ⊂ R ⋈ (P ⋈ Q)
+
 
 If we have a pair of adjoints L, R on the top then we have
 a full sub category (𝒫(C),⊆)_fix of (𝒫(C),⊆) whose objects are c with an isomorphism c ≃ηc RL(c)

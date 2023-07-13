@@ -78,6 +78,23 @@ module _ where
     _∧p_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
     f ∧p g = rel2pair X Y (pair2rel X Y f ∪ pair2rel X Y g)
 
+    _∨p'_ : func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier → func-pair X-carrier Y-carrier
+    f ∨p' g = ( (\ x₀ → ⋀Y \ y → ∃ \ x → (x₀ ≤X x) × (fst f x ≤Y y × snd f y ≤X x) × (fst g x ≤Y y × snd g y ≤X x))
+              , (\ y₀ → ⋀X \ x → ∃ \ y → (y₀ ≤Y y) × (fst f x ≤Y y × snd f y ≤X x) × (fst g x ≤Y y × snd g y ≤X x)))
+
+    ∨p=∨p' : ∀ f g x y → fst (f ∨p g) x ≡ fst (f ∨p' g) x × snd (f ∨p g) y ≡ snd (f ∨p' g) y
+    ∨p=∨p' f g x y = _≡_.refl , _≡_.refl
+
+    ∩-∨p'-preserves : ∀ f g → (pair2rel X Y f) ∩ (pair2rel X Y g) ≅ pair2rel X Y (f ∨p' g)
+    forward (∩-∨p'-preserves f g) {x , y} ((fx≤y , fy≤x) , (gx≤y , gy≤x)) = {!!} , {!!}
+    backward (∩-∨p'-preserves f g) {x , y} (fvg[x]≤y , f∨g[y]≤x) = ({!!} , {!!}) , ({!!} , {!!})
+
+  module latprop (C : complete-meet-semilattice) where
+    open complete-meet-semilattice.property C public
+
+  module preprop (P : preordered-set) where
+    open preordered-set.property P public
+
   module _ (X Y Z : complete-meet-semilattice)
     (let X-pre = cmlat→pre X)
     (let Y-pre = cmlat→pre Y)
@@ -104,12 +121,6 @@ module _ where
     (let _≈Z_ = iso-pair _≤Z_)
     where
 
-    module latprop (C : complete-meet-semilattice) where
-      open complete-meet-semilattice.property C public
-
-    module preprop (P : preordered-set) where
-      open preordered-set.property P public
-
 
     mendo-comp : monotone-func XY-pre XY-pre → monotone-func YZ-pre YZ-pre → monotone-func XZ-pre XZ-pre
     func (mendo-comp f g) (x , z) = ⋀XZ \{ (x' , z') → (x , z) ≤XZ (x' , z') × ∃ \ y' → f .func (x' , y') ≤XY (x' , y') × g .func (y' , z') ≤YZ (y' , z')  }
@@ -134,6 +145,7 @@ module _ where
       .fst x → ⋀Z \{ z → ∃ \ x' → x ≤X x' × ∃ \ y → (f x' ≤Y y × b y ≤X x') × (f' y ≤Z z × b' z ≤Y y) }
       .snd z → ⋀X \{ x → ∃ \ z' → z ≤Z z' × ∃ \ y → (f x ≤Y y × b y ≤X x) × (f' y ≤Z z' × b' z' ≤Y y) }
 
+
     ⊗p≈⊗p' : (f : func-pair X-carrier Y-carrier) → (g : func-pair Y-carrier Z-carrier)
       → (∀ x → fst (f ⊗p' g) x ≈Z fst (f ⊗p g) x)
       → (∀ z → snd (f ⊗p' g) z ≈X snd (f ⊗p g) z)
@@ -154,22 +166,6 @@ module _ where
     pair2rel-⊗-monoidal-strength-⊇ (mfp' (f , b) (f-mono , b-mono)) (mfp' (f' , b') (f'-mono , b'-mono)) {x , z} (y , xy∈p2r[f] , yz∈p2r[g]) .snd
       = latprop.bigmeet-lowerbound X _ _ (z , refl Z-pre _ , y , xy∈p2r[f] , yz∈p2r[g])
         where refl = preprop.rel-is-reflexive
-
-    pair2rel-⊗-monoidal-strength-⊆ : ∀ f g → mpair2rel X Z (f ⊗mp g) ⊆ mpair2rel X Y f ⋈ mpair2rel Y Z g
-    pair2rel-⊗-monoidal-strength-⊆ (mfp' (f , b) (f-mono , b-mono)) (mfp' (f' , b') (f'-mono , b'-mono)) {x , z} (fst⊗≤z , snd⊗≤x)
-      = ⋀Y s , \where
-        .fst .fst → latprop.bigmeet-greatest Y _ _ (\{ y (fx≤y , b'z≤y , _) → fx≤y})
-        .fst .snd → trans X-pre {y = ⋀X (fimage b s)} (mono-meet≤meet-mono b-mono s)
-          (trans X-pre
-            (latprop.bigmeet-monotone X (\{ {x'} (z' , z≤z' , y , (fx'≤y , by≤x') , (f'y≤z' , b'z'≤y)) → (⋀Y \y' → f x ≤Y y' × b' z ≤Y y') , ((latprop.bigmeet-greatest Y  _ _ (\ _ → fst) , latprop.bigmeet-greatest Y _ _ (\ y' → (\{(fx≤y' , b'z≤y') → trans Y-pre (b'-mono z≤z') (trans Y-pre {!!}  b'z≤y')})) , {!!}) , {!!})}))
-            snd⊗≤x)
--- (trans X-pre {y = ⋀X (fimage b s)} (mono-meet≤meet-mono b-mono s) (latprop.bigmeet-monotone X (\ { {x'} (_ , _ , z≤z' , P)  → f x' , ({!!} , ({!!} , {!!})) , {!!}})))
-        .snd → ({!!} , {!!})
-      where refl = preprop.rel-is-reflexive
-            trans = preprop.rel-is-transitive
-            py : pred Y-carrier
-            py = {!!}
-            s = \ y → f x ≤Y y × b' z ≤Y y × py y
 
     _⊗p-fix_ : func-pair X-carrier Y-carrier → func-pair Y-carrier Z-carrier → func-pair X-carrier Z-carrier
     (f , b) ⊗p-fix (f' , b') = \where
@@ -263,6 +259,26 @@ module _ where
         .snd .fst → latprop.bigmeet-lowerbound Z _ _ ((⋀XYZ \{ (x , y , z) → (x , y) ∈ r × (y , z) ∈ r'}) .snd .fst , {!!} , {!!})
         .snd .snd → latprop.bigmeet-greatest Y _ _ \ y y∈xrr'z → latprop.bigmeet-lowerbound Y _ _ _
 
+  module _ (X Y Z W : complete-meet-semilattice)
+    (let X-pre = cmlat→pre X)
+    (let Y-pre = cmlat→pre Y)
+    (let Z-pre = cmlat→pre Z)
+    (let W-pre = cmlat→pre W)
+    (mf : monotone-func-pair X-pre Y-pre)
+    (mf' : monotone-func-pair Y-pre Z-pre)
+    (mf'' : monotone-func-pair Z-pre W-pre)
+    (let (mfp' f f-mono) = mf)
+    (let (mfp' f' f'-mono) = mf')
+    (let (mfp' f'' f''-mono) = mf'')
+    (let (cmlat X-carrier _≤X_ ⋀X X-prop) = X)
+    (let (cmlat Y-carrier _≤Y_ ⋀Y Y-prop) = Y)
+    (let (cmlat Z-carrier _≤Z_ ⋀Z Z-prop) = Z)
+    (let (cmlat W-carrier _≤W_ ⋀W W-prop) = W)
+    where
+
+    p : _≤mpair_ X W (_⊗mp_ X Z W (_⊗mp_ X Y Z mf mf') mf'') (_⊗mp_ X Y W mf (_⊗mp_ Y Z W mf' mf''))
+    p = {!!}
+
   module _ (X Y : complete-meet-semilattice)
     (let X-pre = cmlat→pre X)
     (let Y-pre = cmlat→pre Y)
@@ -272,7 +288,7 @@ module _ where
     (let _≈Y_ = iso-pair _≤Y_)
     (mf : monotone-func X-pre Y-pre)
     (let (mono f f-mono) = mf)
-    (let _∙_ = preprop.rel-is-transitive Y)
+    (let _∙_ = preprop.rel-is-transitive Y-pre)
     (let refl = preprop.rel-is-reflexive) where
     ⊗fun-unitl : ∀ x → ( _⊗f_ X X Y id f) x ≈Y f x
     ⊗fun-unitl x = ⊗f≈∘ X X Y (mono id id) mf x
@@ -292,6 +308,12 @@ module _ where
     (let _≈X_ = iso-pair _≤X_)
     where
 
+    Δ : subset (X-carrier × X-carrier)
+    Δ (x , x') = x ≡ x'
+
+    repeat :  Nat.ℕ → subset (X-carrier × X-carrier) → subset (X-carrier × X-carrier)
+    repeat Nat.zero R = Δ
+    repeat (Nat.suc n) R = Δ ∩ (R ⋈ (repeat n R))
 
   module _
     (pre-hom : (X Y : complete-meet-semilattice) → preordered-set)
@@ -379,17 +401,3 @@ module _ where
   backward (runit cat-mfun {Y = Y} {a}) x = Y .property.rel-is-reflexive (a .func x)
 
 
-{-
-  cat-mendo : preorder-enriched-cat
-  Ob cat-mendo = complete-meet-semilattice
-  Hom cat-mendo D E = preordered-set.carrier (pre-mendo (D ×-cmlat E))
-  I cat-mendo = mono id id
-  _⊗_ cat-mendo {X} {Y} {Z} f g = mendo-comp X Y Z f g
-  _≤_ cat-mendo {X} {Y} f g = _≤mfun_ (X ×-cmlat Y) (X ×-cmlat Y) f g
-  Hom-is-preorder cat-mendo {X} {Y} = ≤mfun-is-preorder (X ×-cmlat Y) (X ×-cmlat Y)
-  cat-mendo .assoc = {!!}
-  cat-mendo .lunit = {!!}
-  cat-mendo .runit = {!!}
--}
-```
-P = derive-subset-galois.L-⊗-⋈-assoc {! !} {!!} {!!} {!!}

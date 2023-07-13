@@ -12,7 +12,7 @@ open import Relation.Unary
 open import Relation.Binary.Lattice
 open import Function renaming (_⇔_ to _⇔fun_; _↔_ to _↔fun_)
 open import Data.Empty renaming (⊥ to bot)
-open import Data.Unit renaming (⊤ to top) hiding (_≤_)
+open import Data.Unit renaming (⊤ to top)
 import Data.Nat as Nat
 
 module preorder where
@@ -331,8 +331,10 @@ record order-embedding (D E : preordered-set) : Set where
   monotone-func.func monotone = func
   monotone-func.property monotone = property.func-is-monotone
 
+_^op = preordered-set.opposite
+
 antitone-func : (D E : preordered-set) → Set
-antitone-func D E = monotone-func D (preordered-set.opposite E)
+antitone-func D E = monotone-func D (E ^op)
 
 pre-comp : ∀ {X Y Z : preordered-set} → monotone-func Y Z →  monotone-func X Y → monotone-func X Z
 pre-comp (mono f f-mono) (mono g g-mono) = mono (f ∘ g) (f-mono ∘ g-mono)
@@ -367,11 +369,24 @@ is-galois-connection {C} {D} L R = ∀ (c : C.carrier) (d : D.carrier) → C.rel
     module L = monotone-func L
     module R = monotone-func R
 
+syntax is-galois-connection {C} {D} L R = C ∶ L ⊣ R ∶ D
+
+is-antitone-galois-connection'' : {C D : preordered-set} (L : monotone-func D (C ^op)) (R : monotone-func (C ^op) D) → Set
+is-antitone-galois-connection'' L R = is-galois-connection L R 
+
 is-antitone-galois-connection : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
 is-antitone-galois-connection {C} L R = is-galois-connection {preordered-set.opposite C} L (monotone-func.dual R)
 
+convert-dual : {C D : preordered-set} (L : monotone-func D (C ^op)) (R : monotone-func (C ^op) D) → is-antitone-galois-connection L (monotone-func.dual R) → is-antitone-galois-connection'' L R
+forward (convert-dual L R L⊣R' c d) = L⊣R' c d .forward
+backward (convert-dual L R L⊣R' c d) = L⊣R' c d .backward
+
+test : (C D : preordered-set) (L : monotone-func D (C ^op)) (R : monotone-func (C ^op) D) → is-antitone-galois-connection'' L R ≡ ((C ^op) ∶ L ⊣ R ∶ D)
+test C D L R = ≡.refl
+
 is-antitone-galois-connection' : {C D : preordered-set} (L : antitone-func D C) (R : antitone-func C D) → Set
 is-antitone-galois-connection' {C} {D} L R = is-galois-connection {C} {preordered-set.opposite D} (monotone-func.dual L) R
+
 
 record galois-connection (C D : preordered-set) : Set where
   constructor gal-conn
