@@ -460,6 +460,10 @@ module _ {X≈ Y≈ : Setoid} where
     X = ∣ X≈ ∣
     Y = ∣ Y≈ ∣
 
+  Pred-swap : Pred (X≈ ×-setoid Y≈) → Pred (Y≈ ×-setoid X≈)
+  Pred.⟦ Pred-swap R ⟧ (y , x) = Pred.⟦ R ⟧ (x , y)
+  Pred-swap R .Pred.isWellDefined {y , x} {y' , x'} (y≈y' , x≈x') Rxy = R .Pred.isWellDefined (x≈x' , y≈y') Rxy
+
   Pred-proj₁ : Pred (X≈ ×-setoid Y≈) → Pred X≈
   Pred.⟦ Pred-proj₁ R ⟧ = λ x → Σ y ∶ Y , ((x , y) ∈ R)
   Pred-proj₁ R .Pred.isWellDefined x≈x' (y , xy∈R) = y , R .Pred.isWellDefined (x≈x' , Y.refl) xy∈R
@@ -473,6 +477,20 @@ module _ {X≈ Y≈ : Setoid} where
 
   Pred-proj₂-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → y ∈ Pred-proj₂ R
   Pred-proj₂-∈ R xy∈R = -, xy∈R
+
+module _ {X≈ Y≈ Z≈ : Setoid} where
+  private
+    module X = SetoidPoly X≈
+    module Y = SetoidPoly Y≈
+    module Z = SetoidPoly Z≈
+    X = ∣ X≈ ∣
+    Y = ∣ Y≈ ∣
+    Z = ∣ Z≈ ∣
+
+  Pred-assoc-lr : Pred (X≈ ×-setoid (Y≈ ×-setoid Z≈)) → Pred ((X≈ ×-setoid Y≈) ×-setoid Z≈)
+  Pred.⟦ Pred-assoc-lr R ⟧ ((x , y) , z) = Pred.⟦ R ⟧ (x , (y , z))
+  Pred-assoc-lr R .Pred.isWellDefined {(x , y) , z} {(x' , y') , z'} ((x≈x' , y≈y') , z≈z') Rxyz = R .Pred.isWellDefined (x≈x' , (y≈y' , z≈z')) Rxyz
+
 
 {-
 DM : Poset' → Poset'
@@ -1541,7 +1559,7 @@ module _ where
 
       ⋈-⨆closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (C⨆ ×-slat D⨆) R → Is⨆Closed (D⨆ ×-slat E⨆) R' → Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
       ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' =
-        (d , {!!} , {!!})
+        (d , R .Pred.isWellDefined (c≈⨆S₁ , D.Eq.refl) cd∈R  , R' .Pred.isWellDefined (D.Eq.refl , e≈⨆S₂) de∈R')
         where
         SRR' : Pred (C≈ ×-setoid (D≈ ×-setoid E≈)) 
         Pred.⟦ SRR' ⟧ (c , d , e) = (c , e) ∈ S × (c , d) ∈ R × (d , e) ∈ R'
@@ -1553,6 +1571,26 @@ module _ where
         c = let (c , d , e) = triple in c
         d = let (c , d , e) = triple in d
         e = let (c , d , e) = triple in e
+
+        S₁R : Pred (C≈ ×-setoid D≈)
+        Pred.⟦ S₁R ⟧ (c , d) = c ∈ Pred-proj₁ S × (c , d) ∈ R
+        S₁R .Pred.isWellDefined (c≈c' , d≈d') (c∈S₁ , cd∈R) = (Pred-proj₁ S .Pred.isWellDefined c≈c' c∈S₁ , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R) 
+
+        cd∈R : (c , d) ∈ R
+        cd∈R = R .Pred.isWellDefined {!!} (R-⨆closed S₁R S₁R⊆R)
+          where
+          S₁R⊆R : S₁R ⊆ R
+          S₁R⊆R = {!!}
+
+        c≈⨆S₁ : c C.≈ C.⨆ (Pred-proj₁ S)
+        c≈⨆S₁ = {!!}
+
+        de∈R' : (d , e) ∈ R'
+        de∈R' = {!!}
+
+        e≈⨆S₂ : e E.≈ E.⨆ (Pred-proj₂ S)
+        e≈⨆S₂ = {!!}
+
         _ : SLat._≈_ (C⨆ ×-slat E⨆) (c , e) ( SLat.⨆ (C⨆ ×-slat E⨆) (S ∩ (R ⋈ R')))
         _ = {!!}
         
