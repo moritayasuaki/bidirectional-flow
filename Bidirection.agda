@@ -1201,6 +1201,18 @@ module _ (D⨆ E⨆ : SLat) where
   F₀⊣G₀ : F₀ ⊣ G₀
   F₀⊣G₀ = F⊣G ∘-galois H₀⊣I₀
 
+  IsHalfButterfly : (R : Pred (D≈ ×-setoid E≈)) → ?
+  IsHalfButterfly R = ?
+
+  preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ pre (Pred⊆-poset (D≈ ×-setoid E≈)) ⟦ G₀ ∘-mono F₀ ⟧cong) ↔ (Is⨆Closed (D⨆ ×-slat E⨆) R × IsHalfButterfly R)
+  preG₀F₀-characterization R =
+    let open SetoidReasoning (Prop↔-setoid) in
+    begin
+    ? ≡⟨⟩
+    ? ≈⟨ ? ⟩
+    ? ∎
+
+
   -- We define the following galois connection
   --
   -- ((D × E →m D) × (D →m E) , ≤)
@@ -1363,22 +1375,22 @@ module _ (D⨆ E⨆ : SLat) where
   F₃⊣G₃ = F₂⊣G₂ ∘-galois H₃⊣I₃
 
 
-module _ {C D : Poset} where
+module _ {C D : Poset} (F : C →mono D) where
   open PosetPoly D
   -- probably monoidal is not a right word for this property (it only refers to multiplication and not to unit)
 
-  IsLaxMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) (F : C →mono D)  → Set
-  IsLaxMonoidal _⊗C_ _⊗D_ F = (a b : ∣ C ∣ ) → ⟦ F ⟧ a ⊗D ⟦ F ⟧ b ≤ ⟦ F ⟧ (a ⊗C b)
+  IsLaxMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) → Set
+  IsLaxMonoidal _⊗C_ _⊗D_ = (a b : ∣ C ∣ ) → ⟦ F ⟧ a ⊗D ⟦ F ⟧ b ≤ ⟦ F ⟧ (a ⊗C b)
 
-  IsOplaxMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) (F : C →mono D) → Set
-  IsOplaxMonoidal _⊗C_ _⊗D_ F = (a b : ∣ C ∣ ) → ⟦ F ⟧ (a ⊗C b) ≤ ⟦ F ⟧ a ⊗D ⟦ F ⟧ b
+  IsOplaxMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) → Set
+  IsOplaxMonoidal _⊗C_ _⊗D_ = (a b : ∣ C ∣ ) → ⟦ F ⟧ (a ⊗C b) ≤ ⟦ F ⟧ a ⊗D ⟦ F ⟧ b
 
-  IsMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) (F : C →mono D) → Set
-  IsMonoidal _⊗C_ _⊗D_ F = (a b : ∣ C ∣ ) → ⟦ F ⟧ (a ⊗C b) ≈ ⟦ F ⟧ a ⊗D ⟦ F ⟧ b
+  IsMonoidal : (_⊗C_ : Op₂ ∣ C ∣) (_⊗D_ : Op₂ ∣ D ∣) → Set
+  IsMonoidal _⊗C_ _⊗D_ = (a b : ∣ C ∣ ) → ⟦ F ⟧ (a ⊗C b) ≈ ⟦ F ⟧ a ⊗D ⟦ F ⟧ b
 
-  module _ {L : C →mono D} {R : D →mono C} where
-    liftOpAlong⊣ : (L⊣R : L ⊣ R) (_⊗C_ : Op₂ ∣ C ∣) → Op₂ ∣ D ∣
-    liftOpAlong⊣ L⊣R _⊗C_ a b = ⟦ L ⟧ (⟦ R ⟧ a ⊗C ⟦ R ⟧ b)
+module _ {C D : Poset}  {L : C →mono D} {R : D →mono C} where
+  liftOpAlong⊣ : (L⊣R : L ⊣ R) (_⊗C_ : Op₂ ∣ C ∣) → Op₂ ∣ D ∣
+  liftOpAlong⊣ L⊣R _⊗C_ a b = ⟦ L ⟧ (⟦ R ⟧ a ⊗C ⟦ R ⟧ b)
 
 
 -- General results about ∩ and ⋈ and adjoints
@@ -1400,10 +1412,10 @@ module _
       open GaloisConnection L⊣R
 
     -- right adjoint that sends 𝒫⊆ to any poset are lax monoidal wrt ∩
-    [∩]-∩-right-adjoint-lax-monoidal : IsLaxMonoidal _[∩]_ _∩_ R
+    [∩]-∩-right-adjoint-lax-monoidal : IsLaxMonoidal R _[∩]_ _∩_
     [∩]-∩-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ∩ ⟦ R ⟧ b)
 
-    ∩-[∩]-left-adjoint-oplax-monoidal : IsOplaxMonoidal _∩_ _[∩]_ L
+    ∩-[∩]-left-adjoint-oplax-monoidal : IsOplaxMonoidal L _∩_ _[∩]_
     ∩-[∩]-left-adjoint-oplax-monoidal S S' = L .Mono.mono ((∩-mono S (⟦ R ⟧ (⟦ L ⟧ S)) S' (⟦ R ⟧ (⟦ L ⟧ S')) (η S) (η S')))
 
     preRL-∩closed→∩∈imageR : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)))
@@ -1415,7 +1427,7 @@ module _
       preRL⊆imageR Ra∩Rb∈preRL 
     
     ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal :
-      ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b))) → IsOplaxMonoidal _[∩]_ _∩_ R
+      ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b))) → IsOplaxMonoidal R _[∩]_ _∩_
     ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal ∩∈imageR a b =
       let
       (c , Rc≐Ra∩Rb) = ∩∈imageR a b -- we have c such that ⟦ R ⟧ c ≐ ⟦ R ⟧ a ∩ ⟦ R ⟧ b
@@ -1428,7 +1440,7 @@ module _
       ⟦ R ⟧ c                              ≈⟨ Rc≐Ra∩Rb ⟩
       ⟦ R ⟧ a ∩ ⟦ R ⟧ b                    ∎ 
 
-    preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → IsOplaxMonoidal _[∩]_ _∩_ R
+    preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → IsOplaxMonoidal R _[∩]_ _∩_
     preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal
       = ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal
       ∘ preRL-∩closed→∩∈imageR
@@ -1438,28 +1450,29 @@ module _
 
   module _
     (P Q : Index → Index → Poset)
-    (_⊗P_ : {C D E : Index} → ∣ P C D ∣ → ∣ P D E ∣ → ∣ P C E ∣)
-    (_⊗Q_ : {C D E : Index} → ∣ Q C D ∣ → ∣ Q D E ∣ → ∣ Q C E ∣)
-    (F : {C D : Index} → P C D →mono Q C D)
+    (F : (C D : Index) → P C D →mono Q C D)
     where
 
-    module _ (C D E : Index) where
+    module _
+      (C D E : Index)
+      (_⊗P_ : ∣ P C D ∣ → ∣ P D E ∣ → ∣ P C E ∣)
+      (_⊗Q_ : ∣ Q C D ∣ → ∣ Q D E ∣ → ∣ Q C E ∣)
+      where
+
       open PosetPoly (Q C E)
       IsIndexedLaxMonoidal : Set
-      IsIndexedLaxMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F ⟧ a ⊗Q ⟦ F ⟧ b ≤ ⟦ F ⟧ (a ⊗P b)
+      IsIndexedLaxMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F C D ⟧ a ⊗Q ⟦ F D E ⟧ b ≤ ⟦ F C E ⟧ (a ⊗P b)
 
       IsIndexedOplaxMonoidal : Set
-      IsIndexedOplaxMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F ⟧ (a ⊗P b) ≤ ⟦ F ⟧ a ⊗Q ⟦ F ⟧ b 
+      IsIndexedOplaxMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F C E ⟧ (a ⊗P b) ≤ ⟦ F C D ⟧ a ⊗Q ⟦ F D E ⟧ b
 
       IsIndexedMonoidal : Set
-      IsIndexedMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F ⟧ (a ⊗P b) ≈ ⟦ F ⟧ a ⊗Q ⟦ F ⟧ b 
+      IsIndexedMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F C E ⟧ (a ⊗P b) ≈ ⟦ F C D ⟧ a ⊗Q ⟦ F D E ⟧ b
 
   module _ (P Q : Index → Index → Poset) where
-    module _ {L : {C D : Index} → P C D →mono Q C D} {R : {C D : Index} → Q C D →mono P C D} where
-      indexedLiftOpAlong⊣ : (L⊣R : {C D : Index} → L {C} {D} ⊣ R {C} {D})
-       → ({C D E : Index} → ∣ P C D ∣ → ∣ P D E ∣ → ∣ P C E ∣)
-       → ({C D E : Index} → ∣ Q C D ∣ → ∣ Q D E ∣ → ∣ Q C E ∣)
-      indexedLiftOpAlong⊣ L⊣R _⊗P_ a b = ⟦ L ⟧ (⟦ R ⟧ a ⊗P ⟦ R ⟧ b)
+    module _ {L : (C D : Index) → P C D →mono Q C D} {R : (C D : Index) → Q C D →mono P C D} (L⊣R : (C D : Index) → L C D ⊣ R C D) where
+      indexedLiftOpAlong⊣ : (C D E : Index) → (∣ P C D ∣ → ∣ P D E ∣ → ∣ P C E ∣) → (∣ Q C D ∣ → ∣ Q D E ∣ → ∣ Q C E ∣)
+      indexedLiftOpAlong⊣ C D E _⊗P_ a b = ⟦ L C E ⟧ (⟦ R C D ⟧ a ⊗P ⟦ R D E ⟧ b)
 
   module _ (∣_∣Ix : Index → Setoid) where
     -- general results about ⋈ and ⊣
@@ -1468,22 +1481,17 @@ module _
       𝒫⊆ C D = Pred⊆-poset (∣ C ∣Ix ×-setoid ∣ D ∣Ix)
 
  
-    module _ {P≤ : Index → Index → Poset}
-      {L : {C D : Index} → 𝒫⊆ C D →mono P≤ C D}
-      {R : {C D : Index} → P≤ C D →mono 𝒫⊆ C D}
-      (L⊣R : {C D : Index} → L {C} {D} ⊣ R {C} {D}) where
-      private
-        _[⋈]_ : {C D E : Index} → ∣ P≤ C D ∣ → ∣ P≤ D E ∣ → ∣ P≤ C E ∣
-        _[⋈]_ = indexedLiftOpAlong⊣  𝒫⊆ P≤ L⊣R _⋈_
+    module _ (P≤ : Index → Index → Poset)
+      {L : (C D : Index) → 𝒫⊆ C D →mono P≤ C D}
+      {R : (C D : Index) → P≤ C D →mono 𝒫⊆ C D}
+      (L⊣R : (C D : Index) → L C D ⊣ R C D) where
 
-      private module _ {C D : Index} where
-        open GaloisConnection (L⊣R {C} {D}) public
+      private module _ (C D : Index) where
+        open GaloisConnection (L⊣R C D) public
 
-      [⋈]-⋈-right-adjoint-lax-monoidal : ∀ {C D E} → IsIndexedLaxMonoidal P≤ 𝒫⊆ _[⋈]_ _⋈_ R C D E
-      [⋈]-⋈-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ⋈ ⟦ R ⟧ b)
-
-      ⋈-[⋈]-left-adjoint-oplax-monoidal : ∀ {C D E} → IsIndexedOplaxMonoidal 𝒫⊆ P≤ _⋈_ _[⋈]_ L C D E
-      ⋈-[⋈]-left-adjoint-oplax-monoidal S S' = L .Mono.mono (⋈-mono S (⟦ R ∘-mono L ⟧ S) S' (⟦ R ∘-mono L ⟧ S') (η S) (η S'))
+      private module _ {C D E : Index} where
+          _[⋈]_ : ∣ P≤ C D ∣ → ∣ P≤ D E ∣ → ∣ P≤ C E ∣
+          _[⋈]_ = indexedLiftOpAlong⊣ 𝒫⊆ P≤ L⊣R C D E _⋈_
 
       module _ (C D E : Index) where
         private
@@ -1491,33 +1499,39 @@ module _
           D≈ = ∣ D ∣Ix
           E≈ = ∣ E ∣Ix
 
-        PreRL⋈Closed = ((S : Pred (C≈ ×-setoid D≈)) (S' : Pred (D≈ ×-setoid E≈)) → S ∈ preRL → S' ∈ preRL → (S ⋈ S') ∈ preRL)
-        ⋈∈ImageR = ((a : ∣ P≤ C D ∣) (b : ∣ P≤ D E ∣) → Σ c ∶ ∣ P≤ C E ∣ , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ⋈ ⟦ R ⟧ b)))
+        [⋈]-⋈-right-adjoint-lax-monoidal : IsIndexedLaxMonoidal P≤ 𝒫⊆ R C D E _[⋈]_ _⋈_
+        [⋈]-⋈-right-adjoint-lax-monoidal a b = η C E (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b)
+
+        ⋈-[⋈]-left-adjoint-oplax-monoidal : IsIndexedOplaxMonoidal 𝒫⊆ P≤  L C D E _⋈_ _[⋈]_
+        ⋈-[⋈]-left-adjoint-oplax-monoidal S S' = L C E .Mono.mono (⋈-mono S (⟦ R C D ∘-mono L C D ⟧ S) S' (⟦ (R D E ∘-mono L D E) ⟧ S') (η C D S) (η D E S'))
+
+        PreRL⋈Closed = ((S : Pred (C≈ ×-setoid D≈)) (S' : Pred (D≈ ×-setoid E≈)) → S ∈ preRL C D → S' ∈ preRL D E → (S ⋈ S') ∈ preRL C E)
+        ⋈∈ImageR = ((a : ∣ P≤ C D ∣) (b : ∣ P≤ D E ∣) → Σ c ∶ ∣ P≤ C E ∣ , (⟦ R C E ⟧ c ≐ (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b)))
 
         preRL-⋈closed→⋈∈imageR : PreRL⋈Closed → ⋈∈ImageR
         preRL-⋈closed→⋈∈imageR preRL-⋈closed a b =
           let
-          Ra⋈Rb∈preRL : (⟦ R ⟧ a ⋈ ⟦ R ⟧ b) ∈ preRL
-          Ra⋈Rb∈preRL = preRL-⋈closed (⟦ R ⟧ a) (⟦ R ⟧ b) (R∈preRL a) (R∈preRL b)
+          Ra⋈Rb∈preRL : (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b) ∈ preRL C E
+          Ra⋈Rb∈preRL = preRL-⋈closed (⟦ R C D ⟧ a) (⟦ R D E ⟧ b) (R∈preRL _ _ a) (R∈preRL _ _ b)
           in
-          preRL⊆imageR Ra⋈Rb∈preRL 
-   
-        ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal : ⋈∈ImageR → IsIndexedOplaxMonoidal P≤ 𝒫⊆ _[⋈]_ _⋈_ R C D E
+          preRL⊆imageR _ _ Ra⋈Rb∈preRL
+
+        ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal : ⋈∈ImageR → IsIndexedOplaxMonoidal P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_
         ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal ⋈∈imageR a b =
             let
             (c , Rc≐Ra⋈Rb) = ⋈∈imageR a b
-            _ : typeOf Rc≐Ra⋈Rb ≡ (⟦ R ⟧ c ≐ (⟦ R ⟧ a ⋈ ⟦ R ⟧ b)) -- debug
+            _ : typeOf Rc≐Ra⋈Rb ≡ (⟦ R C E ⟧ c ≐ (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b)) -- debug
             _ = ≡.refl
             open PosetReasoning (Pred⊆-poset (∣ C ∣Ix ×-setoid ∣ E ∣Ix))
             in
             begin
-            ⟦ R ⟧ (a [⋈] b)                      ≡⟨⟩
-            ⟦ R ∘-mono L ⟧ (⟦ R ⟧ a ⋈ ⟦ R ⟧ b)   ≈˘⟨ (R ∘-mono L) .Mono.cong Rc≐Ra⋈Rb ⟩
-            ⟦ R ∘-mono L ⟧ (⟦ R ⟧ c)             ≈⟨ RLR≈R c  ⟩
-            ⟦ R ⟧ c                              ≈⟨ Rc≐Ra⋈Rb ⟩
-            ⟦ R ⟧ a ⋈ ⟦ R ⟧ b                    ∎ 
-  
-        preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal : PreRL⋈Closed → IsIndexedOplaxMonoidal P≤ 𝒫⊆ _[⋈]_ _⋈_ R C D E 
+            ⟦ R C E ⟧ (a [⋈] b)                                  ≡⟨⟩
+            ⟦ R C E ∘-mono L C E ⟧ (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b)   ≈˘⟨ (R _ _ ∘-mono L _ _) .Mono.cong Rc≐Ra⋈Rb ⟩
+            ⟦ R C E ∘-mono L C E ⟧ (⟦ R C E ⟧ c)                  ≈⟨ RLR≈R _ _ c  ⟩
+            ⟦ R C E ⟧ c                                           ≈⟨ Rc≐Ra⋈Rb ⟩
+            ⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b                            ∎
+
+        preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal : PreRL⋈Closed → IsIndexedOplaxMonoidal P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_
         preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal
           = ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal
           ∘ preRL-⋈closed→⋈∈imageR
@@ -1545,19 +1559,24 @@ module _ where
         (∩-⨆closed R R'
           (preGF-characterization R .proj₁ R∈preGF)
           (preGF-characterization R' .proj₁ R'∈preGF))
-      
-    [∩]-∩-oplax-monoidal : IsOplaxMonoidal _[∩]_ _∩_ G
+
+    [∩]-∩-oplax-monoidal : IsOplaxMonoidal G _[∩]_ _∩_
     [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preGF-closed
-      
+
   module _ where
     private
-      module _ {C⨆ D⨆ : SLat} where
+      module _ (C⨆ D⨆ : SLat) where
         open 𝒫⊆-and-Endo (C⨆ ×-slat D⨆) public
-        open GaloisConnection F⊣G public
-      _[⋈]_ = indexedLiftOpAlong⊣ SLat (\C D → 𝒫⊆ {C} {D}) (\C D → Endo {C} {D}) (\{C} {D} → F⊣G {C} {D}) _⋈_
+
+      module _ (C⨆ D⨆ : SLat) where
+        open GaloisConnection (F⊣G C⨆ D⨆) public
+
+      module _ {C⨆ D⨆ E⨆ : SLat} where
+        -- _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ Endo F⊣G C⨆ D⨆ E⨆ _⋈_
 
     module _ (C⨆ D⨆ E⨆ : SLat) where
       private
+        _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ Endo F⊣G C⨆ D⨆ E⨆ _⋈_
         C≤ = SLat.poset C⨆
         C≈ = SLat.Eq.setoid C⨆
         C = ∣ C⨆ ∣
@@ -1575,10 +1594,12 @@ module _ where
       ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' = (⨆T₂ , [⨆S₁,⨆T₂]∈R , [⨆T₂,⨆S₂]∈R')
         where
 
+        -- we take a subset T ⊆ C × D × E such that eath tuple (c , d , e) ∈ T satisfies (c,e)∈S and (c,d)∈R (d,e)∈R'
         T : Pred (C≈ ×-setoid (D≈ ×-setoid E≈))
         Pred.⟦ T ⟧ (c , d , e) = (c , e) ∈ S × (c , d) ∈ R × (d , e) ∈ R'
         T .Pred.isWellDefined (c≈c' , d≈d' , e≈e') (ce∈S , cd∈R , de∈R') = (S .Pred.isWellDefined (c≈c' , e≈e') ce∈S , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R , R' .Pred.isWellDefined (d≈d' , e≈e') de∈R')
 
+        -- A bunch of equalities between projections of T and S
         T₁ = T ∣₁
         T₂ = (T ∣₂) ∣₁
         T₃ = (T ∣₂) ∣₂
@@ -1616,18 +1637,25 @@ module _ where
         [T₁₂]₂≐T₂ .proj₁ (c , e , cde∈T) = (e , c , cde∈T)
         [T₁₂]₂≐T₂ .proj₂ (e , c , cde∈T) = (c , e , cde∈T)
 
+        -- One can easily check T₁₂ ⊆ R and T₂₃ ⊆ R'.
+        -- Then, we get
+        -- (1) ⨆ S₁ , ⨆ T₂ ≈ ⨆ T₁₂ ∈ R by S₁ ≐ T₁ and join closeness of R
+        -- (2) ⨆ T₂ , ⨆ S₂ ≈ ⨆ T₂₃ ∈ R' by S₂ ≐ T₃ and join closeness of R'
+        -- ⨆ S ∈ R ⋈ R' is witnessed by the intermediate element ⨆ T₂
         T₁₂⊆R : T₁₂ ⊆ R
         T₁₂⊆R (e , ce∈S , cd∈R , de∈R') = cd∈R
 
         T₂₃⊆R' : T₂₃ ⊆ R'
         T₂₃⊆R' (c , ce∈S , cd∈R , de∈R') = de∈R'
 
-        ⨆T : C × D × E
-        ⨆T = SLat.⨆ (C⨆ ×-slat (D⨆ ×-slat E⨆)) T
+        module _ where
+          open SLat (C⨆ ×-slat (D⨆ ×-slat E⨆))
+          ⨆T : C × D × E
+          ⨆T = ⨆ T
 
-        ⨆T₁ = let (c , _ , _) = ⨆T in c
-        ⨆T₂ = let (_ , d , _) = ⨆T in d
-        ⨆T₃ = let (_ , _ , e) = ⨆T in e
+          ⨆T₁ = let (c , _ , _) = ⨆T in c
+          ⨆T₂ = let (_ , d , _) = ⨆T in d
+          ⨆T₃ = let (_ , _ , e) = ⨆T in e
 
         module _ where
           open SLat (C⨆ ×-slat E⨆)
@@ -1648,13 +1676,13 @@ module _ where
 
           ⨆T₁₂≈[⨆T₁,⨆T₂] : ⨆ T₁₂ ≈ (⨆T₁ , ⨆T₂)
           ⨆T₁₂≈[⨆T₁,⨆T₂] =
-            ( C.⨆-cong (Pred-proj₁ T₁₂) (Pred-proj₁ T) [T₁₂]₁≐T₁
-            , D.⨆-cong (Pred-proj₂ T₁₂) (Pred-proj₁ (Pred-proj₂ T)) [T₁₂]₂≐T₂)
+            ( C.⨆-cong (T₁₂ ∣₁) T₁ [T₁₂]₁≐T₁
+            , D.⨆-cong (T₁₂ ∣₂) T₂ [T₁₂]₂≐T₂)
 
           [⨆T₁,⨆T₂]∈R : (⨆T₁ , ⨆T₂) ∈ R
           [⨆T₁,⨆T₂]∈R = R .Pred.isWellDefined ⨆T₁₂≈[⨆T₁,⨆T₂] ⨆T₁₂∈R
 
-          [⨆S₁,⨆T₂]∈R : (C.⨆ (Pred-proj₁ S) , ⨆T₂) ∈ R
+          [⨆S₁,⨆T₂]∈R : (⨆S₁ , ⨆T₂) ∈ R
           [⨆S₁,⨆T₂]∈R = R .Pred.isWellDefined (C.Eq.sym ⨆S₁≈⨆T₁ , D.Eq.refl) [⨆T₁,⨆T₂]∈R
 
         module _ where
@@ -1662,5 +1690,15 @@ module _ where
           [⨆T₂,⨆T₃]∈R' : (⨆T₂ , ⨆T₃) ∈ R'
           [⨆T₂,⨆T₃]∈R' = R'-⨆closed T₂₃ T₂₃⊆R'
 
-          [⨆T₂,⨆S₂]∈R' : (⨆T₂ , E.⨆ (Pred-proj₂ S)) ∈ R'
+          [⨆T₂,⨆S₂]∈R' : (⨆T₂ , ⨆S₂) ∈ R'
           [⨆T₂,⨆S₂]∈R' = R' .Pred.isWellDefined (D.Eq.refl , E.Eq.sym ⨆S₂≈⨆T₃) [⨆T₂,⨆T₃]∈R'
+
+      ⋈-preGF-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preGF-closed R R' R∈preGF R'∈preGF =
+        preGF-characterization C⨆ E⨆ (R ⋈ R') .proj₂
+          (⋈-⨆closed R R'
+            (preGF-characterization C⨆ D⨆ R .proj₁ R∈preGF)
+            (preGF-characterization D⨆ E⨆ R' .proj₁ R'∈preGF))
+
+      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat Endo 𝒫⊆ G C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal =  preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid Endo F⊣G C⨆ D⨆ E⨆ ⋈-preGF-closed
