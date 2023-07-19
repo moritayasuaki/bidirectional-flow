@@ -1,3 +1,4 @@
+
 {-# OPTIONS --type-in-type --postfix-projections #-}
 
 module _ where
@@ -452,21 +453,25 @@ module _ {P : Poset} where
   Pred.⟦ A ˡ ⟧ x = ∀ a → ⟦ A ⟧ a → x ≤ a
   Pred.isWellDefined (A ˡ) {x} {y} x≈y low z z∈A = trans (reflexive (Eq.sym x≈y)) (low z z∈A)
 
-module _ {X Y : Setoid} where
-  module X = SetoidPoly X
-  module Y = SetoidPoly Y
-  Pred-proj₁ : Pred (X ×-setoid Y) → Pred X
-  Pred.⟦ Pred-proj₁ R ⟧ = λ x → Σ y ∶ ∣ Y ∣ , ((x , y) ∈ R)
+module _ {X≈ Y≈ : Setoid} where
+  private
+    module X = SetoidPoly X≈
+    module Y = SetoidPoly Y≈
+    X = ∣ X≈ ∣
+    Y = ∣ Y≈ ∣
+
+  Pred-proj₁ : Pred (X≈ ×-setoid Y≈) → Pred X≈
+  Pred.⟦ Pred-proj₁ R ⟧ = λ x → Σ y ∶ Y , ((x , y) ∈ R)
   Pred-proj₁ R .Pred.isWellDefined x≈x' (y , xy∈R) = y , R .Pred.isWellDefined (x≈x' , Y.refl) xy∈R
 
-  Pred-proj₂ : Pred (X ×-setoid Y) → Pred Y
-  Pred.⟦ Pred-proj₂ R ⟧ = λ y → Σ x ∶ ∣ X ∣ , ((x , y) ∈ R)
+  Pred-proj₂ : Pred (X≈ ×-setoid Y≈) → Pred Y≈
+  Pred.⟦ Pred-proj₂ R ⟧ = λ y → Σ x ∶ X , ((x , y) ∈ R)
   Pred-proj₂ R .Pred.isWellDefined y≈y' (x , xy∈R) = x , R .Pred.isWellDefined (X.refl , y≈y') xy∈R
 
-  Pred-proj₁-∈ : {x : _} {y : _} (R : Pred (X ×-setoid Y)) → (x , y) ∈ R → x ∈ Pred-proj₁ R
+  Pred-proj₁-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → x ∈ Pred-proj₁ R
   Pred-proj₁-∈ R xy∈R = -, xy∈R
 
-  Pred-proj₂-∈ : {x : _} {y : _} (R : Pred (X ×-setoid Y)) → (x , y) ∈ R → y ∈ Pred-proj₂ R
+  Pred-proj₂-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → y ∈ Pred-proj₂ R
   Pred-proj₂-∈ R xy∈R = -, xy∈R
 
 {-
@@ -1548,7 +1553,7 @@ module _ where
         c = let (c , d , e) = triple in c
         d = let (c , d , e) = triple in d
         e = let (c , d , e) = triple in e
-        _ : (c , e) ≡ SLat.⨆ (C⨆ ×-slat E⨆) (S ∩ (R ⋈ R'))
+        _ : SLat._≈_ (C⨆ ×-slat E⨆) (c , e) ( SLat.⨆ (C⨆ ×-slat E⨆) (S ∩ (R ⋈ R')))
         _ = {!!}
         
           
