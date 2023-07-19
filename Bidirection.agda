@@ -679,63 +679,6 @@ module _ (D⨆ : SLat) where
   ⨆-endomono' : (f : D≤ →mono D≤) (S : Pred D≈) → ((d : D) → ( ⨆ (↓ D≤ d ∩ S) ≤ ⟦ f ⟧ d)) → ((d : D) → d ∈ S → d ≤ ⟦ f ⟧ d)
   ⨆-endomono' f S ⨆↓-∩S≤f- d d∈S = Po.trans (⨆-upper (↓ D≤ d ∩ S) d (Po.refl , d∈S)) (⨆↓-∩S≤f- d)
 
-{-
-  ⨆image≈⨆image↓ : (C : Setoid) (f : C →cong D≈) (S : Pred C) → ⨆ (image f S) ≈ ⨆ (image↓ D≤ f S)
-  ⨆image≈⨆image↓ C f S = Po.antisym ⨆image≤⨆image↓ ⨆image↓≤⨆image
-    where
-    open PosetReasoning D≤
-
-    fS⊆fS↓ : image f S ⊆ image↓ D≤ f S
-    fS⊆fS↓ (c , c∈C , fc≈d) = (c , c∈C , Po.reflexive (Eq.sym fc≈d))
-
-    ⨆image≤⨆image↓ : ⨆ (image f S) ≤ ⨆ (image↓ D≤ f S)
-    ⨆image≤⨆image↓ = 
-      begin
-      ⨆ (image f S)     ≤⟨ ⨆-mono (image f S) (image↓ D≤ f S) fS⊆fS↓ ⟩
-      ⨆ (image↓ D≤ f S) ∎
-
-    d∈fS↓→d≤d'∈fS : (d : D) → d ∈ image↓ D≤ f S → Σ d' ∶ D , d' ∈ image f S × d ≤ d'
-    d∈fS↓→d≤d'∈fS d (d∈fS↓ @ (c , c∈S , d≤fc)) =
-      let
-      d' = ⟦ f ⟧ c
-      d'∈S = (c , c∈S , Eq.refl)
-      in (d' , d'∈S , d≤fc)
-
-    ⨆image↓≤⨆image : ⨆ (image↓ D≤ f S) ≤ ⨆ (image f S)
-    ⨆image↓≤⨆image =
-      begin
-      ⨆ (image↓ D≤ f S)   ≤⟨  ⨆S↓≤⨆S _ _ d∈fS↓→d≤d'∈fS  ⟩
-      ⨆ (image f S)       ∎
-
--}
-{-
-module _ (D⨆ E⨆ : SLat) where
-  private module D = SLat D⨆
-  private module E = SLat E⨆
-
-  ⨆f≤f⨆ : ∀ (f : D.poset →mono E.poset) (S : Pred D.Eq.setoid) → E.⨆ (image ⟦ f ⟧cong S) E.≤ ⟦ f ⟧ (D.⨆ S)
-  ⨆f≤f⨆ f S = P₁
-    where
-
-    open PosetReasoning E.poset
-
-    P₀ : (e : ∣ E⨆ ∣) → e ∈ image ⟦ f ⟧cong S → e E.≤ ⟦ f ⟧ (D.⨆ S)
-    P₀ e (d , d∈S , fd≈e) = begin
-      e                           ≈˘⟨ fd≈e ⟩
-      ⟦ f ⟧ d                     ≤⟨ fd≤f⨆S ⟩
-      ⟦ f ⟧ (D.⨆ S) ∎
-      where
-      d≤⨆S   : d D.≤ D.⨆ S
-      d≤⨆S   = D.⨆-upper S d d∈S
-      fd≤f⨆S : ⟦ f ⟧ d E.≤ ⟦ f ⟧ (D.⨆ S)
-      fd≤f⨆S = f .Mono.mono d≤⨆S
-
-    P₁ : E.⨆ (image ⟦ f ⟧cong S) E.≤ ⟦ f ⟧ (D.⨆ S)
-    P₁ = begin
-      E.⨆ (image ⟦ f ⟧cong S)    ≤⟨ E.⨆-least (image ⟦ f ⟧cong S) (⟦ f ⟧ (D.⨆ S)) P₀ ⟩
-      ⟦ f ⟧ (D.⨆ S) ∎
--}
-
 module _ where
   open ProductBinR
   open PosetPoly
@@ -980,6 +923,7 @@ module _ (C⨆ : SLat) where
 
   open SLat C⨆
 
+-- First abstraction
 module 𝒫⊆-and-Endo (C⨆ : SLat) where
 
   private
@@ -1419,11 +1363,11 @@ module _
       open GaloisConnection L⊣R
 
     -- right adjoint that sends 𝒫⊆ to any poset are lax monoidal wrt ∩
-    lift∩-∩-right-adjoint-lax-monoidal : IsLaxMonoidal _[∩]_ _∩_ R
-    lift∩-∩-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ∩ ⟦ R ⟧ b)
+    [∩]-∩-right-adjoint-lax-monoidal : IsLaxMonoidal _[∩]_ _∩_ R
+    [∩]-∩-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ∩ ⟦ R ⟧ b)
 
-    ∩-lift∩-left-adjoint-oplax-monoidal : IsOplaxMonoidal _∩_ _[∩]_ L
-    ∩-lift∩-left-adjoint-oplax-monoidal S S' = L .Mono.mono ((∩-mono S (⟦ R ⟧ (⟦ L ⟧ S)) S' (⟦ R ⟧ (⟦ L ⟧ S')) (η S) (η S')))
+    ∩-[∩]-left-adjoint-oplax-monoidal : IsOplaxMonoidal _∩_ _[∩]_ L
+    ∩-[∩]-left-adjoint-oplax-monoidal S S' = L .Mono.mono ((∩-mono S (⟦ R ⟧ (⟦ L ⟧ S)) S' (⟦ R ⟧ (⟦ L ⟧ S')) (η S) (η S')))
 
     preRL-∩closed→∩∈imageR : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)))
     preRL-∩closed→∩∈imageR preRL-∩closed a b =
@@ -1433,14 +1377,11 @@ module _
       in
       preRL⊆imageR Ra∩Rb∈preRL 
     
-    ∩∈imageR→lift∩-∩-right-adjoint-oplax-monoidal :
-      ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)))
-      → IsOplaxMonoidal _[∩]_ _∩_ R
-    ∩∈imageR→lift∩-∩-right-adjoint-oplax-monoidal ∩∈imageR a b =
+    ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal :
+      ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b))) → IsOplaxMonoidal _[∩]_ _∩_ R
+    ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal ∩∈imageR a b =
       let
-      (c , Rc≐Ra∩Rb) = ∩∈imageR a b
-      _ : typeOf Rc≐Ra∩Rb ≡ (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)) -- debug
-      _ = ≡.refl
+      (c , Rc≐Ra∩Rb) = ∩∈imageR a b -- we have c such that ⟦ R ⟧ c ≐ ⟦ R ⟧ a ∩ ⟦ R ⟧ b
       open PosetReasoning (Pred⊆-poset C≈)
       in
       begin
@@ -1450,9 +1391,9 @@ module _
       ⟦ R ⟧ c                              ≈⟨ Rc≐Ra∩Rb ⟩
       ⟦ R ⟧ a ∩ ⟦ R ⟧ b                    ∎ 
 
-    preRL-∩closed→lift∩-∩-right-adjoint-oplax-monoidal : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → IsOplaxMonoidal _[∩]_ _∩_ R
-    preRL-∩closed→lift∩-∩-right-adjoint-oplax-monoidal
-      = ∩∈imageR→lift∩-∩-right-adjoint-oplax-monoidal
+    preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → IsOplaxMonoidal _[∩]_ _∩_ R
+    preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal
+      = ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal
       ∘ preRL-∩closed→∩∈imageR
 
 module _
@@ -1546,7 +1487,7 @@ module _
 
 
 module _ where
-  -- Here we check the oplax-monoidality of G G₀ G₁ G₂ G₃, wrt ∩ and [∩]
+  -- Here we check the oplax-monoidality of G G₀ G₁ G₂ G₃, wrt ∩ and [∩], ⋈ and [⋈]
 
   module _ (C⨆ : SLat) where
     private
@@ -1568,8 +1509,8 @@ module _ where
           (preGF-characterization R .proj₁ R∈preGF)
           (preGF-characterization R' .proj₁ R'∈preGF))
       
-    lift∩-∩-oplax-monoidal : IsOplaxMonoidal _[∩]_ _∩_ G
-    lift∩-∩-oplax-monoidal = preRL-∩closed→lift∩-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preGF-closed
+    [∩]-∩-oplax-monoidal : IsOplaxMonoidal _[∩]_ _∩_ G
+    [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preGF-closed
       
   module _ where
     private
@@ -1582,13 +1523,34 @@ module _ where
       private
         C≤ = SLat.poset C⨆
         C≈ = SLat.Eq.setoid C⨆
+        C = ∣ C⨆ ∣
+        module C = SLat C⨆
         D≤ = SLat.poset D⨆
         D≈ = SLat.Eq.setoid D⨆
+        D = ∣ D⨆ ∣
+        module D = SLat D⨆
         E≤ = SLat.poset E⨆
         E≈ = SLat.Eq.setoid E⨆
+        E = ∣ E⨆ ∣
+        module E = SLat E⨆
 
       ⋈-⨆closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (C⨆ ×-slat D⨆) R → Is⨆Closed (D⨆ ×-slat E⨆) R' → Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
-      ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' = {!!}
-      
+      ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' =
+        (d , {!!} , {!!})
+        where
+        SRR' : Pred (C≈ ×-setoid (D≈ ×-setoid E≈)) 
+        Pred.⟦ SRR' ⟧ (c , d , e) = (c , e) ∈ S × (c , d) ∈ R × (d , e) ∈ R'
+        SRR' .Pred.isWellDefined (c≈c' , d≈d' , e≈e') (ce∈S , cd∈R , de∈R') = (S .Pred.isWellDefined (c≈c' , e≈e') ce∈S , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R , R' .Pred.isWellDefined (d≈d' , e≈e') de∈R')
+
+        triple : C × D × E
+        triple = SLat.⨆ (C⨆ ×-slat (D⨆ ×-slat E⨆)) SRR'
+
+        c = let (c , d , e) = triple in c
+        d = let (c , d , e) = triple in d
+        e = let (c , d , e) = triple in e
+        _ : (c , e) ≡ SLat.⨆ (C⨆ ×-slat E⨆) (S ∩ (R ⋈ R'))
+        _ = {!!}
+        
+          
 
 
