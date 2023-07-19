@@ -44,9 +44,6 @@ syntax -Σ X (\x → e) = Σ x ∶ X , e
 -Π X Y = (x : X) → Y x
 syntax -Π X (\x → e) = Π x ∶ X , e
 
-private variable
-  ℓ ℓ' ℓ'' o o' p p' : Level
-
 record HasCarrier (Structure : Set) : Set where
   field
     Carrier : Structure → Set
@@ -454,9 +451,12 @@ module _ {P : Poset} where
   Pred.isWellDefined (A ˡ) {x} {y} x≈y low z z∈A = trans (reflexive (Eq.sym x≈y)) (low z z∈A)
 
 module _ {X≈ Y≈ : Setoid} where
+
   private
+
     module X = SetoidPoly X≈
     module Y = SetoidPoly Y≈
+
     X = ∣ X≈ ∣
     Y = ∣ Y≈ ∣
 
@@ -468,9 +468,15 @@ module _ {X≈ Y≈ : Setoid} where
   Pred.⟦ Pred-proj₁ R ⟧ = λ x → Σ y ∶ Y , ((x , y) ∈ R)
   Pred-proj₁ R .Pred.isWellDefined x≈x' (y , xy∈R) = y , R .Pred.isWellDefined (x≈x' , Y.refl) xy∈R
 
+  _∣₁ : Pred (X≈ ×-setoid Y≈) → Pred X≈
+  _∣₁ = Pred-proj₁
+
   Pred-proj₂ : Pred (X≈ ×-setoid Y≈) → Pred Y≈
   Pred.⟦ Pred-proj₂ R ⟧ = λ y → Σ x ∶ X , ((x , y) ∈ R)
   Pred-proj₂ R .Pred.isWellDefined y≈y' (x , xy∈R) = x , R .Pred.isWellDefined (X.refl , y≈y') xy∈R
+
+  _∣₂ : Pred (X≈ ×-setoid Y≈) → Pred Y≈
+  _∣₂ = Pred-proj₂
 
   Pred-proj₁-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → x ∈ Pred-proj₁ R
   Pred-proj₁-∈ R xy∈R = -, xy∈R
@@ -479,17 +485,25 @@ module _ {X≈ Y≈ : Setoid} where
   Pred-proj₂-∈ R xy∈R = -, xy∈R
 
 module _ {X≈ Y≈ Z≈ : Setoid} where
+
   private
+
     module X = SetoidPoly X≈
     module Y = SetoidPoly Y≈
     module Z = SetoidPoly Z≈
+
     X = ∣ X≈ ∣
     Y = ∣ Y≈ ∣
     Z = ∣ Z≈ ∣
 
-  Pred-assoc-lr : Pred (X≈ ×-setoid (Y≈ ×-setoid Z≈)) → Pred ((X≈ ×-setoid Y≈) ×-setoid Z≈)
-  Pred.⟦ Pred-assoc-lr R ⟧ ((x , y) , z) = Pred.⟦ R ⟧ (x , (y , z))
-  Pred-assoc-lr R .Pred.isWellDefined {(x , y) , z} {(x' , y') , z'} ((x≈x' , y≈y') , z≈z') Rxyz = R .Pred.isWellDefined (x≈x' , (y≈y' , z≈z')) Rxyz
+  Pred-assoc-rl : Pred (X≈ ×-setoid (Y≈ ×-setoid Z≈)) → Pred ((X≈ ×-setoid Y≈) ×-setoid Z≈)
+  Pred.⟦ Pred-assoc-rl R ⟧ ((x , y) , z) = Pred.⟦ R ⟧ (x , (y , z))
+  Pred-assoc-rl R .Pred.isWellDefined {(x , y) , z} {(x' , y') , z'} ((x≈x' , y≈y') , z≈z') Rxyz = R .Pred.isWellDefined (x≈x' , (y≈y' , z≈z')) Rxyz
+
+  Pred-assoc-lr : Pred ((X≈ ×-setoid Y≈) ×-setoid Z≈) → Pred (X≈ ×-setoid (Y≈ ×-setoid Z≈))
+  Pred.⟦ Pred-assoc-lr R ⟧ (x , (y , z)) = Pred.⟦ R ⟧ ((x , y) , z)
+  Pred-assoc-lr R .Pred.isWellDefined {x , (y , z)} {x' , (y' , z')} (x≈x' , (y≈y' , z≈z')) Rxyz = R .Pred.isWellDefined ((x≈x' , y≈y') , z≈z') Rxyz
+
 
 
 {-
@@ -711,7 +725,7 @@ module _ where
   (D ×-slat E) ._≈_ = Pointwise (D ._≈_) (E ._≈_)
   (D ×-slat E) ._≤_ = Pointwise (D ._≤_) (E ._≤_)
   (D ×-slat E) .≤-po = ×-isPartialOrder (D .≤-po) (E .≤-po)
-  (D ×-slat E) .⨆ R =  D .⨆ (Pred-proj₁ R) , E .⨆ (Pred-proj₂ R)
+  (D ×-slat E) .⨆ R =  D .⨆ (R ∣₁) , E .⨆ (R ∣₂)
   (D ×-slat E) ._⊓_ (d , e) (d' , e') = (D ._⊓_ d d' , E ._⊓_ e e')
   (D ×-slat E) .⊤ = D .⊤ , E .⊤
   (D ×-slat E) .⊓-inf (d , e) (d' , e') = D×E-lower₁ , D×E-lower₂ , D×E-greatest
@@ -736,8 +750,8 @@ module _ where
     where
     upper : (x : ∣ D ∣ × ∣ E ∣) → x ∈ R → (D ×-slat E) ._≤_ x ((D ×-slat E) .⨆ R)
     upper (d , e) de∈R
-      = (⨆-sup D (Pred-proj₁ R) .proj₁ d (Pred-proj₁-∈ R de∈R))
-      , (⨆-sup E (Pred-proj₂ R) .proj₁ e (Pred-proj₂-∈ R de∈R))
+      = (⨆-sup D (R ∣₁) .proj₁ d (Pred-proj₁-∈ R de∈R))
+      , (⨆-sup E (R ∣₂) .proj₁ e (Pred-proj₂-∈ R de∈R))
     least : (y : (D ×-slat E) .Carrier) →
               ((x : (D ×-slat E) .Carrier) → x ∈ R → (D ×-slat E) ._≤_ x y) →
               (D ×-slat E) ._≤_ ((D ×-slat E) .⨆ R) y
@@ -745,9 +759,9 @@ module _ where
       = ⨆-least D (Pred-proj₁ R) d d-upper
       , ⨆-least E (Pred-proj₂ R) e e-upper
       where
-      d-upper : (d' : D .Carrier) → d' ∈ Pred-proj₁ R → D ._≤_ d' d
+      d-upper : (d' : D .Carrier) → d' ∈ (R ∣₁) → D ._≤_ d' d
       d-upper d' (e' , de'∈R) = p-upper (d' , e') de'∈R .proj₁
-      e-upper : (e' : E .Carrier) → e' ∈ Pred-proj₂ R → E ._≤_ e' e
+      e-upper : (e' : E .Carrier) → e' ∈ (R ∣₂) → E ._≤_ e' e
       e-upper e' (d' , de'∈R) = p-upper (d' , e') de'∈R .proj₂
 
 module _ where
@@ -1558,42 +1572,95 @@ module _ where
         module E = SLat E⨆
 
       ⋈-⨆closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (C⨆ ×-slat D⨆) R → Is⨆Closed (D⨆ ×-slat E⨆) R' → Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
-      ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' =
-        (d , R .Pred.isWellDefined (c≈⨆S₁ , D.Eq.refl) cd∈R  , R' .Pred.isWellDefined (D.Eq.refl , e≈⨆S₂) de∈R')
+      ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' = (⨆T₂ , [⨆S₁,⨆T₂]∈R , [⨆T₂,⨆S₂]∈R')
         where
-        SRR' : Pred (C≈ ×-setoid (D≈ ×-setoid E≈)) 
-        Pred.⟦ SRR' ⟧ (c , d , e) = (c , e) ∈ S × (c , d) ∈ R × (d , e) ∈ R'
-        SRR' .Pred.isWellDefined (c≈c' , d≈d' , e≈e') (ce∈S , cd∈R , de∈R') = (S .Pred.isWellDefined (c≈c' , e≈e') ce∈S , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R , R' .Pred.isWellDefined (d≈d' , e≈e') de∈R')
 
-        triple : C × D × E
-        triple = SLat.⨆ (C⨆ ×-slat (D⨆ ×-slat E⨆)) SRR'
+        T : Pred (C≈ ×-setoid (D≈ ×-setoid E≈))
+        Pred.⟦ T ⟧ (c , d , e) = (c , e) ∈ S × (c , d) ∈ R × (d , e) ∈ R'
+        T .Pred.isWellDefined (c≈c' , d≈d' , e≈e') (ce∈S , cd∈R , de∈R') = (S .Pred.isWellDefined (c≈c' , e≈e') ce∈S , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R , R' .Pred.isWellDefined (d≈d' , e≈e') de∈R')
 
-        c = let (c , d , e) = triple in c
-        d = let (c , d , e) = triple in d
-        e = let (c , d , e) = triple in e
+        T₁ = T ∣₁
+        T₂ = (T ∣₂) ∣₁
+        T₃ = (T ∣₂) ∣₂
 
-        S₁R : Pred (C≈ ×-setoid D≈)
-        Pred.⟦ S₁R ⟧ (c , d) = c ∈ Pred-proj₁ S × (c , d) ∈ R
-        S₁R .Pred.isWellDefined (c≈c' , d≈d') (c∈S₁ , cd∈R) = (Pred-proj₁ S .Pred.isWellDefined c≈c' c∈S₁ , R .Pred.isWellDefined (c≈c' , d≈d') cd∈R) 
+        S₁ = S ∣₁
+        S₂ = S ∣₂
 
-        cd∈R : (c , d) ∈ R
-        cd∈R = R .Pred.isWellDefined {!!} (R-⨆closed S₁R S₁R⊆R)
-          where
-          S₁R⊆R : S₁R ⊆ R
-          S₁R⊆R = {!!}
+        S₁≐T₁ : S₁ ≐ T₁
+        S₁≐T₁ .proj₁ (e , ce∈S) =
+          let
+          (d , cde∈T) = S⊆R⋈R' ce∈S
+          in
+          ((d , e) , (ce∈S , cde∈T))
+        S₁≐T₁ .proj₂ ((d , e) , (ce∈S , cde∈T)) = (e , ce∈S)
 
-        c≈⨆S₁ : c C.≈ C.⨆ (Pred-proj₁ S)
-        c≈⨆S₁ = {!!}
+        S₂≐T₃ : S₂ ≐ T₃
+        S₂≐T₃ .proj₁ (c , ce∈S) =
+          let
+          (d , cde∈T) = S⊆R⋈R' ce∈S
+          in
+          (d , c , ce∈S , cde∈T)
+        S₂≐T₃ .proj₂ (d , c , ce∈S , cde∈T) = (c , ce∈S)
 
-        de∈R' : (d , e) ∈ R'
-        de∈R' = {!!}
+        T₁₂ : Pred (C≈ ×-setoid D≈)
+        T₁₂ = (Pred-assoc-rl T) ∣₁
 
-        e≈⨆S₂ : e E.≈ E.⨆ (Pred-proj₂ S)
-        e≈⨆S₂ = {!!}
+        T₂₃ : Pred (D≈ ×-setoid E≈)
+        T₂₃ = T ∣₂
 
-        _ : SLat._≈_ (C⨆ ×-slat E⨆) (c , e) ( SLat.⨆ (C⨆ ×-slat E⨆) (S ∩ (R ⋈ R')))
-        _ = {!!}
-        
-          
+        [T₁₂]₁≐T₁ : (T₁₂ ∣₁) ≐ T₁
+        [T₁₂]₁≐T₁ .proj₁ (d , e , cde∈T) = ((d , e) , cde∈T)
+        [T₁₂]₁≐T₁ .proj₂ ((d , e) , cde∈T) = (d , e , cde∈T)
 
+        [T₁₂]₂≐T₂ : (T₁₂ ∣₂) ≐ T₂
+        [T₁₂]₂≐T₂ .proj₁ (c , e , cde∈T) = (e , c , cde∈T)
+        [T₁₂]₂≐T₂ .proj₂ (e , c , cde∈T) = (c , e , cde∈T)
 
+        T₁₂⊆R : T₁₂ ⊆ R
+        T₁₂⊆R (e , ce∈S , cd∈R , de∈R') = cd∈R
+
+        T₂₃⊆R' : T₂₃ ⊆ R'
+        T₂₃⊆R' (c , ce∈S , cd∈R , de∈R') = de∈R'
+
+        ⨆T : C × D × E
+        ⨆T = SLat.⨆ (C⨆ ×-slat (D⨆ ×-slat E⨆)) T
+
+        ⨆T₁ = let (c , _ , _) = ⨆T in c
+        ⨆T₂ = let (_ , d , _) = ⨆T in d
+        ⨆T₃ = let (_ , _ , e) = ⨆T in e
+
+        module _ where
+          open SLat (C⨆ ×-slat E⨆)
+          ⨆S = ⨆ S
+          ⨆S₁ = let (c , _) = ⨆S in c
+          ⨆S₂ = let (_ , e) = ⨆S in e
+
+        ⨆S₁≈⨆T₁ : ⨆S₁ C.≈ ⨆T₁
+        ⨆S₁≈⨆T₁ = C.⨆-cong S₁ T₁ S₁≐T₁
+
+        ⨆S₂≈⨆T₃ : ⨆S₂ E.≈ ⨆T₃
+        ⨆S₂≈⨆T₃ = E.⨆-cong S₂ T₃ S₂≐T₃
+
+        module _ where
+          open SLat (C⨆ ×-slat D⨆)
+          ⨆T₁₂∈R : ⨆ T₁₂ ∈ R
+          ⨆T₁₂∈R = R-⨆closed T₁₂ T₁₂⊆R
+
+          ⨆T₁₂≈[⨆T₁,⨆T₂] : ⨆ T₁₂ ≈ (⨆T₁ , ⨆T₂)
+          ⨆T₁₂≈[⨆T₁,⨆T₂] =
+            ( C.⨆-cong (Pred-proj₁ T₁₂) (Pred-proj₁ T) [T₁₂]₁≐T₁
+            , D.⨆-cong (Pred-proj₂ T₁₂) (Pred-proj₁ (Pred-proj₂ T)) [T₁₂]₂≐T₂)
+
+          [⨆T₁,⨆T₂]∈R : (⨆T₁ , ⨆T₂) ∈ R
+          [⨆T₁,⨆T₂]∈R = R .Pred.isWellDefined ⨆T₁₂≈[⨆T₁,⨆T₂] ⨆T₁₂∈R
+
+          [⨆S₁,⨆T₂]∈R : (C.⨆ (Pred-proj₁ S) , ⨆T₂) ∈ R
+          [⨆S₁,⨆T₂]∈R = R .Pred.isWellDefined (C.Eq.sym ⨆S₁≈⨆T₁ , D.Eq.refl) [⨆T₁,⨆T₂]∈R
+
+        module _ where
+          open SLat (D⨆ ×-slat E⨆)
+          [⨆T₂,⨆T₃]∈R' : (⨆T₂ , ⨆T₃) ∈ R'
+          [⨆T₂,⨆T₃]∈R' = R'-⨆closed T₂₃ T₂₃⊆R'
+
+          [⨆T₂,⨆S₂]∈R' : (⨆T₂ , E.⨆ (Pred-proj₂ S)) ∈ R'
+          [⨆T₂,⨆S₂]∈R' = R' .Pred.isWellDefined (D.Eq.refl , E.Eq.sym ⨆S₂≈⨆T₃) [⨆T₂,⨆T₃]∈R'
