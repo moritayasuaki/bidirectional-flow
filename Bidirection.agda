@@ -1,4 +1,3 @@
-
 {-# OPTIONS --type-in-type --postfix-projections #-}
 
 module _ where
@@ -87,9 +86,11 @@ instance
   mono-map : {x y : Poset} → Has⟦⟧ (x →mono y) (∣ x ∣ → ∣ y ∣)
   Has⟦⟧.⟦ mono-map ⟧ = Mono.⟦_⟧
 
+infixr 10 _∘-cong_
 _∘-cong_ : {A B C : Setoid} (f : B →cong C) (g : A →cong B) → A →cong C
 f ∘-cong g = BinRMorphComp.setoidHomomorphism g f
 
+infixr 10 _∘-mono_
 _∘-mono_ : {A B C : Poset} (f : B →mono C) (g : A →mono B) → A →mono C
 f ∘-mono g = BinRMorphComp.posetHomomorphism g f
 
@@ -112,12 +113,27 @@ Prop→-poset .PosetPoly.isPartialOrder .IsPartialOrder.isPreorder .IsPreorder.r
 Prop→-poset .PosetPoly.isPartialOrder .IsPartialOrder.isPreorder .IsPreorder.trans ij jk = jk ∘ ij
 Prop→-poset .PosetPoly.isPartialOrder .IsPartialOrder.antisym = _,_
 
+implicit↔explicit : {A : Set} {B : A → Set} → ({x : A} → B x) ↔ ((x : A) → B x)
+implicit↔explicit .proj₁ = λ-
+implicit↔explicit .proj₂ = _$-
+
+curry↔uncurry : {A : Set} {B : Set} {C : A × B → Set} → ((ab : A × B) → C ab) ↔ ((a : A) (b : B) → C (a , b))
+curry↔uncurry .proj₁ = curry
+curry↔uncurry .proj₂ = uncurry
+
+implication-↔× : {A : Set} {B : Set} → (A → B) → A ↔ B × A
+implication-↔× φ .proj₁ a = (φ a , a)
+implication-↔× φ .proj₂ (b , a) = a
+
 Prop↔-setoid : Setoid
 Prop↔-setoid = PosetPoly.Eq.setoid Prop→-poset
 
 curry-↔ : ∀ a b c → (a × b → c) ↔ (a → b → c)
 curry-↔ a b c .proj₁ f = curry f 
 curry-↔ a b c .proj₂ g = uncurry g
+
+_×-↔_ : {A B C D : Set} → (A ↔ B) → (C ↔ D) → (A × C) ↔ (B × D)
+(a→b , b→a) ×-↔ (c→d , d→c) = Product.map a→b c→d , Product.map b→a d→c
 
 module _ (D≤ : Poset) where
   open PosetPoly D≤
@@ -568,6 +584,9 @@ record SLat : Set where
     ⊤-max : Maximum _≤_ ⊤
     ⨆-sup : ∀ S → (∀ x → x ∈ S → x ≤ ⨆ S) × (∀ y → (∀ x → x ∈ S → x ≤ y) → ⨆ S ≤ y)
 
+  ↓≤ : Carrier → Pred Eq.setoid
+  ↓≤ = ↓ poset
+
   ⊥ : Carrier
   ⊥ = ⨆ ∅
 
@@ -633,13 +652,15 @@ record SLat : Set where
 
   ⊓≈⨆∩↓ : ∀ x y → (x ⊓ y) ≈ ⨆ (↓ poset x ∩ ↓ poset y)
   ⊓≈⨆∩↓ x y = Po.antisym
-    (⨆-upper (↓ poset x ∩ ↓ poset y) (x ⊓ y) (⊓-inf x y .proj₁ , ⊓-inf x y .proj₂ .proj₁))
-    (⊓-inf x y .proj₂ .proj₂ (⨆ (↓ poset x ∩ ↓ poset y)) (⨆-least (↓ poset x ∩ ↓ poset y) x (\_ p → p .proj₁)) ( (⨆-least (↓ poset x ∩ ↓ poset y) y (\_ p → p .proj₂))))
+    (⨆-upper (↓≤ x ∩ ↓≤ y) (x ⊓ y) (⊓-inf x y .proj₁ , ⊓-inf x y .proj₂ .proj₁))
+    (⊓-inf x y .proj₂ .proj₂ (⨆ (↓≤ x ∩ ↓≤ y)) (⨆-least (↓≤ x ∩ ↓≤ y) x (\_ p → p .proj₁)) ( (⨆-least (↓≤ x ∩ ↓≤ y) y (\_ p → p .proj₂))))
 
-  ⨆↓≈⨆↓∩ : ∀ x S → x ∈ S → ⨆ (↓ poset x) ≈ ⨆ (↓ poset x ∩ S)
+  ⨆↓≈⨆↓∩ : ∀ x S → x ∈ S → ⨆ (↓≤ x) ≈ ⨆ (↓≤ x ∩ S)
   ⨆↓≈⨆↓∩ x S x∈S = Po.antisym
-    (⨆-upper (↓ poset x ∩ S) (⨆ (↓ poset x)) (⨆-↓≤ x , Pred.isWellDefined S (Eq.sym (⨆-↓ x)) x∈S))
-    (⨆-mono (↓ poset x ∩ S) (↓ poset x) proj₁)
+    (⨆-upper (↓≤ x ∩ S) (⨆ (↓≤ x)) (⨆-↓≤ x , Pred.isWellDefined S (Eq.sym (⨆-↓ x)) x∈S))
+    (⨆-mono (↓≤ x ∩ S) (↓≤ x) proj₁)
+
+  post≤ = post poset
 
   ν : (Eq.setoid →cong Eq.setoid) → Carrier
   ν f = ⨆ (post poset f)
@@ -655,19 +676,19 @@ record SLat : Set where
     ι x x≤fx =
       begin
       x        ≤⟨ x≤fx ⟩
-      f x      ≤⟨ f≤ .Mono.mono (⨆-upper (post poset f≈) x x≤fx) ⟩
+      f x      ≤⟨ f≤ .Mono.mono (⨆-upper (post≤ f≈) x x≤fx) ⟩
       f (ν f≈) ∎
 
     R : ν f≈ ≤ f (ν f≈)
     R =
       begin
-      ν f≈     ≤⟨ ⨆-least (post poset f≈) (f (ν f≈)) ι ⟩
+      ν f≈     ≤⟨ ⨆-least (post≤ f≈) (f (ν f≈)) ι ⟩
       f (ν f≈) ∎
 
     L : f (ν f≈) ≤ ν f≈
     L =
       begin
-      f (ν f≈) ≤⟨ ⨆-upper (post poset f≈) (f (ν f≈)) (f≤ .Mono.mono (⨆-least (post poset f≈) (f (ν f≈)) ι)) ⟩
+      f (ν f≈) ≤⟨ ⨆-upper (post≤ f≈) (f (ν f≈)) (f≤ .Mono.mono (⨆-least (post≤ f≈) (f (ν f≈)) ι)) ⟩
       ν f≈     ∎
   ν-gfp f≤ .proj₂ x' x'∈fixf = u -- proof that ν f is the greatest fixed point
     where
@@ -676,11 +697,11 @@ record SLat : Set where
     open PosetReasoning poset
     u =
       begin
-      x'   ≤⟨ ⨆-upper (post poset f≈) x' (Po.reflexive x'∈fixf) ⟩
+      x'   ≤⟨ ⨆-upper (post≤ f≈) x' (Po.reflexive x'∈fixf) ⟩
       ν f≈ ∎
 
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
-  ν-mono f≈ g≈ f≤g = ⨆-mono (post poset f≈) (post poset g≈) \ {d} d≤fd → Po.trans d≤fd (f≤g d)
+  ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) \ {d} d≤fd → Po.trans d≤fd (f≤g d)
 
 instance
   slat-has-carrier : HasCarrier (SLat)
@@ -842,18 +863,27 @@ lift↔-implicit P Q P⇔Q .proj₁ ∀P = P⇔Q .proj₁ ∀P
 lift↔-implicit P Q P⇔Q .proj₂ ∀Q = P⇔Q .proj₂ ∀Q
 
 module _ {C : Poset} {D : Poset} {E : Poset} {L : C →mono D} {R : D →mono C} {L' : D →mono E} {R' : E →mono D} where
+  open GaloisConnection
   private
     module C = PosetPoly C
     module D = PosetPoly D
     module E = PosetPoly E
 
   _∘-galois_ : L ⊣ R → L' ⊣ R' → (L' ∘-mono L) ⊣ (R ∘-mono R')
-  (L⊣R ∘-galois L'⊣R') .GaloisConnection.ψ c e =
+  (L⊣R ∘-galois L'⊣R') .ψ c e =
     let open SetoidReasoning Prop↔-setoid in
     begin
-    ⟦ L' ∘-mono L ⟧ c E.≤ e     ≈⟨ L'⊣R' .GaloisConnection.ψ (⟦ L ⟧ c) e ⟩
-    ⟦ L ⟧ c D.≤ ⟦ R' ⟧ e       ≈⟨ L⊣R .GaloisConnection.ψ c (⟦ R' ⟧ e) ⟩
+    ⟦ L' ∘-mono L ⟧ c E.≤ e     ≈⟨ L'⊣R' .ψ (⟦ L ⟧ c) e ⟩
+    ⟦ L ⟧ c D.≤ ⟦ R' ⟧ e       ≈⟨ L⊣R .ψ c (⟦ R' ⟧ e) ⟩
     c C.≤ ⟦ R ∘-mono R' ⟧ e     ∎
+
+  preRL-∘-⊆ : (α : L ⊣ R) (β : L' ⊣ R') → preRL (α ∘-galois β) ⊆ preRL α
+  preRL-∘-⊆ α β {c} RR'L'Lc≤c =
+    let open PosetReasoning C in
+    begin
+    ⟦ R ∘-mono L ⟧ c ≤⟨ R .Mono.mono (η β (⟦ L ⟧ c)) ⟩
+    ⟦ (R ∘-mono R') ∘-mono L' ∘-mono L ⟧ c ≤⟨ RR'L'Lc≤c ⟩
+    c ∎
 
 
 module FunBinR where
@@ -950,15 +980,48 @@ Is⨆Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
 Is⨆Closed D S = (∀ S' → S' ⊆ S → (D .SLat.⨆ S') ∈ S)
 
 
-
-module _ (C⨆ : SLat) where
+module _ (D⨆ E⨆ : SLat) where
 
   private
-    C≤ = SLat.poset C⨆
-    C≈ = SLat.Eq.setoid C⨆
-    C = ∣ C⨆ ∣
+    D≤ = SLat.poset D⨆
+    D≈ = SLat.Eq.setoid D⨆
+    D = ∣ D⨆ ∣
+    module D = SLat D⨆
 
-  open SLat C⨆
+    E≤ = SLat.poset E⨆
+    E≈ = SLat.Eq.setoid E⨆
+    E = ∣ E⨆ ∣
+    module E = SLat E⨆
+
+    open SLat (D⨆ ×-slat E⨆)
+
+  proj₁-⨆closed : ∀ R → Is⨆Closed (D⨆ ×-slat E⨆) R → Is⨆Closed D⨆ (R ∣₁)
+  proj₁-⨆closed R R-⨆closed S S⊆R₁ = ⨆ T .proj₂ , R .Pred.isWellDefined (D.⨆-cong (T ∣₁) S T₁≐S , E.Eq.refl) ⨆T∈R
+    where
+    T : Pred (D≈ ×-setoid E≈)
+    Pred.⟦ T ⟧ (d , e) = d ∈ S × (d , e) ∈ R
+    T .Pred.isWellDefined {d , e} {d' , e'} (d≈d' , e≈e') (d∈S , de∈R) = S .Pred.isWellDefined d≈d' d∈S , R .Pred.isWellDefined (d≈d' , e≈e') de∈R
+    T₁≐S : (T ∣₁) ≐ S
+    T₁≐S .proj₂ d∈S = let (e , de∈R) = S⊆R₁ d∈S  in e , d∈S , de∈R
+    T₁≐S .proj₁ (e , d∈S , de∈R) = d∈S
+    T⊆R : T ⊆ R
+    T⊆R {d , e} (d∈S , de∈R) = de∈R
+    ⨆T∈R : ⨆ T ∈ R
+    ⨆T∈R = R-⨆closed T T⊆R
+
+  proj₂-⨆closed : ∀ R → Is⨆Closed (D⨆ ×-slat E⨆) R → Is⨆Closed E⨆ (R ∣₂)
+  proj₂-⨆closed R R-⨆closed S S⊆R₂ = ⨆ T .proj₁ , R .Pred.isWellDefined (D.Eq.refl , E.⨆-cong (T ∣₂) S T₂≐S) ⨆T∈R
+    where
+    T : Pred (D≈ ×-setoid E≈)
+    Pred.⟦ T ⟧ (d , e) = e ∈ S × (d , e) ∈ R
+    T .Pred.isWellDefined {d , e} {d' , e'} (d≈d' , e≈e') (d∈S , de∈R) = S .Pred.isWellDefined e≈e' d∈S , R .Pred.isWellDefined (d≈d' , e≈e') de∈R
+    T₂≐S : (T ∣₂) ≐ S
+    T₂≐S .proj₂ e∈S = let (d , de∈R) = S⊆R₂ e∈S  in d , e∈S , de∈R
+    T₂≐S .proj₁ (d , e∈S , de∈R) = e∈S
+    T⊆R : T ⊆ R
+    T⊆R {d , e} (d∈S , de∈R) = de∈R
+    ⨆T∈R : ⨆ T ∈ R
+    ⨆T∈R = R-⨆closed T T⊆R
 
 -- First abstraction
 module 𝒫⊆-and-Endo (C⨆ : SLat) where
@@ -990,15 +1053,15 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   F-raw : Pred C≈ → C → C
   F-raw S d = ⨆ ((↓ C≤ d) ∩ S)
 
-  F-mono-valued : Pred C≈ → (C≤ →mono C≤)
-  Mono.⟦ F-mono-valued S ⟧ = F-raw S
-  F-mono-valued S .Mono.isMonotone .IsMono.mono {d} {d'}
+  F-mono : Pred C≈ → (C≤ →mono C≤)
+  Mono.⟦ F-mono S ⟧ = F-raw S
+  F-mono S .Mono.isMonotone .IsMono.mono {d} {d'}
     = ⨆-mono ((↓ C≤ d) ∩ S) ((↓ C≤ d') ∩ S)
     ∘ ∩-mono-l (↓ C≤ d) (↓ C≤ d') S
     ∘ ↓-mono C≤ d d'
-  F-mono-valued S .Mono.isMonotone .IsMono.cong d≈d' = Po.antisym
-    (F-mono-valued S .Mono.mono (Po.reflexive d≈d'))
-    (F-mono-valued S .Mono.mono (Po.reflexive (Eq.sym d≈d')))
+  F-mono S .Mono.isMonotone .IsMono.cong d≈d' = Po.antisym
+    (F-mono S .Mono.mono (Po.reflexive d≈d'))
+    (F-mono S .Mono.mono (Po.reflexive (Eq.sym d≈d')))
 
   G-raw : (C → C) → UniR.Pred C lzero
   G-raw f = post-raw C≤ f
@@ -1007,7 +1070,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   G-pred f = post C≤ ⟦ f ⟧cong
 
   F : 𝒫⊆ →mono (C≤ →mono≤-poset C≤)
-  Mono.⟦ F ⟧ = F-mono-valued
+  Mono.⟦ F ⟧ = F-mono
   F .Mono.isMonotone .IsMono.mono {P} {Q} P⊆Q d
     = ⨆-mono (↓ C≤ d ∩ P) (↓ C≤ d ∩ Q)
              (∩-mono-r P Q (↓ C≤ d) P⊆Q)
@@ -1051,7 +1114,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   preFG = GaloisConnection.ε F⊣G
 
   postFG-characterization : (f≤ : C≤ →mono C≤)
-    → f≤ ∈ post (C≤ →mono≤-poset C≤) ⟦ F ∘-mono G ⟧cong ↔ IsCoclosure C≤ ⟦ f≤ ⟧
+    → f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
   postFG-characterization f≤ =
     let open SetoidReasoning (Prop↔-setoid) in
     begin
@@ -1109,20 +1172,20 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     let open SetoidReasoning (Prop↔-setoid) in
     begin
     (R ∈ pre (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong) ≡⟨⟩
-    (∀ {d} → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
+    (∀ {d} → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
     (∀ S → S ⊆ R → ⨆ S ∈ R) ≡⟨⟩
     Is⨆Closed C⨆ R ∎
     where
     γ : (∀ {d} → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R) → ∀ S → S ⊆ R → ⨆ S ∈ R
-    γ φ S S⊆R = φ {d = ⨆ S} (⨆-mono S (↓ poset (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
+    γ φ S S⊆R = φ {d = ⨆ S} (⨆-mono S (↓≤ (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
 
-    γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ {d} → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R
-    γ⁻¹ ψ {d} d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓ poset d ∩ R) (∩-lower-r (↓ poset d) R))
+    γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ {d} → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R
+    γ⁻¹ ψ {d} d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓≤ d ∩ R) (∩-lower-r (↓≤ d) R))
       where
-      χ : ⨆ (↓ poset d ∩ R) ≤ d
-      χ = Po.trans (⨆-mono _ _ (∩-lower-l (↓ poset d) R)) (⨆-↓≤ d)
+      χ : ⨆ (↓≤ d ∩ R) ≤ d
+      χ = Po.trans (⨆-mono _ _ (∩-lower-l (↓≤ d) R)) (⨆-↓≤ d)
 
-      χ⁻¹ : d ≤ ⨆ (↓ poset d ∩ R)
+      χ⁻¹ : d ≤ ⨆ (↓≤ d ∩ R)
       χ⁻¹ = d≤⨆↓d∩R
 
 module _ (D⨆ E⨆ : SLat) where
@@ -1143,7 +1206,7 @@ module _ (D⨆ E⨆ : SLat) where
 
     module D = SLat D⨆
     module E = SLat E⨆
-
+  open SLat (D⨆ ×-slat E⨆)
   open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
 
   -- We define the following galois connection
@@ -1195,23 +1258,42 @@ module _ (D⨆ E⨆ : SLat) where
 
   F₀ : 𝒫⊆ →mono (((D≤ ×-poset E≤) →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
   F₀ = H₀ ∘-mono F
+
   G₀ : (((D≤ ×-poset E≤) →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono 𝒫⊆
   G₀ = G ∘-mono I₀
 
   F₀⊣G₀ : F₀ ⊣ G₀
   F₀⊣G₀ = F⊣G ∘-galois H₀⊣I₀
 
-  IsHalfButterfly : (R : Pred (D≈ ×-setoid E≈)) → ?
-  IsHalfButterfly R = ?
+  --G0 F 0 R ⊆ R
+  IsTriangle : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTriangle R = (d : D) (e : E) → (dl dh : D) → dl D.≤ d → d D.≤ dh → (dl , e) ∈ R → (dh , e) ∈ R → (d , e) ∈ R  
 
-  preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ pre (Pred⊆-poset (D≈ ×-setoid E≈)) ⟦ G₀ ∘-mono F₀ ⟧cong) ↔ (Is⨆Closed (D⨆ ×-slat E⨆) R × IsHalfButterfly R)
-  preG₀F₀-characterization R =
-    let open SetoidReasoning (Prop↔-setoid) in
-    begin
-    ? ≡⟨⟩
-    ? ≈⟨ ? ⟩
-    ? ∎
+  module _ where
+    open GaloisConnection
+    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (Is⨆Closed (D⨆ ×-slat E⨆) R × IsTriangle R)
+    preG₀F₀-characterization R =
+      let open SetoidReasoning (Prop↔-setoid) in
+      begin
+      R ∈ preRL F₀⊣G₀                    ≈⟨ implication-↔× (preRL-∘-⊆ F⊣G H₀⊣I₀ {R}) ⟩
+      (R ∈ preRL F⊣G × R ∈ preRL F₀⊣G₀) ≈⟨ (preGF-characterization R ×-↔ GG) ⟩
+      (Is⨆Closed (D⨆ ×-slat E⨆) R × (∀ d₀ e₀ → d₀ D.≤ D.⨆ ((↓≤ (d₀ , e₀) ∩ R) ∣₁) → (e₀ E.≤ E.⨆ ((↓≤ (d₀ , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d₀ , e₀))) ≡⟨ {!!} ⟩
+      {!!} ∎
+      where
+      GG : R ∈ preRL F₀⊣G₀ ↔ (∀ d₀ e₀ → d₀ D.≤ D.⨆ ((↓≤ (d₀ , e₀) ∩ R) ∣₁) → (e₀ E.≤ E.⨆ ((↓≤ (d₀ , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d₀ , e₀))
+      GG =
+        let open SetoidReasoning (Prop↔-setoid) in
+        begin
+        R ∈ preRL F₀⊣G₀ ≡⟨⟩
+        ⟦ G₀ ∘-mono F₀ ⟧ R ⊆ R ≡⟨⟩
+        (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R UniR.⊆ Pred.⟦ R ⟧ ≈⟨ λ- , _$- ⟩
+        (∀ de → (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R de → ⟦ R ⟧ de) ≈⟨ curry , uncurry ⟩
+        (∀ d e → (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R (d , e) → ⟦ R ⟧ (d , e)) ≡⟨⟩
+        (∀ d e → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) ≈⟨ (\P d e → curry (P d e)) , (\P d e → uncurry (P d e)) ⟩
+        (∀ d e → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) → (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) ∎
 
+      TT : (∀ d e → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) → (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) → IsTriangle R
+      TT x = {!!}
 
   -- We define the following galois connection
   --
