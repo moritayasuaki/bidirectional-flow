@@ -135,8 +135,9 @@ curry-↔ a b c .proj₂ g = uncurry g
 _×-↔_ : {A B C D : Set} → (A ↔ B) → (C ↔ D) → (A × C) ↔ (B × D)
 (a→b , b→a) ×-↔ (c→d , d→c) = Product.map a→b c→d , Product.map b→a d→c
 
+{-
 module _ (D≤ : Poset) where
-  open PosetPoly D≤
+  open PosetPoly D
 
   yoneda : ∀ a b → (a ≤ b) → (∀ c → b ≤ c → a ≤ c)
   yoneda a b a≤b c b≤c = trans a≤b b≤c
@@ -151,8 +152,7 @@ module _ (D≤ : Poset) where
   coyoneda-↔ : ∀ a b → (a ≤ b) ↔ (∀ c → c ≤ a → c ≤ b)
   coyoneda-↔ a b .proj₁ = coyoneda a b
   coyoneda-↔ a b .proj₂ ∀c→c≤a→c≤b = ∀c→c≤a→c≤b a refl
-
-
+-}
 module _ where
   open ProductBinR
   module _ where
@@ -629,6 +629,7 @@ record SLat : Set where
   ⊤≈⨆U : ⊤ ≈ ⨆ U
   ⊤≈⨆U = Po.antisym (⨆-upper U _ tt ) (⊤-max (⨆ U))
 
+{-
   ≤⊓→≤-l : ∀ x y z → z ≤ (x ⊓ y) → z ≤ x
   ≤⊓→≤-l x y = coyoneda poset _ _ (⊓-lower-l x y)
 
@@ -644,7 +645,7 @@ record SLat : Set where
   ≤⊓↔≤ : ∀ x y z → (z ≤ (x ⊓ y)) ↔ (z ≤ x × z ≤ y)
   ≤⊓↔≤ x y z .proj₁ = ≤⊓→≤ x y z
   ≤⊓↔≤ x y z .proj₂ = ≤⊓←≤ x y z
-
+-}
   ⨆≤→∀≤ : ∀ S x → ⨆ S ≤ x → ∀ x' → x' ∈ S → x' ≤ x
   ⨆≤→∀≤ S x ⨆S≤x x' x'∈S = Po.trans (⨆-upper _ _ x'∈S) ⨆S≤x
 
@@ -1299,6 +1300,9 @@ module _ (D⨆ E⨆ : SLat) where
     ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
     , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
+  IsBiasedBowtieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsBiasedBowtieClosed R = (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+
   module _ where
     open GaloisConnection
     preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
@@ -1620,6 +1624,7 @@ module _ (D⨆ E⨆ : SLat) where
 
 
 module _ {C D : Poset} (F : C →mono D) where
+  -- Definition of monoidal properties for non-indexed binary operation on poset maps
   open PosetPoly D
   -- probably monoidal is not a right word for this property (it only refers to multiplication and not to unit)
 
@@ -1633,15 +1638,14 @@ module _ {C D : Poset} (F : C →mono D) where
   IsMonoidal _⊗C_ _⊗D_ = (a b : ∣ C ∣ ) → ⟦ F ⟧ (a ⊗C b) ≈ ⟦ F ⟧ a ⊗D ⟦ F ⟧ b
 
 module _ {C D : Poset}  {L : C →mono D} {R : D →mono C} where
+  -- Definition of lifting of (non-indexed) binary operation on a poset along with an adjunction
   liftOpAlong⊣ : (L⊣R : L ⊣ R) (_⊗C_ : Op₂ ∣ C ∣) → Op₂ ∣ D ∣
   liftOpAlong⊣ L⊣R _⊗C_ a b = ⟦ L ⟧ (⟦ R ⟧ a ⊗C ⟦ R ⟧ b)
 
 
--- General results about ∩ and ⋈ and adjoints
-
 module _
   (C≈ : Setoid) where
-  -- general result about ∩ and ⊣
+  -- General results about ∩ and its lift along with any ⊣
 
   private
     𝒫⊆ = Pred⊆-poset C≈
@@ -1655,13 +1659,15 @@ module _
       _[∩]_ = liftOpAlong⊣ L⊣R _∩_
       open GaloisConnection L⊣R
 
-    -- right adjoint that sends 𝒫⊆ to any poset are lax monoidal wrt ∩
+    -- Any right adjoint functor to 𝒫⊆ is lax monoidal wrt [∩]
     [∩]-∩-right-adjoint-lax-monoidal : IsLaxMonoidal R _[∩]_ _∩_
     [∩]-∩-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ∩ ⟦ R ⟧ b)
 
+    -- Any left adjoint functor from 𝒫⊆ is oplax monoidal wrt ∩
     ∩-[∩]-left-adjoint-oplax-monoidal : IsOplaxMonoidal L _∩_ _[∩]_
     ∩-[∩]-left-adjoint-oplax-monoidal S S' = L .Mono.mono ((∩-mono S (⟦ R ⟧ (⟦ L ⟧ S)) S' (⟦ R ⟧ (⟦ L ⟧ S')) (η S) (η S')))
 
+    -- If a set of fixed points of an adjunction is closed under ∩ then so is the image of the right adjoint
     preRL-∩closed→∩∈imageR : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)))
     preRL-∩closed→∩∈imageR preRL-∩closed a b =
       let
@@ -1670,6 +1676,7 @@ module _
       in
       preRL⊆imageR Ra∩Rb∈preRL 
     
+    -- If an image of a right adjoint is closed under ∩ then the right adjoint is oplax monoidal wrt [∩] and ∩
     ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal :
       ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b))) → IsOplaxMonoidal R _[∩]_ _∩_
     ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal ∩∈imageR a b =
@@ -1691,11 +1698,13 @@ module _
 
 module _
   (Index : Set) where
+  -- Definitions for indexed binary operations
 
   module _
     (P Q : Index → Index → Poset)
     (F : (C D : Index) → P C D →mono Q C D)
     where
+    -- Monoidal properties between indexed posets
 
     module _
       (C D E : Index)
@@ -1714,6 +1723,7 @@ module _
       IsIndexedMonoidal = (a : ∣ P C D ∣) → (b : ∣ P D E ∣) → ⟦ F C E ⟧ (a ⊗P b) ≈ ⟦ F C D ⟧ a ⊗Q ⟦ F D E ⟧ b
 
   module _ (P Q : Index → Index → Poset) where
+    -- Definition of lifting of an indexed binary operation on a poset along with an adjunction
     module _ {L : (C D : Index) → P C D →mono Q C D} {R : (C D : Index) → Q C D →mono P C D} (L⊣R : (C D : Index) → L C D ⊣ R C D) where
       indexedLiftOpAlong⊣ : (C D E : Index) → (∣ P C D ∣ → ∣ P D E ∣ → ∣ P C E ∣) → (∣ Q C D ∣ → ∣ Q D E ∣ → ∣ Q C E ∣)
       indexedLiftOpAlong⊣ C D E _⊗P_ a b = ⟦ L C E ⟧ (⟦ R C D ⟧ a ⊗P ⟦ R D E ⟧ b)
@@ -1781,10 +1791,10 @@ module _
           ∘ preRL-⋈closed→⋈∈imageR
 
 
-module _ where
+module OplaxMonoidality-∩ where
   -- Here we check the oplax-monoidality of G G₀ G₁ G₂ G₃, wrt ∩ and [∩], ⋈ and [⋈]
 
-  module _ (C⨆ : SLat) where
+  module F⊣G (C⨆ : SLat) where
     private
       C≤ = SLat.poset C⨆
       C≈ = SLat.Eq.setoid C⨆
@@ -1808,6 +1818,23 @@ module _ where
     [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preGF-closed
 
   module _ (D⨆ E⨆ : SLat) where
+    private
+      D≤ = SLat.poset D⨆
+      D≈ = SLat.Eq.setoid D⨆
+      D = ∣ D⨆ ∣
+      module D = SLat D⨆
+
+      E≤ = SLat.poset E⨆
+      E≈ = SLat.Eq.setoid E⨆
+      E = ∣ E⨆ ∣
+      module E = SLat E⨆
+
+      open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
+
+    module F₀⊣G where
+      open GaloisConnection (F₀⊣G₀ D⨆ E⨆)
+      _[∩]_ = liftOpAlong⊣ (F₀⊣G₀ D⨆ E⨆) _∩_
+
 
   module _ where
     private
