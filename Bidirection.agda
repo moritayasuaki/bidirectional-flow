@@ -263,11 +263,11 @@ _∩_ : {X : Setoid} → Pred X → Pred X → Pred X
     module P = Pred P
     module Q = Pred Q
 
-∩-lower-l : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ S
-∩-lower-l S T (d∈S , d∈T) = d∈S
+∩-⊆-l : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ S
+∩-⊆-l S T (d∈S , d∈T) = d∈S
 
-∩-lower-r : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ T
-∩-lower-r S T (d∈S , d∈T) = d∈T
+∩-⊆-r : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ T
+∩-⊆-r S T (d∈S , d∈T) = d∈T
 
 
 ∩-mono-l : {X : Setoid} (P Q S : Pred X) → P ⊆ Q → (P ∩ S) ⊆ (Q ∩ S)
@@ -499,6 +499,12 @@ module _ {X≈ Y≈ : Setoid} where
 
   Pred-proj₂-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → y ∈ Pred-proj₂ R
   Pred-proj₂-∈ R xy∈R = -, xy∈R
+
+  Pred-proj₁-mono : (R Q : Pred (X≈ ×-setoid Y≈)) → R ⊆ Q → Pred-proj₁ R ⊆ Pred-proj₁ Q
+  Pred-proj₁-mono R Q R⊆Q {x} (y , xy∈R) = (y , R⊆Q xy∈R)
+
+  Pred-proj₂-mono : (R Q : Pred (X≈ ×-setoid Y≈)) → R ⊆ Q → Pred-proj₂ R ⊆ Pred-proj₂ Q
+  Pred-proj₂-mono R Q R⊆Q {y} (x , xy∈R) = (x , R⊆Q xy∈R)
 
 module _ {X≈ Y≈ Z≈ : Setoid} where
 
@@ -979,7 +985,6 @@ IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
 Is⨆Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
 Is⨆Closed D S = (∀ S' → S' ⊆ S → (D .SLat.⨆ S') ∈ S)
 
-
 module _ (D⨆ E⨆ : SLat) where
 
   private
@@ -1133,7 +1138,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
         let open PosetReasoning C≤ in
         begin
         f d  ≤⟨ φ ⟩
-        ⨆ (↓ poset d ∩ post C≤ f≈)  ≤⟨ ⨆-mono (↓ poset d ∩ post C≤ f≈) (↓ poset d) (∩-lower-l (↓ poset d) (post C≤ f≈)) ⟩
+        ⨆ (↓ poset d ∩ post C≤ f≈)  ≤⟨ ⨆-mono (↓ poset d ∩ post C≤ f≈) (↓ poset d) (∩-⊆-l (↓ poset d) (post C≤ f≈)) ⟩
         ⨆ (↓ poset d) ≈⟨ ⨆-↓ d ⟩
         d  ∎
       δ : f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈) → f d ≤ f (f d)
@@ -1167,26 +1172,29 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   postGF : (R : Pred C≈) → (R ∈ post (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong)
   postGF R = GaloisConnection.η F⊣G R
 
-  preGF-characterization : (R : Pred C≈) → (R ∈ pre (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong) ↔ Is⨆Closed C⨆ R
-  preGF-characterization R =
-    let open SetoidReasoning (Prop↔-setoid) in
-    begin
-    (R ∈ pre (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong) ≡⟨⟩
-    (∀ {d} → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
-    (∀ S → S ⊆ R → ⨆ S ∈ R) ≡⟨⟩
-    Is⨆Closed C⨆ R ∎
-    where
-    γ : (∀ {d} → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R) → ∀ S → S ⊆ R → ⨆ S ∈ R
-    γ φ S S⊆R = φ {d = ⨆ S} (⨆-mono S (↓≤ (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
-
-    γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ {d} → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R
-    γ⁻¹ ψ {d} d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓≤ d ∩ R) (∩-lower-r (↓≤ d) R))
+  module _ where
+    open GaloisConnection
+    preGF-characterization : (R : Pred C≈) → R ∈ preRL F⊣G ↔ Is⨆Closed C⨆ R
+    preGF-characterization R =
+      let open SetoidReasoning (Prop↔-setoid) in
+      begin
+      R ∈ preRL F⊣G ≡⟨⟩
+      (G-pred ∘ F-mono) R ⊆ R ≈⟨ λ- , _$- ⟩
+      (∀ d → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
+      (∀ S → S ⊆ R → ⨆ S ∈ R) ≡⟨⟩
+      Is⨆Closed C⨆ R ∎
       where
-      χ : ⨆ (↓≤ d ∩ R) ≤ d
-      χ = Po.trans (⨆-mono _ _ (∩-lower-l (↓≤ d) R)) (⨆-↓≤ d)
+      γ : (∀ d → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R) → ∀ S → S ⊆ R → ⨆ S ∈ R
+      γ φ S S⊆R = φ (⨆ S) (⨆-mono S (↓≤ (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
 
-      χ⁻¹ : d ≤ ⨆ (↓≤ d ∩ R)
-      χ⁻¹ = d≤⨆↓d∩R
+      γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ d → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R
+      γ⁻¹ ψ d d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓≤ d ∩ R) (∩-⊆-r (↓≤ d) R))
+        where
+        χ : ⨆ (↓≤ d ∩ R) ≤ d
+        χ = Po.trans (⨆-mono _ _ (∩-⊆-l (↓≤ d) R)) (⨆-↓≤ d)
+
+        χ⁻¹ : d ≤ ⨆ (↓≤ d ∩ R)
+        χ⁻¹ = d≤⨆↓d∩R
 
 module _ (D⨆ E⨆ : SLat) where
 
@@ -1208,6 +1216,23 @@ module _ (D⨆ E⨆ : SLat) where
     module E = SLat E⨆
   open SLat (D⨆ ×-slat E⨆)
   open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
+
+  module _ where
+    open GaloisConnection
+    preGF-explicit : (R : Pred (D≈ ×-setoid E≈)) → R ∈ preRL F⊣G ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preGF-explicit R =
+      let open SetoidReasoning (Prop↔-setoid) in
+      begin
+      R ∈ preRL F⊣G                                                                                             ≡⟨⟩
+      (G-raw ∘ F-raw) R UniR.⊆ Pred.⟦ R ⟧                                                                        ≈⟨ λ- , _$- ⟩
+      (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R) ∎
+
+    preGF→⊔closed : (R : Pred (D≈ ×-setoid E≈))
+                  → (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
+                  → (((d , e) : D × E) ((d₀ , e₀) : D × E) → (d₀ , e₀) ≤ (d , e) → (d₀ , e) ∈ R × (d , e₀) ∈ R → (d , e) ∈ R)
+    preGF→⊔closed R ≤⨆↓∩→∈ (d , e) (d₀ , e₀) (d₀≤d , e₀≤e) (d₀e∈R , de₀∈R) = ≤⨆↓∩→∈ (d , e)
+      ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
+      , E.⨆-upper ((↓≤ (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
 
   -- We define the following galois connection
   --
@@ -1265,35 +1290,51 @@ module _ (D⨆ E⨆ : SLat) where
   F₀⊣G₀ : F₀ ⊣ G₀
   F₀⊣G₀ = F⊣G ∘-galois H₀⊣I₀
 
-  --G0 F 0 R ⊆ R
-  IsTriangle : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsTriangle R = (d : D) (e : E) → (dl dh : D) → dl D.≤ d → d D.≤ dh → (dl , e) ∈ R → (dh , e) ∈ R → (d , e) ∈ R  
+  IsBiasedBowtie : (R : Pred (D≈ ×-setoid E≈)) → D × E → D × E → E → Set
+  IsBiasedBowtie R (d , e) (d₀ , e₀) e₁ = (d₀ , e₀) ≤ (d , e) × (e E.≤ e₁) × (d₀ , e₁) ∈ R × (d , e₀) ∈ R
+
+  biasedbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ((d , e) : D × E) → (Σ (d₀ , e₀) ∶ (D × E) , Σ e₁ ∶ E , IsBiasedBowtie R (d , e) (d₀ , e₀) e₁) → d D.≤ (D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+  biasedbowtie→≤⨆ R (d , e) ((d₀ , e₀) , e₁ , (d₀≤d , e₀≤e) , e≤e₁ , d₀e₁∈R , de₀∈R) =
+    ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
   module _ where
     open GaloisConnection
-    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (Is⨆Closed (D⨆ ×-slat E⨆) R × IsTriangle R)
-    preG₀F₀-characterization R =
-      let open SetoidReasoning (Prop↔-setoid) in
-      begin
-      R ∈ preRL F₀⊣G₀                    ≈⟨ implication-↔× (preRL-∘-⊆ F⊣G H₀⊣I₀ {R}) ⟩
-      (R ∈ preRL F⊣G × R ∈ preRL F₀⊣G₀) ≈⟨ (preGF-characterization R ×-↔ GG) ⟩
-      (Is⨆Closed (D⨆ ×-slat E⨆) R × (∀ d₀ e₀ → d₀ D.≤ D.⨆ ((↓≤ (d₀ , e₀) ∩ R) ∣₁) → (e₀ E.≤ E.⨆ ((↓≤ (d₀ , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d₀ , e₀))) ≡⟨ {!!} ⟩
-      {!!} ∎
-      where
-      GG : R ∈ preRL F₀⊣G₀ ↔ (∀ d₀ e₀ → d₀ D.≤ D.⨆ ((↓≤ (d₀ , e₀) ∩ R) ∣₁) → (e₀ E.≤ E.⨆ ((↓≤ (d₀ , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d₀ , e₀))
-      GG =
-        let open SetoidReasoning (Prop↔-setoid) in
-        begin
-        R ∈ preRL F₀⊣G₀ ≡⟨⟩
-        ⟦ G₀ ∘-mono F₀ ⟧ R ⊆ R ≡⟨⟩
-        (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R UniR.⊆ Pred.⟦ R ⟧ ≈⟨ λ- , _$- ⟩
-        (∀ de → (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R de → ⟦ R ⟧ de) ≈⟨ curry , uncurry ⟩
-        (∀ d e → (G-raw ∘ I₀-raw ∘ H₀-raw ∘ F-raw) R (d , e) → ⟦ R ⟧ (d , e)) ≡⟨⟩
-        (∀ d e → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) ≈⟨ (\P d e → curry (P d e)) , (\P d e → uncurry (P d e)) ⟩
-        (∀ d e → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) → (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) ∎
+    preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preG₀F₀-explicit R = (λ- , _$-)
 
-      TT : (∀ d e → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) → (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → ⟦ R ⟧ (d , e)) → IsTriangle R
-      TT x = {!!}
+    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (∀ p p₀ e₁ → IsBiasedBowtie R p p₀ e₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+    preG₀F₀-characterization R = (α , α⁻¹)
+     where
+     α₁ : (R ∈ preRL F₀⊣G₀) → (∀ p p₀ e₁ → IsBiasedBowtie R p p₀ e₁ → p ∈ R)
+     α₁ R∈preG₀F₀ (d , e) (d₀ , e₀) e₁ biasedbowtie = R∈preG₀F₀ (biasedbowtie→≤⨆ R (d , e) ((d₀ , e₀) , e₁ , biasedbowtie))
+
+     α₂ : (R ∈ preRL F₀⊣G₀) → Is⨆Closed (D⨆ ×-slat E⨆) R
+     α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G H₀⊣I₀ {R}
+
+     α : (R ∈ preRL F₀⊣G₀) → (∀ p p₀ e₁ → IsBiasedBowtie R p p₀ e₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+     α = Product.< α₁ , α₂ >
+
+     α⁻¹ : (∀ p p₀ e₁ → IsBiasedBowtie R p p₀ e₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
+     α⁻¹ (biasedbowtie→R , ⨆closed) {(d , e)} (d≤⨆↓de∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
+        biasedbowtie→R (d , e) (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) , E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+          ( (d≥⨆↓d⊤∩R∣₁ , e≥⨆↓de∩R∣₂)
+          , e≤⨆↓d⊤∩R∣₂
+          , ⨆closed (↓≤ (d , E.⊤) ∩ R) (∩-⊆-r (↓≤ (d , E.⊤)) R)
+          , R .Pred.isWellDefined (D.Eq.sym d≈⨆↓de∩R∣₁ , E.Eq.refl) (⨆closed (↓≤ (d , e) ∩ R) (∩-⊆-r (↓≤ (d , e)) R)))
+        where
+        d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) D.≤ d
+        d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓≤ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+
+        e≥⨆↓de∩R∣₂ : E.⨆ ((↓≤ (d , e) ∩ R) ∣₂) E.≤ e
+        e≥⨆↓de∩R∣₂ = E.⨆-least ((↓≤ (d , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
+
+        d≥⨆↓de∩R∣₁ : D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) D.≤ d
+        d≥⨆↓de∩R∣₁ = D.⨆-least ((↓≤ (d , e) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+
+        d≈⨆↓de∩R∣₁ : d D.≈ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)
+        d≈⨆↓de∩R∣₁ = D.Po.antisym d≤⨆↓de∩R∣₁ d≥⨆↓de∩R∣₁
+
 
   -- We define the following galois connection
   --
@@ -1355,16 +1396,54 @@ module _ (D⨆ E⨆ : SLat) where
   F₁⊣G₁ : F₁ ⊣ G₁
   F₁⊣G₁ = F₀⊣G₀ ∘-galois H₁⊣I₁
 
-  IsButterfly : Pred (D≈ ×-setoid E≈) → Set
-  IsButterfly R = ∀ d₀ d d₁ e₀ e e₁
-    → d₀ D.≤ d → d D.≤ d₁ → e₀ E.≤ e → e E.≤ e₁
-    → (d₀ , e₁) ∈ R → (d₁ , e₀) ∈ R → (d , e) ∈ R
+  IsBowtie : (R : Pred (D≈ ×-setoid E≈)) → D × E → D × E → D × E → Set
+  IsBowtie R (d , e) (d₀ , e₀) (d₁ , e₁) = (d₀ , e₀) ≤ (d , e) × (d , e) ≤ (d₁ , e₁) × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
+
+  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ((d , e) : D × E) → (Σ (d₀ , e₀) ∶ (D × E) , Σ (d₁ , e₁) ∶ (D × E) , IsBowtie R (d , e) (d₀ , e₀) (d₁ , e₁) → d D.≤ (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)))
+  bowtie→≤⨆ R (d , e) ((d₀ , e₀) , (d₁ , e₁) , (d₀≤d , e₀≤e) , (d≤d₁ , e≤e₁) , d₀e₁∈R , d₁e₀∈R) =
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
+
+  module _ where
+    open GaloisConnection
+    preG₁F₁-explicit : (R : Pred (D≈ ×-setoid E≈))
+      → (R ∈ preRL F₁⊣G₁)
+      ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preG₁F₁-explicit R = (λ- , _$-)
+
+    preG₁F₁-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₁⊣G₁) ↔ (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₁F₁-characterization R = (α , α⁻¹)
+      where
+      α₁ : (R ∈ preRL F₁⊣G₁) → (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R)
+      α₁ R∈preG₀F₀ (d , e) (d₀ , e₀) (d₁ , e₁) bowtie = R∈preG₀F₀ (bowtie→≤⨆ R (d , e) ((d₀ , e₀) , (d₁ , e₁) , bowtie))
+
+      α₂ : (R ∈ preRL F₁⊣G₁) → (Is⨆Closed (D⨆ ×-slat E⨆) R)
+      α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G (H₀⊣I₀ ∘-galois H₁⊣I₁) {R}
+
+      α : (R ∈ preRL F₁⊣G₁) → (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+      α = Product.< α₁ , α₂ >
+
+      α⁻¹ : (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₁⊣G₁)
+      α⁻¹ (bowtie→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
+         bowtie→R (d , e)
+           (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) , E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂))
+           (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) , E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+           ( (d≥⨆↓d⊤∩R∣₁ , e≥⨆↓⊤e∩R∣₂)
+           , (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂)
+           , ⨆closed (↓≤ (d , E.⊤) ∩ R) (∩-⊆-r (↓≤ (d , E.⊤)) R)
+           , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+         where
+         d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) D.≤ d
+         d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓≤ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+
+         e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
+         e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
 
   -- We define the following galois connection
   --
   -- ((E →m D) × (D →m E) , ≤)
   --        H₂ ↓ ⊣ ↑ I₂
-  --   ((E →m D) × E , ≤)
+  --   ((E →m D) × E , ≤⨆↓∩→∈)
 
   -- H₂ : ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono ((E≤ →mono≤-poset D≤) ×-poset E≤)
   -- I₂ : ((E≤ →mono≤-poset D≤) ×-poset E≤) →mono ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
@@ -1414,6 +1493,57 @@ module _ (D⨆ E⨆ : SLat) where
   F₂⊣G₂ : F₂ ⊣ G₂
   F₂⊣G₂ = F₁⊣G₁ ∘-galois H₂⊣I₂
 
+  IsFan : (R : Pred (D≈ ×-setoid E≈)) → D × E → D × E → D → Set
+  IsFan R (d , e) (d₁ , e₀) d₀ = (d , e₀) ≤ (d₁ , e) × (d₀ D.≤ d) × (d₀ , e₀) ∈ R × (d₁ , e₀) ∈ R
+
+{-
+  fan→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
+    → ((d , e) : D × E)
+    → Σ (d₀ , e₀) ∶ (D × E) , Σ (d₁ , e₁) ∶ (D × E) , IsFan R (d , e) (d₀ , e₀) (d₁ , e₁)
+    → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓≤ (D.⊤ , E.⊤) ∩ R) ∣₂)
+  fan→≤⨆ R (d , e) ((d₀ , e₀) , (d₁ , e₁) , e₀≤e , (d≤d₁ , e≤e₁) , d₀e₁∈R , d₁e₀∈R) =
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (D.⊤ , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (D.⊤-max _ , E.⊤-max _) , d₀e₁∈R)))
+-}
+  module _ where
+    open GaloisConnection
+    preG₂F₂-explicit : (R : Pred (D≈ ×-setoid E≈))
+      → (R ∈ preRL F₂⊣G₂)
+      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓≤ (D.⊤ , E.⊤) ∩ R) ∣₂) → (d , e) ∈ R)
+    preG₂F₂-explicit R = (λ- , _$-)
+
+    preG₂F₂-characterization : (R : Pred (D≈ ×-setoid E≈))
+      → (R ∈ preRL F₂⊣G₂)
+      ↔ (∀ p p₀ p₁ → IsFan R p p₀ p₁ → p ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₂F₂-characterization R = ?
+
+
+{-
+    preG₁F₁-characterization R = (α , α⁻¹)
+     where
+     α₁ : (R ∈ preRL F₁⊣G₁) → (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R)
+     α₁ R∈preG₀F₀ (d , e) (d₀ , e₀) (d₁ , e₁) bowtie = R∈preG₀F₀ (bowtie→≤⨆ R (d , e) ((d₀ , e₀) , (d₁ , e₁) , bowtie))
+
+     α₂ : (R ∈ preRL F₁⊣G₁) → (Is⨆Closed (D⨆ ×-slat E⨆) R)
+     α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G (H₀⊣I₀ ∘-galois H₁⊣I₁) {R}
+
+     α : (R ∈ preRL F₁⊣G₁) → (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+     α = Product.< α₁ , α₂ >
+
+     α⁻¹ : (∀ p p₀ p₁ → IsBowtie R p p₀ p₁ → p ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₁⊣G₁)
+     α⁻¹ (bowtie→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
+        bowtie→R (d , e) (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) , E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂)) (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) , E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+          ( (d≥⨆↓d⊤∩R∣₁ , e≥⨆↓⊤e∩R∣₂)
+          , (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂)
+          , ⨆closed (↓≤ (d , E.⊤) ∩ R) (∩-⊆-r (↓≤ (d , E.⊤)) R)
+          , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+        where
+        d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) D.≤ d
+        d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓≤ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+
+        e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
+        e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
+-}
   -- We define the following galois connection
   --
   -- ((E →m D) × E , ≤)
@@ -1455,6 +1585,45 @@ module _ (D⨆ E⨆ : SLat) where
 
   F₃⊣G₃ : F₃ ⊣ G₃
   F₃⊣G₃ = F₂⊣G₂ ∘-galois H₃⊣I₃
+
+  IsTilt : (R : Pred (D≈ ×-setoid E≈)) → D × E → D × E → Set
+  IsTilt R (d , e) (d₁ , e₀) = (d , e₀) ≤ (d₁ , e) × (d₁ , e₀) ∈ R
+
+  tilt→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ((d , e) : D × E) → (Σ (d₀ , e₁) ∶ (D × E) , IsTilt R (d , e) (d₀ , e₁)) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
+  tilt→≤⨆ R (d , e) ((d₁ , e₀) , ((d≤d₁ , e₀≤e) , d₁e₀∈R)) =
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , ((D.⊤-max d₁ , e₀≤e) , d₁e₀∈R)))
+    , E.⊤-max e)
+
+
+  module _ where
+    open GaloisConnection
+    preG₃F₃-explicit : (R : Pred (D≈ ×-setoid E≈))
+      → (R ∈ preRL F₃⊣G₃)
+      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤ → (d , e) ∈ R)
+    preG₃F₃-explicit R = (λ- , _$-)
+
+    preG₃F₃-characterization : (R : Pred (D≈ ×-setoid E≈))
+      → (R ∈ preRL F₃⊣G₃)
+      ↔ (∀ p q → IsTilt R p q → p ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₃F₃-characterization R = (α , α⁻¹)
+      where
+      α₁ : (R ∈ preRL F₃⊣G₃) → (∀ p q → IsTilt R p q → p ∈ R)
+      α₁ R∈preG₃F₃ (d , e) (d₁ , e₀) tilt = R∈preG₃F₃ (tilt→≤⨆ R (d , e) ((d₁ , e₀) , tilt))
+
+      α₂ : (R ∈ preRL F₃⊣G₃) → (Is⨆Closed (D⨆ ×-slat E⨆) R)
+      α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G (H₀⊣I₀ ∘-galois (H₁⊣I₁ ∘-galois (H₂⊣I₂ ∘-galois H₃⊣I₃))) {R}
+
+      α : R ∈ preRL F₃⊣G₃ → (∀ p q → IsTilt R p q → p ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+      α = Product.< α₁ , α₂ >
+
+      α⁻¹ : (∀ p q → IsTilt R p q → p ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R) → R ∈ preRL F₃⊣G₃
+      α⁻¹ (tilt→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⊤) =
+        tilt→R (d , e)
+          (⨆ (↓≤ (D.⊤ , e) ∩ R))
+          ((d≤⨆↓⊤e∩R∣₁ , e≥⨆↓⊤e∩R∣₂) , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+        where
+        e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) E.≤ e
+        e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) e (λ e₀ (d₁ , ((d₁≤⊤ , e₀≤e) , d₁e₀∈R)) → e₀≤e)
 
 
 module _ {C D : Poset} (F : C →mono D) where
