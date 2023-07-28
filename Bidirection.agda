@@ -236,10 +236,13 @@ Rel X = RelPoly X lzero
 _∈_ : {X : Setoid} → ∣ X ∣ → Pred X → Set
 x ∈ P = x UniR.∈ ⟦ P ⟧
 
-
 ∅ : {X : Setoid} → Pred X
 Pred.⟦ ∅ ⟧ = UniR.∅
 Pred.isWellDefined ∅ _ ()
+
+｛_｝ : {X : Setoid} → ∣ X ∣ → Pred X
+Pred.⟦  ｛_｝ {X} x ⟧ = X .SetoidPoly._≈_ x
+｛_｝ {X} x .Pred.isWellDefined {y} {z} y≈z x≈y = X .SetoidPoly.trans x≈y y≈z
 
 U : {X : Setoid} → Pred X
 Pred.⟦ U ⟧ = UniR.U
@@ -284,6 +287,13 @@ _∩_ : {X : Setoid} → Pred X → Pred X → Pred X
 
 ∩-cong-r : {X : Setoid} (P Q S : Pred X) → P ≐ Q → (S ∩ P) ≐ (S ∩ Q)
 ∩-cong-r P Q S P≐Q = ∩-mono-r P Q S (P≐Q .proj₁) , ∩-mono-r Q P S (P≐Q .proj₂)
+
+module _ {X : Setoid} where
+  open SetoidPoly X
+  _∪_ : Pred X → Pred X → Pred X
+  Pred.⟦ P ∪ Q ⟧ = ⟦ P ⟧ UniR.∪ ⟦ Q ⟧
+  (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₁ x∈P) = inj₁ (P .Pred.isWellDefined x≈y x∈P)
+  (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₂ x∈Q) = inj₂ (Q .Pred.isWellDefined x≈y x∈Q)
 
 _⋈_ : {X Y Z : Setoid} → Pred (X ×-setoid Y) → Pred (Y ×-setoid Z) → Pred (X ×-setoid Z)
 (R ⋈ S) .Pred.⟦_⟧ = λ(x , z) → Σ y ∶ _ , (x , y) ∈ R × (y , z) ∈ S
@@ -595,6 +605,9 @@ record SLat : Set where
 
   ⊥ : Carrier
   ⊥ = ⨆ ∅
+
+  _⊔_ : Op₂ Carrier
+  x ⊔ y = ⨆ (｛ x ｝ ∪ ｛ y ｝)
 
   ⨆-upper : ∀ S x → x ∈ S → x ≤ ⨆ S
   ⨆-upper S = ⨆-sup S .proj₁
@@ -1076,7 +1089,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   G-pred : (C≤ →mono C≤) → Pred C≈
   G-pred f = post C≤ ⟦ f ⟧cong
 
-  F : 𝒫⊆ →mono (C≤ →mono≤-poset C≤)
+  F : 𝒫⊆ →mono Endo
   Mono.⟦ F ⟧ = F-mono
   F .Mono.isMonotone .IsMono.mono {P} {Q} P⊆Q d
     = ⨆-mono (↓ C≤ d ∩ P) (↓ C≤ d ∩ Q)
@@ -1085,7 +1098,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     (F .Mono.isMonotone .IsMono.mono {P} {Q} (P≐Q .proj₁) d)
     (F .Mono.isMonotone .IsMono.mono {Q} {P} (P≐Q .proj₂) d)
 
-  G : (C≤ →mono≤-poset C≤) →mono (Pred⊆-poset C≈)
+  G : Endo →mono 𝒫⊆
   Pred.⟦ Mono.⟦ G ⟧ f ⟧ = ⟦ G-pred f ⟧
   Mono.⟦ G ⟧ f .Pred.isWellDefined {d} {d'} d≈d' d≤fd
     = begin
@@ -1292,37 +1305,37 @@ module _ (D⨆ E⨆ : SLat) where
   F₀⊣G₀ : F₀ ⊣ G₀
   F₀⊣G₀ = F⊣G ∘-galois H₀⊣I₀
 
-  IsBiasedBowtie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (e₁ : E) → Set
-  IsBiasedBowtie R d e d₀ e₀ e₁ = (d₀ D.≤ d) × (e₀ E.≤ e) × (e E.≤ e₁) × (d₀ , e₁) ∈ R × (d , e₀) ∈ R
+  IsTiltBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (e₁ : E) → Set
+  IsTiltBowTie R d e d₀ e₀ e₁ = (d₀ D.≤ d) × (e₀ E.≤ e) × (e E.≤ e₁) × (d₀ , e₁) ∈ R × (d , e₀) ∈ R
 
-  biasedbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsBiasedBowtie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
-  biasedbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R) =
+  tiltbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsTiltBowTie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+  tiltbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R) =
     ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
     , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
-  IsBiasedBowtieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsBiasedBowtieClosed R = (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+  IsTiltBowTieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTiltBowTieClosed R = (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
 
   module _ where
     open GaloisConnection
     preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₀F₀-explicit R = (λ- , _$-)
 
-    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
     preG₀F₀-characterization R = (α , α⁻¹)
      where
-     α₁ : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R)
-     α₁ R∈preG₀F₀ d e d₀ e₀ e₁ biasedbowtie = R∈preG₀F₀ (biasedbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , biasedbowtie))
+     α₁ : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+     α₁ R∈preG₀F₀ d e d₀ e₀ e₁ tiltbowtie = R∈preG₀F₀ (tiltbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , tiltbowtie))
 
      α₂ : (R ∈ preRL F₀⊣G₀) → Is⨆Closed (D⨆ ×-slat E⨆) R
      α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G H₀⊣I₀ {R}
 
-     α : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+     α : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
      α = Product.< α₁ , α₂ >
 
-     α⁻¹ : (∀ d e d₀ e₀ e₁ → IsBiasedBowtie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
-     α⁻¹ (biasedbowtie→R , ⨆closed) {(d , e)} (d≤⨆↓de∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
-        biasedbowtie→R d e (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+     α⁻¹ : (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
+     α⁻¹ (tiltbowtie→R , ⨆closed) {(d , e)} (d≤⨆↓de∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
+        tiltbowtie→R d e (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
           ( d≥⨆↓d⊤∩R∣₁
           , e≥⨆↓de∩R∣₂
           , e≤⨆↓d⊤∩R∣₂
@@ -1402,10 +1415,14 @@ module _ (D⨆ E⨆ : SLat) where
   F₁⊣G₁ : F₁ ⊣ G₁
   F₁⊣G₁ = F₀⊣G₀ ∘-galois H₁⊣I₁
 
-  IsBowtie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
-  IsBowtie R d e d₀ e₀ d₁ e₁ = d₀ D.≤ d × e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
+  IsBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
+  IsBowTie R d e d₀ e₀ d₁ e₁ = d₀ D.≤ d × e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
 
-  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowtie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+  IsBowTieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsBowTieClosed R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
+
+
+  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
   bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
     ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
     , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
@@ -1417,19 +1434,19 @@ module _ (D⨆ E⨆ : SLat) where
       ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₁F₁-explicit R = (λ- , _$-)
 
-    preG₁F₁-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowtie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₁F₁-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
     preG₁F₁-characterization R = (α , α⁻¹)
       where
-      α₁ : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowtie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
+      α₁ : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
       α₁ R∈preG₀F₀ d e d₀ e₀ d₁ e₁ bowtie = R∈preG₀F₀ (bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , bowtie))
 
       α₂ : (R ∈ preRL F₁⊣G₁) → (Is⨆Closed (D⨆ ×-slat E⨆) R)
       α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G (H₀⊣I₀ ∘-galois H₁⊣I₁) {R}
 
-      α : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowtie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+      α : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
       α = Product.< α₁ , α₂ >
 
-      α⁻¹ : (∀ d e d₀ e₀ d₁ e₁ → IsBowtie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₁⊣G₁)
+      α⁻¹ : (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₁⊣G₁)
       α⁻¹ (bowtie→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
          bowtie→R d e
            (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂))
@@ -1501,6 +1518,9 @@ module _ (D⨆ E⨆ : SLat) where
 
   IsFan : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
   IsFan R d e d₀ e₀ d₁ e₁ = e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
+
+  IsFanClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsFanClosed R = ∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
   fan→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
     → ∀ d e
@@ -1586,6 +1606,9 @@ module _ (D⨆ E⨆ : SLat) where
 
   IsTilt : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (e₀ : E) (d₁ : D) → Set
   IsTilt R d e e₀ d₁ = e₀ E.≤ e × d D.≤ d₁ × (d₁ , e₀) ∈ R
+
+  IsTiltClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTiltClosed R = ∀ d e e₀ d₁ → IsTilt R d e e₀ d₁ → (d , e) ∈ R
 
   tilt→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsTilt R d e e₀ d₁) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
   tilt→≤⨆ R d e (e₀ , d₁ , e₀≤e , d≤d₁ , d₁e₀∈R) =
@@ -1790,8 +1813,7 @@ module _
           = ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal
           ∘ preRL-⋈closed→⋈∈imageR
 
-
-module OplaxMonoidality-∩ where
+module CheckOplaxMonoidalityForIntersection where
   -- Here we check the oplax-monoidality of G G₀ G₁ G₂ G₃, wrt ∩ and [∩], ⋈ and [⋈]
 
   module F⊣G (C⨆ : SLat) where
@@ -1802,20 +1824,23 @@ module OplaxMonoidality-∩ where
       open SLat C⨆
       open 𝒫⊆-and-Endo C⨆
       open GaloisConnection F⊣G
+      -- naive operation for nondeterministic choice
       _[∩]_ = liftOpAlong⊣ F⊣G _∩_
 
     ∩-⨆closed : (R R' : Pred C≈) → Is⨆Closed C⨆ R → Is⨆Closed C⨆ R' → Is⨆Closed C⨆ (R ∩ R')
     ∩-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R∩R' = (R-⨆closed S (proj₁ ∘ S⊆R∩R') , R'-⨆closed S (proj₂ ∘ S⊆R∩R'))
 
-    ∩-preGF-closed : (R R' : Pred C≈) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
-    ∩-preGF-closed R R' R∈preGF R'∈preGF =
+    ∩-preRL-closed : (R R' : Pred C≈) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+    ∩-preRL-closed R R' R∈preRL R'∈preRL =
       preGF-characterization (R ∩ R') .proj₂
         (∩-⨆closed R R'
-          (preGF-characterization R .proj₁ R∈preGF)
-          (preGF-characterization R' .proj₁ R'∈preGF))
+          (preGF-characterization R .proj₁ R∈preRL)
+          (preGF-characterization R' .proj₁ R'∈preRL))
 
     [∩]-∩-oplax-monoidal : IsOplaxMonoidal G _[∩]_ _∩_
-    [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preGF-closed
+    [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal C≈ F⊣G ∩-preRL-closed
+
+    -- show exsistance of cheaper (efficient) version of operation that is also oplax-monoidal
 
   module _ (D⨆ E⨆ : SLat) where
     private
@@ -1831,21 +1856,62 @@ module OplaxMonoidality-∩ where
 
       open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
 
-    module F₀⊣G where
-      open GaloisConnection (F₀⊣G₀ D⨆ E⨆)
-      _[∩]_ = liftOpAlong⊣ (F₀⊣G₀ D⨆ E⨆) _∩_
+    module F₀⊣G₀ where
+      private
+        _[∩]_ = liftOpAlong⊣ (F₀⊣G₀ D⨆ E⨆) _∩_
+        open GaloisConnection (F₀⊣G₀ D⨆ E⨆)
+      ∩-tiltbowtieclosed : (R R' : Pred (D≈ ×-setoid E≈))
+        → IsTiltBowTieClosed D⨆ E⨆ R → IsTiltBowTieClosed D⨆ E⨆ R' → IsTiltBowTieClosed D⨆ E⨆ (R ∩ R')
+      ∩-tiltbowtieclosed R R' R-closed R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (de₀∈R , de₀∈R'))
+        = (R-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R)) , R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R' , de₀∈R')
+
+      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed R R' R∈preRL R'∈preRL =
+        preG₀F₀-characterization D⨆ E⨆ (R ∩ R') .proj₂
+          ( ∩-tiltbowtieclosed R R'
+            (preG₀F₀-characterization D⨆ E⨆ R .proj₁ R∈preRL .proj₁)
+            (preG₀F₀-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₁)
+          , F⊣G.∩-⨆closed (D⨆ ×-slat E⨆) R R'
+            (preG₀F₀-characterization D⨆ E⨆ R .proj₁ R∈preRL .proj₂)
+            (preG₀F₀-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
+
+      [∩]-∩-oplax-monoidal : IsOplaxMonoidal (G₀ D⨆ E⨆) _[∩]_ _∩_
+      [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal (D≈ ×-setoid E≈) (F₀⊣G₀ D⨆ E⨆) ∩-preRL-closed
 
 
-  module _ where
+    module F₁⊣G₁ where
+      private
+        _[∩]_ = liftOpAlong⊣ (F₁⊣G₁ D⨆ E⨆) _∩_
+        open GaloisConnection (F₁⊣G₁ D⨆ E⨆)
+      ∩-bowtieclosed : (R R' : Pred (D≈ ×-setoid E≈))
+        → IsBowTieClosed D⨆ E⨆ R → IsBowTieClosed D⨆ E⨆ R' → IsBowTieClosed D⨆ E⨆ (R ∩ R')
+      ∩-bowtieclosed R R' R-closed R'-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (d₁e₀∈R , d₁e₀∈R'))
+        = (R-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)) , R'-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R' , d₁e₀∈R')
+
+      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed R R' R∈preRL R'∈preRL =
+        preG₁F₁-characterization D⨆ E⨆ (R ∩ R') .proj₂
+          ( ∩-bowtieclosed R R'
+            (preG₁F₁-characterization D⨆ E⨆ R .proj₁ R∈preRL .proj₁)
+            (preG₁F₁-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₁)
+          , F⊣G.∩-⨆closed (D⨆ ×-slat E⨆) R R'
+            (preG₁F₁-characterization D⨆ E⨆ R .proj₁ R∈preRL .proj₂)
+            (preG₁F₁-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
+
+      [∩]-∩-oplax-monoidal : IsOplaxMonoidal (G₁ D⨆ E⨆) _[∩]_ _∩_
+      [∩]-∩-oplax-monoidal = preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal (D≈ ×-setoid E≈) (F₁⊣G₁ D⨆ E⨆) ∩-preRL-closed
+
+    -- TODO: show [∩]-∩-oplax-monoidal for F₂⊣G₂ and F₃⊣G₃ (this must be as easy as F₀⊣G₀ and F₁⊣F₂)
+    --
+module CheckOplaxMonoidalityForComposition where
+  private
+    module _ (C⨆ D⨆ : SLat) where
+      open 𝒫⊆-and-Endo (C⨆ ×-slat D⨆) public
+
+  module F⊣G where
     private
       module _ (C⨆ D⨆ : SLat) where
-        open 𝒫⊆-and-Endo (C⨆ ×-slat D⨆) public
-
-      module _ (C⨆ D⨆ : SLat) where
         open GaloisConnection (F⊣G C⨆ D⨆) public
-
-      module _ {C⨆ D⨆ E⨆ : SLat} where
-        -- _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ Endo F⊣G C⨆ D⨆ E⨆ _⋈_
 
     module _ (C⨆ D⨆ E⨆ : SLat) where
       private
@@ -1966,12 +2032,81 @@ module OplaxMonoidality-∩ where
           [⨆T₂,⨆S₂]∈R' : (⨆T₂ , ⨆S₂) ∈ R'
           [⨆T₂,⨆S₂]∈R' = R' .Pred.isWellDefined (D.Eq.refl , E.Eq.sym ⨆S₂≈⨆T₃) [⨆T₂,⨆T₃]∈R'
 
-      ⋈-preGF-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
-      ⋈-preGF-closed R R' R∈preGF R'∈preGF =
+      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed R R' R∈preGF R'∈preGF =
         preGF-characterization C⨆ E⨆ (R ⋈ R') .proj₂
           (⋈-⨆closed R R'
             (preGF-characterization C⨆ D⨆ R .proj₁ R∈preGF)
             (preGF-characterization D⨆ E⨆ R' .proj₁ R'∈preGF))
 
       [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat Endo 𝒫⊆ G C⨆ D⨆ E⨆ _[⋈]_ _⋈_
-      [⋈]-⋈-oplax-monoidal =  preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid Endo F⊣G C⨆ D⨆ E⨆ ⋈-preGF-closed
+      [⋈]-⋈-oplax-monoidal =  preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid Endo F⊣G C⨆ D⨆ E⨆ ⋈-preRL-closed
+
+      -- show cheaper (efficient) version of oplax-monoidal operation
+
+  module F₂⊣G₂ where
+    private
+      module _ (C⨆ D⨆ : SLat) where
+        open GaloisConnection (F₂⊣G₂ C⨆ D⨆) public
+    module _ (C⨆ D⨆ E⨆ : SLat) where
+      private
+        _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ _ F₂⊣G₂ C⨆ D⨆ E⨆ _⋈_
+        C≤ = SLat.poset C⨆
+        C≈ = SLat.Eq.setoid C⨆
+        C = ∣ C⨆ ∣
+        module C = SLat C⨆
+        D≤ = SLat.poset D⨆
+        D≈ = SLat.Eq.setoid D⨆
+        D = ∣ D⨆ ∣
+        module D = SLat D⨆
+        E≤ = SLat.poset E⨆
+        E≈ = SLat.Eq.setoid E⨆
+        E = ∣ E⨆ ∣
+        module E = SLat E⨆
+
+      ⋈-fanclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsFanClosed C⨆ D⨆ R → IsFanClosed D⨆ E⨆ R' → IsFanClosed C⨆ E⨆ (R ⋈ R')
+      ⋈-fanclosed R R' R-fanclosed  R'-fanclosed = ?
+
+      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed R R' R∈preRL R'∈preRL =
+        preG₂F₂-characterization C⨆ E⨆ (R ⋈ R') .proj₂
+          ( ⋈-fanclosed R R'
+            (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₁)
+            (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₁)
+          , F⊣G.⋈-⨆closed C⨆ D⨆ E⨆ R R'
+            (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₂)
+            (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
+
+  module F₃⊣G₃ where
+    private
+      module _ (C⨆ D⨆ : SLat) where
+        open GaloisConnection (F₃⊣G₃ C⨆ D⨆) public
+    module _ (C⨆ D⨆ E⨆ : SLat) where
+      private
+        _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ _ F₃⊣G₃ C⨆ D⨆ E⨆ _⋈_
+        C≤ = SLat.poset C⨆
+        C≈ = SLat.Eq.setoid C⨆
+        C = ∣ C⨆ ∣
+        module C = SLat C⨆
+        D≤ = SLat.poset D⨆
+        D≈ = SLat.Eq.setoid D⨆
+        D = ∣ D⨆ ∣
+        module D = SLat D⨆
+        E≤ = SLat.poset E⨆
+        E≈ = SLat.Eq.setoid E⨆
+        E = ∣ E⨆ ∣
+        module E = SLat E⨆
+
+      ⋈-tiltclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsTiltClosed C⨆ D⨆ R → IsTiltClosed D⨆ E⨆ R' → IsTiltClosed C⨆ E⨆ (R ⋈ R')
+      ⋈-tiltclosed R R' R-tiltclosed  R'-tiltclosed c e e₀ c₁ (e₀≤e , c≤c₁ , (d , c₁d∈R , de₀∈R)) =
+        (d , R-tiltclosed c d d c₁ (D.Po.refl , c≤c₁ , c₁d∈R) , R'-tiltclosed d e e₀ d (e₀≤e , D.Po.refl , de₀∈R))
+
+      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed R R' R∈preRL R'∈preRL =
+        preG₃F₃-characterization C⨆ E⨆ (R ⋈ R') .proj₂
+          ( ⋈-tiltclosed R R'
+            (preG₃F₃-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₁)
+            (preG₃F₃-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₁)
+          , F⊣G.⋈-⨆closed C⨆ D⨆ E⨆ R R'
+            (preG₃F₃-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₂)
+            (preG₃F₃-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
