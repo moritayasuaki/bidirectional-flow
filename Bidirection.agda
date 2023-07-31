@@ -606,9 +606,6 @@ record SLat : Set where
   ⊥ : Carrier
   ⊥ = ⨆ ∅
 
-  _⊔_ : Op₂ Carrier
-  x ⊔ y = ⨆ (｛ x ｝ ∪ ｛ y ｝)
-
   ⨆-upper : ∀ S x → x ∈ S → x ≤ ⨆ S
   ⨆-upper S = ⨆-sup S .proj₁
 
@@ -629,6 +626,18 @@ record SLat : Set where
 
   ⨆-↓ : ∀ x → ⨆ (↓ poset x) ≈ x
   ⨆-↓ x = Po.antisym (⨆-↓≤ x) (⨆-↓≥ x)
+
+  _⊔_ : Op₂ Carrier
+  x ⊔ y = ⨆ (｛ x ｝ ∪ ｛ y ｝)
+
+  ⊔-upper-l : ∀ x y → x ≤ (x ⊔ y)
+  ⊔-upper-l x y = ⨆-upper _ _ (inj₁ Eq.refl)
+
+  ⊔-upper-r : ∀ x y → y ≤ (x ⊔ y)
+  ⊔-upper-r x y = ⨆-upper _ _ (inj₂ Eq.refl)
+
+  ⊔-least : ∀ x y → (∀ z → x ≤ z → y ≤ z → (x ⊔ y) ≤ z)
+  ⊔-least x y z x≤z y≤z = ⨆-least _ _ λ { w (inj₁ x≈w) → Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z ; w (inj₂ y≈w) → Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z}
 
   ⊓-lower-l : ∀ x y → (x ⊓ y) ≤ x
   ⊓-lower-l x y = proj₁ (⊓-inf x y)
@@ -1522,6 +1531,45 @@ module _ (D⨆ E⨆ : SLat) where
   IsFanClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsFanClosed R = ∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
+  IsTriangle : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTriangle R = ∀ d e e₀ e₁ → e₀ E.≤ e × e E.≤ e₁ × (d , e₀) ∈ R × (d , e₁) ∈ R → (d , e) ∈ R
+
+  IsLowerPreimageClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsLowerPreimageClosed R = ∀ d e d₁ → d D.≤ d₁ × (d₁ , e) ∈ R → (d , e) ∈ R
+
+  ⨆closed→fanclosed↔triangle×lowerpreimage : (R : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsFanClosed R ↔ IsTriangle R × IsLowerPreimageClosed R
+  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₁ φ .proj₁ d e e₀ e₁ (e₀≤e , e≤e₁ , de₀∈R , de₁∈R) = φ d e d e₀ d e₁ (e₀≤e , D.Po.refl , e≤e₁ , de₁∈R , de₀∈R)
+  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₁ φ .proj₂ d e d₁ (d≤d₁ , d₁e∈R) = φ d e d₁ e d₁ e (E.Po.refl , d≤d₁ , E.Po.refl , d₁e∈R , d₁e∈R)
+  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₂ (α , β) d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)
+    = de∈R
+    where
+    d' : D
+    d' = d₀ D.⊔ d₁
+
+    p : ((d₀ , e₁) ⊔ (d₁ , e₀)) ≈ (d' , e₁)
+    p =
+      ( D.⨆-cong ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
+        ( (λ{ (_ , inj₁ (d₀≈ , e₁≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₀≈)) → inj₂ d₁≈})
+        , λ{ (inj₁ d₀≈) → (e₁ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₀ , inj₂ (d₁≈ , E.Eq.refl)) })
+      , E.Po.antisym
+          (E.⨆-least ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ λ { e₁' (d₀' , inj₁ (d₀≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈) ; e₀' (d₁' , inj₂ (d₁≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁)})
+          (E.⨆-upper ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ (d₀ , (inj₁ Eq.refl))))
+
+    g : ((d₀ , e₁) ⊔ (d₁ , e₀)) ∈ R
+    g = ⨆closed (｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) λ { (inj₁ d₀e₁≈) → R .Pred.isWellDefined d₀e₁≈ d₀e₁∈R ; (inj₂ d₁e₀≈) →  R .Pred.isWellDefined d₁e₀≈ d₁e₀∈R}
+
+    d'e₁∈R : (d' , e₁) ∈ R
+    d'e₁∈R = R .Pred.isWellDefined p g
+
+    de₁∈R : (d , e₁) ∈ R
+    de₁∈R = β d e₁ d' (D.Po.trans d≤d₁ (D.⊔-upper-r d₀ d₁) , d'e₁∈R)
+
+    de₀∈R : (d , e₀) ∈ R
+    de₀∈R = β d e₀ d₁ (d≤d₁ , d₁e₀∈R)
+
+    de∈R : (d , e) ∈ R
+    de∈R = α d e e₀ e₁ (e₀≤e , e≤e₁ , de₀∈R , de₁∈R)
+
   fan→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
     → ∀ d e
     → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsFan R d e d₀ e₀ d₁ e₁
@@ -2065,7 +2113,9 @@ module CheckOplaxMonoidalityForComposition where
         module E = SLat E⨆
 
       ⋈-fanclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsFanClosed C⨆ D⨆ R → IsFanClosed D⨆ E⨆ R' → IsFanClosed C⨆ E⨆ (R ⋈ R')
-      ⋈-fanclosed R R' R-fanclosed  R'-fanclosed = ?
+      ⋈-fanclosed R R' R-fanclosed R'-fanclosed c e c₀ e₀ c₁ e₁ (e₀≤e , c≤c₁ , e≤e₁ , (d , c₀d∈R , de₁∈R') , (d' , c₁d'∈R , d'e₀∈R')) =
+        let d'' = d D.⊔ d' in
+        (d'' , R-fanclosed c d'' c₀ d c₁ d'' ({!D.⨆-upper !} , c≤c₁ , D.Po.refl , {!!} , {!!}) , R'-fanclosed d'' e d' e₀ d'' e₁ {!!})
 
       ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
       ⋈-preRL-closed R R' R∈preRL R'∈preRL =
