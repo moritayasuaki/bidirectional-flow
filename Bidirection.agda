@@ -73,18 +73,18 @@ module _ where
   _→cong_ = BinRMorph.SetoidHomomorphism
   _→mono_ = BinRMorph.PosetHomomorphism
 
-record Has⟦⟧ (A : Set) (B : Set) : Set where
+record HasBracket (A : Set) (B : Set) : Set where
   field
     ⟦_⟧ : A → B
 
-open Has⟦⟧ {{...}} public
+open HasBracket {{...}} public
 
 instance
-  cong-map : {x y : Setoid} → Has⟦⟧ (x →cong y) (∣ x ∣ → ∣ y ∣)
-  Has⟦⟧.⟦ cong-map ⟧ = Cong.⟦_⟧
+  cong-map : {x y : Setoid} → HasBracket (x →cong y) (∣ x ∣ → ∣ y ∣)
+  HasBracket.⟦ cong-map ⟧ = Cong.⟦_⟧
 
-  mono-map : {x y : Poset} → Has⟦⟧ (x →mono y) (∣ x ∣ → ∣ y ∣)
-  Has⟦⟧.⟦ mono-map ⟧ = Mono.⟦_⟧
+  mono-map : {x y : Poset} → HasBracket (x →mono y) (∣ x ∣ → ∣ y ∣)
+  HasBracket.⟦ mono-map ⟧ = Mono.⟦_⟧
 
 infixr 10 _∘-cong_
 _∘-cong_ : {A B C : Setoid} (f : B →cong C) (g : A →cong B) → A →cong C
@@ -222,8 +222,8 @@ record Pred (X : Setoid) : Set where
     isWellDefined : {x y : _} → x ≈ y → ⟦ x ⟧ → ⟦ y ⟧
 
 instance
-  pred-map : {X : Setoid} → Has⟦⟧ (Pred X) (∣ X ∣ → Set)
-  Has⟦⟧.⟦ pred-map ⟧ = Pred.⟦_⟧
+  pred-map : {X : Setoid} → HasBracket (Pred X) (∣ X ∣ → Set)
+  HasBracket.⟦ pred-map ⟧ = Pred.⟦_⟧
 
 
 ≈→↔ : {X : Setoid} (P : Pred X) → {x y : ∣ X ∣} → SetoidPoly._≈_ X x y → (⟦ P ⟧ x) ↔ (⟦ P ⟧ y)
@@ -313,7 +313,7 @@ _⋈_ {Y = Y} R S .Pred.isWellDefined {x , z} {x' , z'} (x≈x' , z≈z') (y , x
 ⋈-mono-r P Q S P⊆Q = (λ (y , xy∈S , yz∈P) → (y , xy∈S , P⊆Q yz∈P))
 
 ⋈-mono : {X Y Z : Setoid} (P Q : Pred (X ×-setoid Y)) (S R : Pred (Y ×-setoid Z)) → P ⊆ Q → S ⊆ R → (P ⋈ S) ⊆ (Q ⋈ R)
-⋈-mono P Q S R P⊆Q S⊆R = (λ (y , xy∈P , yz∈S) → (y , P⊆Q xy∈P , S⊆R yz∈S)) 
+⋈-mono P Q S R P⊆Q S⊆R = (λ (y , xy∈P , yz∈S) → (y , P⊆Q xy∈P , S⊆R yz∈S))
 
 ⋈-cong-l : {X Y Z : Setoid} (P Q : Pred (X ×-setoid Y)) (S : Pred (Y ×-setoid Z)) → P ≐ Q → (P ⋈ S) ≐ (Q ⋈ S)
 ⋈-cong-l P Q S P≐Q = ⋈-mono-l P Q S (P≐Q .proj₁) , ⋈-mono-l Q P S (P≐Q .proj₂)
@@ -358,39 +358,14 @@ module _ {X≈ Y≈ : Setoid} where
   Pred.⟦ preimageR R Q ⟧ = preimageR-raw ⟦ R ⟧ ⟦ Q ⟧
   preimageR R Q .Pred.isWellDefined {x} {x'} x≈x' (y , xy∈R , y∈Q) = (y , R .Pred.isWellDefined (x≈x' , Y.refl) xy∈R , y∈Q)
 
-{-
-image : {X : Setoid} {Y : Setoid} → (X →cong Y) → Pred X → Pred Y
-image {X = X} {Y = Y} f P .Pred.⟦_⟧ y = Σ x ∶ ∣ X ∣ , x ∈ P × ⟦ f ⟧ x ≈ y
-  where
-  open SetoidPoly Y
-image {X = X} {Y = Y} f P .Pred.isWellDefined y≈y' (x , x∈S , fx≈y) = x , x∈S , trans fx≈y y≈y'
-  where
-  open SetoidPoly Y
+  liftFR-raw : (X → Y) → UniR.Pred (X × Y) lzero
+  liftFR-raw f (x , y) = f x Y.≈ y
 
-image↓ : {X≈ : Setoid} (Y≤ : Poset) → (X≈ →cong PosetPoly.Eq.setoid Y≤) → Pred X≈ → Pred (PosetPoly.Eq.setoid Y≤)
-Pred.⟦ image↓ Y≤ f P ⟧ y = Σ x ∶ _ , x ∈ P × y ≤ ⟦ f ⟧ x
-  where
-  open PosetPoly Y≤
-image↓ Y≤ f P .Pred.isWellDefined y≈y' (x , x∈S , y≤fx) = x , x∈S , trans (reflexive (Eq.sym y≈y')) y≤fx
-  where
-  open PosetPoly Y≤
+  liftFR : (X≈ →cong Y≈) → Pred (X≈ ×-setoid Y≈)
+  Pred.⟦ liftFR f≈ ⟧ = liftFR-raw ⟦ f≈ ⟧
+  liftFR f≈ .Pred.isWellDefined {(x , y)} {(x' , y')} (x≈x' , y≈y') fx≈y = Y.trans (f≈ .Cong.cong (X.sym x≈x')) (Y.trans fx≈y y≈y')
 
-preimage : {X : Setoid} {Y : Setoid} → (X →cong Y) → Pred Y → Pred X
-Pred.⟦ preimage {X = X} {Y = Y} f P ⟧ x = ⟦ f ⟧ x UniR.∈ ⟦ P ⟧
-preimage {X = X} {Y = Y} f P .Pred.isWellDefined {x} {x'} x≈x' fx∈P = P .Pred.isWellDefined (f .Cong.cong x≈x') fx∈P
 
-image-mono : {X Y : Setoid} (f : X →cong Y) (S S' : Pred X) → S ⊆ S' → image f S ⊆ image f S'
-image-mono f S S' S⊆S' {y} (x , x∈S , fx≈y) = x , S⊆S' x∈S , fx≈y
-
-preimage-mono : {X Y : Setoid} (f : X →cong Y) (S S' : Pred Y) → S ⊆ S' → preimage f S ⊆ preimage f S'
-preimage-mono f S S' S⊆S' {x} fx∈S = S⊆S' fx∈S
-
-id⊆preimage∘image : {X Y : Setoid} (f : X →cong Y) (S : Pred X) → S ⊆ preimage f (image f S)
-id⊆preimage∘image {Y = Y} f S x∈S = _ , x∈S , Y .SetoidPoly.refl
-
-image-preimage⊆id : {X Y : Setoid} (f : X →cong Y) (S : Pred Y) → image f (preimage f S) ⊆ S
-image-preimage⊆id f S {y} (x , fx∈S , fx≈y) = S .Pred.isWellDefined fx≈y fx∈S
--}
 module _ (C≈ : Setoid) where
   open SetoidPoly C≈
   private
@@ -555,19 +530,15 @@ module _ (D≤ : Poset) where
   open PosetPoly D≤
   private
     D≈ = PosetPoly.Eq.setoid D≤
-  ↓ : ∣ D≤ ∣ → Pred D≈
-  Pred.⟦ ↓ d ⟧ d' = d' ≤ d
-  Pred.isWellDefined (↓ d) d'≈d'' d'≤d = trans (reflexive (Eq.sym d'≈d'')) d'≤d
+  principal-downset : ∣ D≤ ∣ → Pred D≈
+  Pred.⟦ principal-downset d ⟧ d' = d' ≤ d
+  Pred.isWellDefined (principal-downset d) d'≈d'' d'≤d = trans (reflexive (Eq.sym d'≈d'')) d'≤d
 
-  ↓-mono : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≤_ d d' → ↓ d ⊆ ↓ d'
-  ↓-mono d d' d≤d' = (λ d''≤d → trans d''≤d d≤d')
+  principal-downset-mono : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≤_ d d' → principal-downset d ⊆ principal-downset d'
+  principal-downset-mono d d' d≤d' = (λ d''≤d → trans d''≤d d≤d')
 
-  ↓-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → ↓ d ≐ ↓ d'
-  ↓-cong d d' d≈d' = ↓-mono d d' (reflexive d≈d') , ↓-mono d' d (reflexive (Eq.sym d≈d'))
-
-  principal-downset = ↓
-  principal-downset-mono = ↓-mono
-  principal-downset-cong = ↓-cong
+  principal-downset-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → principal-downset d ≐ principal-downset d'
+  principal-downset-cong d d' d≈d' = principal-downset-mono d d' (reflexive d≈d') , principal-downset-mono d' d (reflexive (Eq.sym d≈d'))
 
   principal-upset : ∣ D≤ ∣ → Pred (PosetPoly.Eq.setoid D≤)
   Pred.⟦ principal-upset d ⟧ d' = d ≤ d'
@@ -579,9 +550,6 @@ module _ (D≤ : Poset) where
   principal-upset-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → principal-upset d ≐ principal-upset d'
   principal-upset-cong d d' d≈d' = principal-upset-mono d' d (reflexive (Eq.sym d≈d')) , principal-upset-mono d d' (reflexive d≈d')
 
-  ↑ = principal-upset
-  ↑-mono = principal-upset-mono
-  ↑-cong = principal-upset-cong
 
 record SLat : Set where
   field
@@ -604,8 +572,14 @@ record SLat : Set where
     ⊤-max : Maximum _≤_ ⊤
     ⨆-sup : ∀ S → (∀ x → x ∈ S → x ≤ ⨆ S) × (∀ y → (∀ x → x ∈ S → x ≤ y) → ⨆ S ≤ y)
 
-  ↓≤ : Carrier → Pred Eq.setoid
-  ↓≤ = ↓ poset
+  ↓ : Carrier → Pred Eq.setoid
+  ↓ = principal-downset poset
+
+  ↓-mono : ∀ x y → x ≤ y → ↓ x ⊆ ↓ y
+  ↓-mono = principal-downset-mono poset
+
+  ↓-cong : ∀ x y → x ≈ y → ↓ x ≐ ↓ y
+  ↓-cong = principal-downset-cong poset
 
   ⊥ : Carrier
   ⊥ = ⨆ ∅
@@ -622,13 +596,13 @@ record SLat : Set where
   ⨆-cong : ∀ S S' → S ≐ S' → ⨆ S ≈ ⨆ S'
   ⨆-cong S S' (S⊆S' , S⊇S')  = Po.antisym (⨆-mono S S' S⊆S') (⨆-mono S' S S⊇S')
 
-  ⨆-↓≥ : ∀ x → x ≤ ⨆ (↓ poset x)
-  ⨆-↓≥ x = ⨆-upper (↓ poset x) x (Po.reflexive Eq.refl)
+  ⨆-↓≥ : ∀ x → x ≤ ⨆ (↓ x)
+  ⨆-↓≥ x = ⨆-upper (↓ x) x (Po.reflexive Eq.refl)
 
-  ⨆-↓≤ : ∀ x → ⨆ (↓ poset x) ≤ x
-  ⨆-↓≤ x = ⨆-least (↓ poset x) x \x' x'∈↓x → x'∈↓x
+  ⨆-↓≤ : ∀ x → ⨆ (↓ x) ≤ x
+  ⨆-↓≤ x = ⨆-least (↓ x) x \x' x'∈↓x → x'∈↓x
 
-  ⨆-↓ : ∀ x → ⨆ (↓ poset x) ≈ x
+  ⨆-↓ : ∀ x → ⨆ (↓ x) ≈ x
   ⨆-↓ x = Po.antisym (⨆-↓≤ x) (⨆-↓≥ x)
 
   _⊔_ : Op₂ Carrier
@@ -691,15 +665,15 @@ record SLat : Set where
   ⨆≤↔∀≤ S x .proj₂ = ⨆≤←∀≤ S x
 
 
-  ⊓≈⨆∩↓ : ∀ x y → (x ⊓ y) ≈ ⨆ (↓ poset x ∩ ↓ poset y)
+  ⊓≈⨆∩↓ : ∀ x y → (x ⊓ y) ≈ ⨆ (↓ x ∩ ↓ y)
   ⊓≈⨆∩↓ x y = Po.antisym
-    (⨆-upper (↓≤ x ∩ ↓≤ y) (x ⊓ y) (⊓-inf x y .proj₁ , ⊓-inf x y .proj₂ .proj₁))
-    (⊓-inf x y .proj₂ .proj₂ (⨆ (↓≤ x ∩ ↓≤ y)) (⨆-least (↓≤ x ∩ ↓≤ y) x (\_ p → p .proj₁)) ( (⨆-least (↓≤ x ∩ ↓≤ y) y (\_ p → p .proj₂))))
+    (⨆-upper (↓ x ∩ ↓ y) (x ⊓ y) (⊓-inf x y .proj₁ , ⊓-inf x y .proj₂ .proj₁))
+    (⊓-inf x y .proj₂ .proj₂ (⨆ (↓ x ∩ ↓ y)) (⨆-least (↓ x ∩ ↓ y) x (\_ p → p .proj₁)) ( (⨆-least (↓ x ∩ ↓ y) y (\_ p → p .proj₂))))
 
-  ⨆↓≈⨆↓∩ : ∀ x S → x ∈ S → ⨆ (↓≤ x) ≈ ⨆ (↓≤ x ∩ S)
+  ⨆↓≈⨆↓∩ : ∀ x S → x ∈ S → ⨆ (↓ x) ≈ ⨆ (↓ x ∩ S)
   ⨆↓≈⨆↓∩ x S x∈S = Po.antisym
-    (⨆-upper (↓≤ x ∩ S) (⨆ (↓≤ x)) (⨆-↓≤ x , Pred.isWellDefined S (Eq.sym (⨆-↓ x)) x∈S))
-    (⨆-mono (↓≤ x ∩ S) (↓≤ x) proj₁)
+    (⨆-upper (↓ x ∩ S) (⨆ (↓ x)) (⨆-↓≤ x , Pred.isWellDefined S (Eq.sym (⨆-↓ x)) x∈S))
+    (⨆-mono (↓ x ∩ S) (↓ x) proj₁)
 
   post≤ = post poset
 
@@ -748,6 +722,46 @@ instance
   slat-has-carrier : HasCarrier (SLat)
   slat-has-carrier .HasCarrier.Carrier = SLat.Carrier
 
+module _ (D⨆ : SLat) (E⨆ : SLat) where
+  private
+    module D = SLat D⨆
+    module E = SLat E⨆
+
+    D≤ = D.poset
+    D≈ = D.Eq.setoid
+    D = ∣ D⨆ ∣
+
+    E≤ = E.poset
+    E≈ = E.Eq.setoid
+    E = ∣ E⨆ ∣
+
+  IsCont : (D≈ →cong E≈) → Set
+  IsCont f≈ = (S : Pred D≈) → E.⨆ (imageR (liftFR f≈) S) E.≈ ⟦ f≈ ⟧ (D.⨆ S)
+
+  record Cont : Set where
+    field
+      ⟦_⟧cong'    : D≈ →cong E≈
+      isCont : IsCont ⟦_⟧cong'
+
+    ⟦_⟧' : D → E
+    ⟦_⟧' = ⟦ ⟦_⟧cong' ⟧
+
+    ⟦_⟧mono : D≤ →mono E≤
+    Mono.⟦ ⟦_⟧mono ⟧ = ⟦ ⟦_⟧cong' ⟧
+    ⟦ .Mono.isMonotone ⟧mono .IsMono.cong = Cong.isCongruent ⟦_⟧cong' .IsCong.cong
+    ⟦ .Mono.isMonotone ⟧mono .IsMono.mono {d} {d'} d≤d' = -- E.Po.trans (E.⨆-↓≥ (⟦_⟧' d)) (E.Po.trans {!!} (E.⨆-↓ (⟦_⟧' d')))
+      let open PosetReasoning E≤ in
+      begin
+      ⟦ d ⟧'                                   ≈˘⟨ ⟦_⟧cong' .Cong.isCongruent .IsCong.cong (D.⨆-↓ d) ⟩
+      ⟦ D.⨆ (D.↓ d) ⟧'                        ≈˘⟨ isCont (D.↓ d) ⟩
+      E.⨆ (imageR (liftFR ⟦_⟧cong') (D.↓ d))  ≤⟨ E.⨆-mono _ _ (λ {(d'' , f-≈d'' , d''≤d) → (d'' , f-≈d'' , D.Po.trans d''≤d d≤d')}) ⟩
+      E.⨆ (imageR (liftFR ⟦_⟧cong') (D.↓ d')) ≈⟨  isCont (D.↓ d') ⟩
+      ⟦ D.⨆ (D.↓ d') ⟧'                       ≈⟨  ⟦_⟧cong' .Cong.isCongruent .IsCong.cong (D.⨆-↓ d') ⟩
+      ⟦ d' ⟧'                                  ∎
+
+_→cont_ : SLat → SLat → Set
+_→cont_ = Cont
+
 module _ (D⨆ : SLat) where
   open SLat D⨆
   private
@@ -755,8 +769,8 @@ module _ (D⨆ : SLat) where
     D≈ = Eq.setoid
     D = ∣ D⨆ ∣
 
-  ⨆S↓≤⨆S : (S↓ S : Pred D≈) → (∀ d → d ∈ S↓ → Σ d' ∶ D , d' ∈ S × d ≤ d') → ⨆ S↓ ≤ ⨆ S
-  ⨆S↓≤⨆S S↓ S d∈S↓→d≤d'∈S = ⨆-least S↓ (⨆ S) P₁
+  ⨆S↓⨆S : (S↓ S : Pred D≈) → (∀ d → d ∈ S↓ → Σ d' ∶ D , d' ∈ S × d ≤ d') → ⨆ S↓ ≤ ⨆ S
+  ⨆S↓⨆S S↓ S d∈S↓→d≤d'∈S = ⨆-least S↓ (⨆ S) P₁
     where
     open PosetReasoning D≤
     P₁ : (d : D) → d ∈ S↓ → d ≤ ⨆ S
@@ -769,14 +783,14 @@ module _ (D⨆ : SLat) where
       d' ≤⟨ ⨆-upper S d' d'∈S ⟩
       ⨆ S ∎
 
-  ⨆-endomono : (f : D≤ →mono D≤) (S : Pred D≈) → ((d : D) → d ∈ S → d ≤ ⟦ f ⟧ d) → ((d : D) → ( ⨆ (↓ D≤ d ∩ S) ≤ ⟦ f ⟧ d))
-  ⨆-endomono f S ∈S→postfix-of-f d = ⨆-least (↓ D≤ d ∩ S) (⟦ f ⟧ d) ↓d∩S⇒≤fd
+  ⨆-endomono : (f : D≤ →mono D≤) (S : Pred D≈) → ((d : D) → d ∈ S → d ≤ ⟦ f ⟧ d) → ((d : D) → ( ⨆ (↓ d ∩ S) ≤ ⟦ f ⟧ d))
+  ⨆-endomono f S ∈S→postfix-of-f d = ⨆-least (↓ d ∩ S) (⟦ f ⟧ d) ↓d∩S⇒≤fd
     where
-    ↓d∩S⇒≤fd : ∀ d' → d' ∈ (↓ D≤ d ∩ S) → d' ≤ ⟦ f ⟧ d
+    ↓d∩S⇒≤fd : ∀ d' → d' ∈ (↓ d ∩ S) → d' ≤ ⟦ f ⟧ d
     ↓d∩S⇒≤fd d' (d'≤d , d'∈S) = Po.trans (∈S→postfix-of-f d' d'∈S) (Mono.mono f d'≤d)
 
-  ⨆-endomono' : (f : D≤ →mono D≤) (S : Pred D≈) → ((d : D) → ( ⨆ (↓ D≤ d ∩ S) ≤ ⟦ f ⟧ d)) → ((d : D) → d ∈ S → d ≤ ⟦ f ⟧ d)
-  ⨆-endomono' f S ⨆↓-∩S≤f- d d∈S = Po.trans (⨆-upper (↓ D≤ d ∩ S) d (Po.refl , d∈S)) (⨆↓-∩S≤f- d)
+  ⨆-endomono' : (f : D≤ →mono D≤) (S : Pred D≈) → ((d : D) → ( ⨆ (↓ d ∩ S) ≤ ⟦ f ⟧ d)) → ((d : D) → d ∈ S → d ≤ ⟦ f ⟧ d)
+  ⨆-endomono' f S ⨆↓-∩S≤f- d d∈S = Po.trans (⨆-upper (↓ d ∩ S) d (Po.refl , d∈S)) (⨆↓-∩S≤f- d)
 
 module _ where
   open ProductBinR
@@ -874,7 +888,7 @@ module _ where
 
     preRL≐imageR : preRL ≐ imageF ⟦ R ⟧cong
     preRL≐imageR = preRL⊆imageR , preRL⊇imageR
-    
+
     R∈preRL : ∀ d → ⟦ R ⟧ d ∈ preRL
     R∈preRL = R .mono ∘ ε
 
@@ -1113,14 +1127,14 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   -- F⊣G : F ⊣ G
 
   F-raw : Pred C≈ → C → C
-  F-raw S d = ⨆ ((↓ C≤ d) ∩ S)
+  F-raw S d = ⨆ (↓ d ∩ S)
 
   F-mono : Pred C≈ → (C≤ →mono C≤)
   Mono.⟦ F-mono S ⟧ = F-raw S
   F-mono S .Mono.isMonotone .IsMono.mono {d} {d'}
-    = ⨆-mono ((↓ C≤ d) ∩ S) ((↓ C≤ d') ∩ S)
-    ∘ ∩-mono-l (↓ C≤ d) (↓ C≤ d') S
-    ∘ ↓-mono C≤ d d'
+    = ⨆-mono (↓ d ∩ S) (↓ d' ∩ S)
+    ∘ ∩-mono-l (↓ d) (↓ d') S
+    ∘ ↓-mono d d'
   F-mono S .Mono.isMonotone .IsMono.cong d≈d' = Po.antisym
     (F-mono S .Mono.mono (Po.reflexive d≈d'))
     (F-mono S .Mono.mono (Po.reflexive (Eq.sym d≈d')))
@@ -1134,8 +1148,8 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   F : 𝒫⊆ →mono Endo
   Mono.⟦ F ⟧ = F-mono
   F .Mono.isMonotone .IsMono.mono {P} {Q} P⊆Q d
-    = ⨆-mono (↓ C≤ d ∩ P) (↓ C≤ d ∩ Q)
-             (∩-mono-r P Q (↓ C≤ d) P⊆Q)
+    = ⨆-mono (↓ d ∩ P) (↓ d ∩ Q)
+             (∩-mono-r P Q (↓ d) P⊆Q)
   F .Mono.isMonotone .IsMono.cong {P} {Q} P≐Q d = Po.antisym
     (F .Mono.isMonotone .IsMono.mono {P} {Q} (P≐Q .proj₁) d)
     (F .Mono.isMonotone .IsMono.mono {Q} {P} (P≐Q .proj₂) d)
@@ -1166,8 +1180,8 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
 
 
   F⊣G : F ⊣ G
-  F⊣G .GaloisConnection.ψ P f .proj₁ FP≤f {d} d∈P = Po.trans (⨆-upper (↓ C≤ d ∩ P) d (Po.refl , d∈P)) (FP≤f d)
-  F⊣G .GaloisConnection.ψ P f .proj₂ P⊆Gf d = ⨆-least (↓ C≤ d ∩ P) (⟦ f ⟧ d) \d' (d'≤d , d'∈P) → Po.trans (P⊆Gf d'∈P) (Mono.mono f d'≤d)
+  F⊣G .GaloisConnection.ψ P f .proj₁ FP≤f {d} d∈P = Po.trans (⨆-upper (↓ d ∩ P) d (Po.refl , d∈P)) (FP≤f d)
+  F⊣G .GaloisConnection.ψ P f .proj₂ P⊆Gf d = ⨆-least (↓ d ∩ P) (⟦ f ⟧ d) \d' (d'≤d , d'∈P) → Po.trans (P⊆Gf d'∈P) (Mono.mono f d'≤d)
     where
     private module M = PosetPoly (C≤ →mono≤-poset C≤)
 
@@ -1181,32 +1195,32 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     let open SetoidReasoning (Prop↔-setoid) in
     begin
     (f≤ ∈ post (C≤ →mono≤-poset C≤) ⟦ F ∘-mono G ⟧cong) ≡⟨⟩
-    (∀ d → f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈ )) ≈⟨ lift↔ _ _ ψ ⟩
-    (∀ d → f d ≤ d × (f d ≤ f (f d))) ≡⟨⟩
+    (∀ x → f x ≤ ⨆ (↓ x ∩ post C≤ f≈ )) ≈⟨ lift↔ _ _ ψ ⟩
+    (∀ x → f x ≤ x × (f x ≤ f (f x))) ≡⟨⟩
     IsCoclosure C≤ f ∎
     where
     f≈ = ⟦ f≤ ⟧cong
     f = ⟦ f≤ ⟧
-    ψ : ∀ d  → (f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈)) ↔ ((f d ≤ d) × (f d ≤ f (f d)))
+    ψ : ∀ d → (f d ≤ ⨆ (↓ d ∩ post C≤ f≈)) ↔ ((f d ≤ d) × (f d ≤ f (f d)))
     ψ d = Product.< ε , δ > , uncurry φ
       where
-      ε : f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈) → f d ≤ d
+      ε : f d ≤ ⨆ (↓ d ∩ post C≤ f≈) → f d ≤ d
       ε φ =
         let open PosetReasoning C≤ in
         begin
         f d  ≤⟨ φ ⟩
-        ⨆ (↓ poset d ∩ post C≤ f≈)  ≤⟨ ⨆-mono (↓ poset d ∩ post C≤ f≈) (↓ poset d) (∩-⊆-l (↓ poset d) (post C≤ f≈)) ⟩
-        ⨆ (↓ poset d) ≈⟨ ⨆-↓ d ⟩
+        ⨆ (↓ d ∩ post C≤ f≈)  ≤⟨ ⨆-mono (↓ d ∩ post C≤ f≈) (↓ d) (∩-⊆-l (↓ d) (post C≤ f≈)) ⟩
+        ⨆ (↓ d) ≈⟨ ⨆-↓ d ⟩
         d  ∎
-      δ : f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈) → f d ≤ f (f d)
+      δ : f d ≤ ⨆ (↓ d ∩ post C≤ f≈) → f d ≤ f (f d)
       δ φ =
         let open PosetReasoning C≤ in
         begin
         f d  ≤⟨ φ ⟩
-        ⨆ (↓ poset d ∩ post C≤ f≈)  ≤⟨ ⨆-least (↓ poset d ∩ post C≤ f≈) (f (f d)) P2' ⟩
+        ⨆ (↓ d ∩ post C≤ f≈)  ≤⟨ ⨆-least (↓ d ∩ post C≤ f≈) (f (f d)) P2' ⟩
         f (f d)  ∎
         where
-        P2' : ∀ d' → d' ∈ (↓ poset d ∩ post C≤ f≈) → d' ≤ f (f d)
+        P2' : ∀ d' → d' ∈ (↓ d ∩ post C≤ f≈) → d' ≤ f (f d)
         P2' d' (d'≤d , d'≤fd') =
           let
           ffd'≤ffd = f≤ .Mono.mono (f≤ .Mono.mono d'≤d)
@@ -1219,12 +1233,12 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
           f (f d') ≤⟨ ffd'≤ffd ⟩
           f (f d) ∎
 
-      φ : f d ≤ d → f d ≤ f (f d) → f d ≤ ⨆ (↓ poset d ∩ post C≤ f≈)
+      φ : f d ≤ d → f d ≤ f (f d) → f d ≤ ⨆ (↓ d ∩ post C≤ f≈)
       φ fd≤d fd≤ffd =
         let open PosetReasoning C≤ in
         begin
-        f d ≤⟨ ⨆-upper (↓ poset d ∩ post C≤ f≈) (f d) (fd≤d , fd≤ffd) ⟩
-        ⨆ (↓ poset d ∩ post C≤ f≈) ∎
+        f d ≤⟨ ⨆-upper (↓ d ∩ post C≤ f≈) (f d) (fd≤d , fd≤ffd) ⟩
+        ⨆ (↓ d ∩ post C≤ f≈) ∎
 
   postGF : (R : Pred C≈) → (R ∈ post (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong)
   postGF R = GaloisConnection.η F⊣G R
@@ -1237,20 +1251,20 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
       begin
       R ∈ preRL F⊣G ≡⟨⟩
       (G-pred ∘ F-mono) R ⊆ R ≈⟨ λ- , _$- ⟩
-      (∀ d → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
+      (∀ d → d ≤ ⨆ (↓ d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
       (∀ S → S ⊆ R → ⨆ S ∈ R) ≡⟨⟩
       Is⨆Closed C⨆ R ∎
       where
-      γ : (∀ d → d ≤ ⨆ (↓ poset d ∩ R) → d ∈ R) → ∀ S → S ⊆ R → ⨆ S ∈ R
-      γ φ S S⊆R = φ (⨆ S) (⨆-mono S (↓≤ (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
+      γ : (∀ d → d ≤ ⨆ (↓ d ∩ R) → d ∈ R) → ∀ S → S ⊆ R → ⨆ S ∈ R
+      γ φ S S⊆R = φ (⨆ S) (⨆-mono S (↓ (⨆ S) ∩ R) \ {d} d∈S → ⨆-upper S d d∈S  , S⊆R d∈S)
 
-      γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ d → d ≤ ⨆ (↓≤ d ∩ R) → d ∈ R
-      γ⁻¹ ψ d d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓≤ d ∩ R) (∩-⊆-r (↓≤ d) R))
+      γ⁻¹ : (∀ S → S ⊆ R → ⨆ S ∈ R) → ∀ d → d ≤ ⨆ (↓ d ∩ R) → d ∈ R
+      γ⁻¹ ψ d d≤⨆↓d∩R = R .Pred.isWellDefined (Po.antisym χ χ⁻¹)  (ψ (↓ d ∩ R) (∩-⊆-r (↓ d) R))
         where
-        χ : ⨆ (↓≤ d ∩ R) ≤ d
-        χ = Po.trans (⨆-mono _ _ (∩-⊆-l (↓≤ d) R)) (⨆-↓≤ d)
+        χ : ⨆ (↓ d ∩ R) ≤ d
+        χ = Po.trans (⨆-mono _ _ (∩-⊆-l (↓ d) R)) (⨆-↓≤ d)
 
-        χ⁻¹ : d ≤ ⨆ (↓≤ d ∩ R)
+        χ⁻¹ : d ≤ ⨆ (↓ d ∩ R)
         χ⁻¹ = d≤⨆↓d∩R
 
 module _ (D⨆ E⨆ : SLat) where
@@ -1276,20 +1290,20 @@ module _ (D⨆ E⨆ : SLat) where
 
   module _ where
     open GaloisConnection
-    preGF-explicit : (R : Pred (D≈ ×-setoid E≈)) → R ∈ preRL F⊣G ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preGF-explicit : (R : Pred (D≈ ×-setoid E≈)) → R ∈ preRL F⊣G ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
     preGF-explicit R =
       let open SetoidReasoning (Prop↔-setoid) in
       begin
       R ∈ preRL F⊣G                                                                                             ≡⟨⟩
       (G-raw ∘ F-raw) R UniR.⊆ Pred.⟦ R ⟧                                                                        ≈⟨ λ- , _$- ⟩
-      (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R) ∎
+      (((d , e) : D × E) → d D.≤ D.⨆ ((↓ (d , e) ∩ R) ∣₁) × (e E.≤ E.⨆ ((↓ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R) ∎
 
     preGF→⊔closed : (R : Pred (D≈ ×-setoid E≈))
-                  → (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
+                  → (((d , e) : D × E) → (d D.≤ D.⨆ ((↓ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓ (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
                   → (((d , e) : D × E) ((d₀ , e₀) : D × E) → (d₀ , e₀) ≤ (d , e) → (d₀ , e) ∈ R × (d , e₀) ∈ R → (d , e) ∈ R)
     preGF→⊔closed R ≤⨆↓∩→∈ (d , e) (d₀ , e₀) (d₀≤d , e₀≤e) (d₀e∈R , de₀∈R) = ≤⨆↓∩→∈ (d , e)
-      ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
-      , E.⨆-upper ((↓≤ (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
+      ( D.⨆-upper ((↓ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
+      , E.⨆-upper ((↓ (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
 
   -- We define the following galois connection
   --
@@ -1350,17 +1364,17 @@ module _ (D⨆ E⨆ : SLat) where
   IsTiltBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (e₁ : E) → Set
   IsTiltBowTie R d e d₀ e₀ e₁ = (d₀ D.≤ d) × (e₀ E.≤ e) × (e E.≤ e₁) × (d₀ , e₁) ∈ R × (d , e₀) ∈ R
 
-  tiltbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsTiltBowTie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+  tiltbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsTiltBowTie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓ (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂))
   tiltbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R) =
-    ( D.⨆-upper ((↓≤ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
-    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
+    ( D.⨆-upper ((↓ (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
   IsTiltBowTieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsTiltBowTieClosed R = (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
 
   module _ where
     open GaloisConnection
-    preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓ (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₀F₀-explicit R = (λ- , _$-)
 
     preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
@@ -1377,31 +1391,31 @@ module _ (D⨆ E⨆ : SLat) where
 
      α⁻¹ : (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
      α⁻¹ (tiltbowtie→R , ⨆closed) {(d , e)} (d≤⨆↓de∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
-        tiltbowtie→R d e (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓≤ (d , e) ∩ R) ∣₂)) (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+        tiltbowtie→R d e (D.⨆ ((↓ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓ (d , e) ∩ R) ∣₂)) (E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂))
           ( d≥⨆↓d⊤∩R∣₁
           , e≥⨆↓de∩R∣₂
           , e≤⨆↓d⊤∩R∣₂
-          , ⨆closed (↓≤ (d , E.⊤) ∩ R) (∩-⊆-r (↓≤ (d , E.⊤)) R)
-          , R .Pred.isWellDefined (D.Eq.sym d≈⨆↓de∩R∣₁ , E.Eq.refl) (⨆closed (↓≤ (d , e) ∩ R) (∩-⊆-r (↓≤ (d , e)) R)))
+          , ⨆closed (↓ (d , E.⊤) ∩ R) (∩-⊆-r (↓ (d , E.⊤)) R)
+          , R .Pred.isWellDefined (D.Eq.sym d≈⨆↓de∩R∣₁ , E.Eq.refl) (⨆closed (↓ (d , e) ∩ R) (∩-⊆-r (↓ (d , e)) R)))
         where
-        d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) D.≤ d
-        d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓≤ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+        d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓ (d , E.⊤) ∩ R) ∣₁) D.≤ d
+        d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
 
-        e≥⨆↓de∩R∣₂ : E.⨆ ((↓≤ (d , e) ∩ R) ∣₂) E.≤ e
-        e≥⨆↓de∩R∣₂ = E.⨆-least ((↓≤ (d , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
+        e≥⨆↓de∩R∣₂ : E.⨆ ((↓ (d , e) ∩ R) ∣₂) E.≤ e
+        e≥⨆↓de∩R∣₂ = E.⨆-least ((↓ (d , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
 
-        d≥⨆↓de∩R∣₁ : D.⨆ ((↓≤ (d , e) ∩ R) ∣₁) D.≤ d
-        d≥⨆↓de∩R∣₁ = D.⨆-least ((↓≤ (d , e) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+        d≥⨆↓de∩R∣₁ : D.⨆ ((↓ (d , e) ∩ R) ∣₁) D.≤ d
+        d≥⨆↓de∩R∣₁ = D.⨆-least ((↓ (d , e) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
 
-        d≈⨆↓de∩R∣₁ : d D.≈ D.⨆ ((↓≤ (d , e) ∩ R) ∣₁)
+        d≈⨆↓de∩R∣₁ : d D.≈ D.⨆ ((↓ (d , e) ∩ R) ∣₁)
         d≈⨆↓de∩R∣₁ = D.Po.antisym d≤⨆↓de∩R∣₁ d≥⨆↓de∩R∣₁
 
 
   -- We define the following galois connection
   --
-  -- ((D × E →m D) × (D →m E) , ≤)
+  -- ((D × E →mono D) × (D →mono E) , ≤)
   --        H₁ ↓ ⊣ ↑ I₁
-  -- ((E →m D) × (D →m E) , ≤)
+  -- ((E →mono D) × (D →mono E) , ≤)
 
   -- H₁ : (((D≤ ×-poset E≤) →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
   -- I₁ : ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono (((D≤ ×-poset E≤) →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
@@ -1463,16 +1477,16 @@ module _ (D⨆ E⨆ : SLat) where
   IsBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
-  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂))
   bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
-    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
-    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓ (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
   module _ where
     open GaloisConnection
     preG₁F₁-explicit : (R : Pred (D≈ ×-setoid E≈))
       → (R ∈ preRL F₁⊣G₁)
-      ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
+      ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₁F₁-explicit R = (λ- , _$-)
 
     preG₁F₁-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
@@ -1490,18 +1504,34 @@ module _ (D⨆ E⨆ : SLat) where
       α⁻¹ : (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₁⊣G₁)
       α⁻¹ (bowtie→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂) =
          bowtie→R d e
-           (D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂))
-           (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
+           (D.⨆ ((↓ (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₂))
+           (D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁)) (E.⨆ ((↓ (d , E.⊤) ∩ R) ∣₂))
            ( d≥⨆↓d⊤∩R∣₁ , e≥⨆↓⊤e∩R∣₂
            , d≤⨆↓⊤e∩R∣₁ , e≤⨆↓d⊤∩R∣₂
-           , ⨆closed (↓≤ (d , E.⊤) ∩ R) (∩-⊆-r (↓≤ (d , E.⊤)) R)
-           , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+           , ⨆closed (↓ (d , E.⊤) ∩ R) (∩-⊆-r (↓ (d , E.⊤)) R)
+           , ⨆closed (↓ (D.⊤ , e) ∩ R) (∩-⊆-r (↓ (D.⊤ , e)) R))
          where
-         d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₁) D.≤ d
-         d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓≤ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
+         d≥⨆↓d⊤∩R∣₁ : D.⨆ ((↓ (d , E.⊤) ∩ R) ∣₁) D.≤ d
+         d≥⨆↓d⊤∩R∣₁ = D.⨆-least ((↓ (d , E.⊤) ∩ R) ∣₁) d (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → d₀≤d)
 
-         e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
-         e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
+         e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
+         e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
+
+  -- A definition of an adjunction between `pair of backward and forward transfer functions' and `pair of a backward function and a forward constant' :
+  --
+  -- ((D →mono E) , ≤)
+  --        Hc ↓ ⊣ ↑ Ic
+  -- ((D →cont E) , ≤)
+
+  module _ where
+    Hc-cont : (D≤ →mono E≤) → (D⨆ →cont E⨆)
+    Cong.⟦ Cont.⟦ Hc-cont f≤ ⟧cong' ⟧ = {!!}
+    Cont.⟦ Hc-cont f≤ ⟧cong' .Cong.isCongruent = {!!}
+    Hc-cont f≤ .Cont.isCont = {!!}
+
+    Ic-mono : (D⨆ →cont E⨆) → (D≤ →mono E≤)
+    Ic-mono f⨆ = Cont.⟦ f⨆ ⟧mono
+
 
   -- A definition of an adjunction between `pair of backward and forward transfer functions' and `pair of a backward function and a forward constant' :
   --
@@ -1517,7 +1547,7 @@ module _ (D⨆ E⨆ : SLat) where
     H₂-raw (f⃖ , f⃗) = (f⃖ , f⃗ D.⊤)
 
     H₂-mono : (E≤ →mono D≤) × (D≤ →mono E≤) → (E≤ →mono D≤) × E
-    Mono.⟦ H₂-mono (f⃖ , f⃗) .proj₁ ⟧ = H₂-raw (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧) .proj₁ 
+    Mono.⟦ H₂-mono (f⃖ , f⃗) .proj₁ ⟧ = H₂-raw (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧) .proj₁
     H₂-mono (f⃖ , f⃗) .proj₁ .Mono.isMonotone .IsMono.cong e≈e' = f⃖ .Mono.isMonotone .IsMono.cong e≈e'
     H₂-mono (f⃖ , f⃗) .proj₁ .Mono.isMonotone .IsMono.mono e≤e' = f⃖ .Mono.isMonotone .IsMono.mono e≤e'
     H₂-mono (f⃖ , f⃗) .proj₂ = H₂-raw (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧) .proj₂
@@ -1609,16 +1639,16 @@ module _ (D⨆ E⨆ : SLat) where
   brokenbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
     → ∀ d e
     → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBrokenBowTie R d e d₀ e₀ d₁ e₁
-    → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓≤ ⊤ ∩ R) ∣₂)
+    → d D.≤ D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓ ⊤ ∩ R) ∣₂)
   brokenbowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
-    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
-    , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ ⊤ ∩ R) ∣₂) e₁ (d₀ , ⊤-max _ , d₀e₁∈R)))
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
+    , E.Po.trans e≤e₁ (E.⨆-upper ((↓ ⊤ ∩ R) ∣₂) e₁ (d₀ , ⊤-max _ , d₀e₁∈R)))
 
   module _ where
     open GaloisConnection
     preG₂F₂-explicit : (R : Pred (D≈ ×-setoid E≈))
       → (R ∈ preRL F₂⊣G₂)
-      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓≤ ⊤ ∩ R) ∣₂) → (d , e) ∈ R)
+      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓ ⊤ ∩ R) ∣₂) → (d , e) ∈ R)
     preG₂F₂-explicit R = (λ- , _$-)
 
     preG₂F₂-characterization : (R : Pred (D≈ ×-setoid E≈))
@@ -1638,13 +1668,13 @@ module _ (D⨆ E⨆ : SLat) where
      α⁻¹ : ((∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R) → (R ∈ preRL F₂⊣G₂)
      α⁻¹ (fan→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓⊤⊤∩R∣₂) =
        fan→R d e
-         (D.⨆ ((↓≤ ⊤ ∩ R) ∣₁)) (E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂))
-         (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) (E.⨆ ((↓≤ ⊤ ∩ R) ∣₂))
+         (D.⨆ ((↓ ⊤ ∩ R) ∣₁)) (E.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₂))
+         (D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁)) (E.⨆ ((↓ ⊤ ∩ R) ∣₂))
          ( E.⨆-least _ _ (λ e₀ (d₀ , (d₀≤⊤ , e₀≤e) , d₀e₀∈R) → e₀≤e)
          , d≤⨆↓⊤e∩R∣₁
          , e≤⨆↓⊤⊤∩R∣₂
-         , ⨆closed (↓≤ ⊤ ∩ R) (∩-⊆-r (↓≤ ⊤) R)
-         , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+         , ⨆closed (↓ ⊤ ∩ R) (∩-⊆-r (↓ ⊤) R)
+         , ⨆closed (↓ (D.⊤ , e) ∩ R) (∩-⊆-r (↓ (D.⊤ , e)) R))
 
   -- We define the following galois connection
   --
@@ -1694,16 +1724,16 @@ module _ (D⨆ E⨆ : SLat) where
   IsTiltConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsTiltConnecting R = ∀ d e e₀ d₁ → IsTilt R d e e₀ d₁ → (d , e) ∈ R
 
-  tilt→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsTilt R d e e₀ d₁) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
+  tilt→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsTilt R d e e₀ d₁) → d D.≤ D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
   tilt→≤⨆ R d e (e₀ , d₁ , e₀≤e , d≤d₁ , d₁e₀∈R) =
-    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , ((D.⊤-max d₁ , e₀≤e) , d₁e₀∈R)))
+    ( D.Po.trans d≤d₁ (D.⨆-upper ((↓ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , ((D.⊤-max d₁ , e₀≤e) , d₁e₀∈R)))
     , E.⊤-max e)
 
   module _ where
     open GaloisConnection
     preG₃F₃-explicit : (R : Pred (D≈ ×-setoid E≈))
       → (R ∈ preRL F₃⊣G₃)
-      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤ → (d , e) ∈ R)
+      ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤ → (d , e) ∈ R)
     preG₃F₃-explicit R = (λ- , _$-)
 
     preG₃F₃-characterization : (R : Pred (D≈ ×-setoid E≈))
@@ -1723,11 +1753,11 @@ module _ (D⨆ E⨆ : SLat) where
       α⁻¹ : (∀ d e e₀ d₁ → IsTilt R d e e₀ d₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R) → R ∈ preRL F₃⊣G₃
       α⁻¹ (tilt→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⊤) =
         tilt→R d e
-          (proj₂ (⨆ (↓≤ (D.⊤ , e) ∩ R))) (proj₁ (⨆ (↓≤ (D.⊤ , e) ∩ R)))
-          (e≥⨆↓⊤e∩R∣₂ , d≤⨆↓⊤e∩R∣₁ , ⨆closed (↓≤ (D.⊤ , e) ∩ R) (∩-⊆-r (↓≤ (D.⊤ , e)) R))
+          (proj₂ (⨆ (↓ (D.⊤ , e) ∩ R))) (proj₁ (⨆ (↓ (D.⊤ , e) ∩ R)))
+          (e≥⨆↓⊤e∩R∣₂ , d≤⨆↓⊤e∩R∣₁ , ⨆closed (↓ (D.⊤ , e) ∩ R) (∩-⊆-r (↓ (D.⊤ , e)) R))
         where
-        e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) E.≤ e
-        e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) e (λ e₀ (d₁ , ((d₁≤⊤ , e₀≤e) , d₁e₀∈R)) → e₀≤e)
+        e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) E.≤ e
+        e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) e (λ e₀ (d₁ , ((d₁≤⊤ , e₀≤e) , d₁e₀∈R)) → e₀≤e)
 
 module _ {C D : Poset} (F : C →mono D) where
   -- Definition of monoidal properties for non-indexed binary operation on poset maps
@@ -1780,8 +1810,8 @@ module _
       Ra∩Rb∈preRL : (⟦ R ⟧ a ∩ ⟦ R ⟧ b) ∈ preRL
       Ra∩Rb∈preRL = preRL-∩closed (⟦ R ⟧ a) (⟦ R ⟧ b) (R∈preRL a) (R∈preRL b)
       in
-      preRL⊆imageR Ra∩Rb∈preRL 
-    
+      preRL⊆imageR Ra∩Rb∈preRL
+
     -- If an image of a right adjoint is closed under ∩ then the right adjoint is oplax monoidal wrt [∩] and ∩
     ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal :
       ((a b : D) → Σ c ∶ D , (⟦ R ⟧ c ≐ (⟦ R ⟧ a ∩ ⟦ R ⟧ b))) → IsOplaxMonoidal R _[∩]_ _∩_
@@ -1795,7 +1825,7 @@ module _
       ⟦ R ∘-mono L ⟧ (⟦ R ⟧ a ∩ ⟦ R ⟧ b)   ≈˘⟨ (R ∘-mono L) .Mono.cong Rc≐Ra∩Rb ⟩
       ⟦ R ∘-mono L ⟧ (⟦ R ⟧ c)             ≈⟨ RLR≈R c  ⟩
       ⟦ R ⟧ c                              ≈⟨ Rc≐Ra∩Rb ⟩
-      ⟦ R ⟧ a ∩ ⟦ R ⟧ b                    ∎ 
+      ⟦ R ⟧ a ∩ ⟦ R ⟧ b                    ∎
 
     preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal : ((S S' : Pred C≈) → S ∈ preRL → S' ∈ preRL → (S ∩ S') ∈ preRL) → IsOplaxMonoidal R _[∩]_ _∩_
     preRL-∩closed→[∩]-∩-right-adjoint-oplax-monoidal
@@ -1840,7 +1870,7 @@ module _
       𝒫⊆ : Index → Index → Poset
       𝒫⊆ C D = Pred⊆-poset (∣ C ∣Ix ×-setoid ∣ D ∣Ix)
 
- 
+
     module _ (P≤ : Index → Index → Poset)
       {L : (C D : Index) → 𝒫⊆ C D →mono P≤ C D}
       {R : (C D : Index) → P≤ C D →mono 𝒫⊆ C D}
@@ -2182,17 +2212,9 @@ module CheckOplaxMonoidalityForComposition where
             d₀e₀⊔d₁e₁≈d'e₁ = Eq.trans
               (⊔-componentwise D⨆ E⨆ d₀ e₀ d₁ e₁)
               (D.Eq.refl , E.≤→⊔-≈ e₀ e₁ (E.Po.trans e₀≤e e≤e₁))
-            {-
-              ( D.⨆-cong ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
-                ( (λ{ (_ , inj₁ (d₀≈ , e₀≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₁≈)) → inj₂ d₁≈})
-                , λ{ (inj₁ d₀≈) → (e₀ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₁ , inj₂ (d₁≈ , E.Eq.refl)) })
-              , E.Po.antisym
-                  (E.⨆-least ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁  λ { e₀' (d₀' , inj₁ (d₀≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁) ; e₁' (d₁' , inj₂ (d₁≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈)})
-                  (E.⨆-upper ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁ (d₁ , inj₂ Eq.refl)))
-                  -}
 
             d'e₁∈R' : (d' , e₁) ∈ R'
-            d'e₁∈R' = R' .Pred.isWellDefined d₀e₀⊔d₁e₁≈d'e₁ d₀e₀⊔d₁e₀∈R' 
+            d'e₁∈R' = R' .Pred.isWellDefined d₀e₀⊔d₁e₁≈d'e₁ d₀e₀⊔d₁e₀∈R'
 
           d₀≤d' : d₀ D.≤ d'
           d₀≤d' = D.⊔-upper-l d₀ d₁
@@ -2214,6 +2236,9 @@ module CheckOplaxMonoidalityForComposition where
           (⋈-⨆closed×brokenbowtieconnecting R R'
             (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL)
             (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL))
+
+      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat _ 𝒫⊆ G₂ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal = preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid _ F₂⊣G₂ C⨆ D⨆ E⨆ ⋈-preRL-closed
 
   module F₃⊣G₃ where
     private
@@ -2248,3 +2273,6 @@ module CheckOplaxMonoidalityForComposition where
           , F⊣G.⋈-⨆closed C⨆ D⨆ E⨆ R R'
             (preG₃F₃-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₂)
             (preG₃F₃-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
+
+      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat _ 𝒫⊆ G₃ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal = preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid _ F₃⊣G₃ C⨆ D⨆ E⨆ ⋈-preRL-closed
