@@ -1007,7 +1007,14 @@ IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
   where open PosetPoly D
 
 Is⨆Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
-Is⨆Closed D S = (∀ S' → S' ⊆ S → (D .SLat.⨆ S') ∈ S)
+Is⨆Closed D S = ∀ S' → S' ⊆ S → (SLat.⨆ D S') ∈ S
+
+Is⊔Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
+Is⊔Closed D S = ∀ x y → x ∈ S → y ∈ S → (SLat._⊔_ D x y) ∈ S
+
+⨆closed→⊔closed : (D : SLat) → (S : Pred (SLat.Eq.setoid D)) → Is⨆Closed D S → Is⊔Closed D S
+⨆closed→⊔closed D S ⨆closed x y x∈S y∈S = ⨆closed (｛ x ｝ ∪ ｛ y ｝) λ{ (inj₁ x≈) → S .Pred.isWellDefined x≈ x∈S ; (inj₂ y≈) → S .Pred.isWellDefined y≈ y∈S}
+
 
 module _ (D⨆ E⨆ : SLat) where
 
@@ -1427,9 +1434,8 @@ module _ (D⨆ E⨆ : SLat) where
   IsBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
   IsBowTie R d e d₀ e₀ d₁ e₁ = d₀ D.≤ d × e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
 
-  IsBowTieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsBowTieClosed R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
-
+  IsBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
   bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓≤ (d , E.⊤) ∩ R) ∣₂))
   bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
@@ -1525,41 +1531,50 @@ module _ (D⨆ E⨆ : SLat) where
   F₂⊣G₂ : F₂ ⊣ G₂
   F₂⊣G₂ = F₁⊣G₁ ∘-galois H₂⊣I₂
 
-  IsFan : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
-  IsFan R d e d₀ e₀ d₁ e₁ = e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
+  IsBrokenBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
+  IsBrokenBowTie R d e d₀ e₀ d₁ e₁ = e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
 
-  IsFanClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsFanClosed R = ∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
+  IsBrokenBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsBrokenBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
-  IsTriangle : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsTriangle R = ∀ d e e₀ e₁ → e₀ E.≤ e × e E.≤ e₁ × (d , e₀) ∈ R × (d , e₁) ∈ R → (d , e) ∈ R
+  IsFanOut : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (e₀ : E) (e₁ : E) → Set
+  IsFanOut R d e e₀ e₁ = e₀ E.≤ e × e E.≤ e₁ × (d , e₁) ∈ R × (d , e₀) ∈ R
 
-  IsLowerPreimageClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsLowerPreimageClosed R = ∀ d e d₁ → d D.≤ d₁ × (d₁ , e) ∈ R → (d , e) ∈ R
+  IsFanOutConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsFanOutConnecting R = ∀ d e e₀ e₁ → IsFanOut R d e e₀ e₁ → (d , e) ∈ R
 
-  ⨆closed→fanclosed↔triangle×lowerpreimage : (R : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsFanClosed R ↔ IsTriangle R × IsLowerPreimageClosed R
-  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₁ φ .proj₁ d e e₀ e₁ (e₀≤e , e≤e₁ , de₀∈R , de₁∈R) = φ d e d e₀ d e₁ (e₀≤e , D.Po.refl , e≤e₁ , de₁∈R , de₀∈R)
-  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₁ φ .proj₂ d e d₁ (d≤d₁ , d₁e∈R) = φ d e d₁ e d₁ e (E.Po.refl , d≤d₁ , E.Po.refl , d₁e∈R , d₁e∈R)
-  ⨆closed→fanclosed↔triangle×lowerpreimage R ⨆closed .proj₂ (α , β) d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)
+  IsLowerIn : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₁ : D) → Set
+  IsLowerIn R d e d₁ = d D.≤ d₁ × (d₁ , e) ∈ R
+
+  IsLowerInConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsLowerInConnecting R = ∀ d e d₁ → IsLowerIn R d e d₁ → (d , e) ∈ R
+
+  ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting : (R : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsBrokenBowTieConnecting R ↔ IsFanOutConnecting R × IsLowerInConnecting R
+  ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₁ φ .proj₁ d e e₀ e₁ (e₀≤e , e≤e₁ , de₁∈R , de₀∈R) = φ d e d e₀ d e₁ (e₀≤e , D.Po.refl , e≤e₁ , de₁∈R , de₀∈R)
+  ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₁ φ .proj₂ d e d₁ (d≤d₁ , d₁e∈R) = φ d e d₁ e d₁ e (E.Po.refl , d≤d₁ , E.Po.refl , d₁e∈R , d₁e∈R)
+  ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₂ (α , β) d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)
     = de∈R
     where
+    R-⊔closed : Is⊔Closed (D⨆ ×-slat E⨆) R
+    R-⊔closed = ⨆closed→⊔closed (D⨆ ×-slat E⨆) R R-⨆closed
+
     d' : D
     d' = d₀ D.⊔ d₁
 
-    p : ((d₀ , e₁) ⊔ (d₁ , e₀)) ≈ (d' , e₁)
-    p =
+    d₀e₁⊔d₁e₀≈d'e₁ : ((d₀ , e₁) ⊔ (d₁ , e₀)) ≈ (d' , e₁)
+    d₀e₁⊔d₁e₀≈d'e₁ =
       ( D.⨆-cong ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
         ( (λ{ (_ , inj₁ (d₀≈ , e₁≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₀≈)) → inj₂ d₁≈})
         , λ{ (inj₁ d₀≈) → (e₁ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₀ , inj₂ (d₁≈ , E.Eq.refl)) })
       , E.Po.antisym
           (E.⨆-least ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ λ { e₁' (d₀' , inj₁ (d₀≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈) ; e₀' (d₁' , inj₂ (d₁≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁)})
-          (E.⨆-upper ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ (d₀ , (inj₁ Eq.refl))))
+          (E.⨆-upper ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ (d₀ , inj₁ Eq.refl)))
 
-    g : ((d₀ , e₁) ⊔ (d₁ , e₀)) ∈ R
-    g = ⨆closed (｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) λ { (inj₁ d₀e₁≈) → R .Pred.isWellDefined d₀e₁≈ d₀e₁∈R ; (inj₂ d₁e₀≈) →  R .Pred.isWellDefined d₁e₀≈ d₁e₀∈R}
+    d₀e₁⊔d₁e₀∈R : ((d₀ , e₁) ⊔ (d₁ , e₀)) ∈ R
+    d₀e₁⊔d₁e₀∈R = R-⊔closed (d₀ , e₁) (d₁ , e₀) d₀e₁∈R d₁e₀∈R
 
     d'e₁∈R : (d' , e₁) ∈ R
-    d'e₁∈R = R .Pred.isWellDefined p g
+    d'e₁∈R = R .Pred.isWellDefined d₀e₁⊔d₁e₀≈d'e₁ d₀e₁⊔d₁e₀∈R
 
     de₁∈R : (d , e₁) ∈ R
     de₁∈R = β d e₁ d' (D.Po.trans d≤d₁ (D.⊔-upper-r d₀ d₁) , d'e₁∈R)
@@ -1568,13 +1583,13 @@ module _ (D⨆ E⨆ : SLat) where
     de₀∈R = β d e₀ d₁ (d≤d₁ , d₁e₀∈R)
 
     de∈R : (d , e) ∈ R
-    de∈R = α d e e₀ e₁ (e₀≤e , e≤e₁ , de₀∈R , de₁∈R)
+    de∈R = α d e e₀ e₁ (e₀≤e , e≤e₁ , de₁∈R , de₀∈R)
 
-  fan→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
+  brokenbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
     → ∀ d e
-    → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsFan R d e d₀ e₀ d₁ e₁
+    → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBrokenBowTie R d e d₀ e₀ d₁ e₁
     → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓≤ ⊤ ∩ R) ∣₂)
-  fan→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
+  brokenbowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
     ( D.Po.trans d≤d₁ (D.⨆-upper ((↓≤ (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
     , E.Po.trans e≤e₁ (E.⨆-upper ((↓≤ ⊤ ∩ R) ∣₂) e₁ (d₀ , ⊤-max _ , d₀e₁∈R)))
 
@@ -1587,19 +1602,19 @@ module _ (D⨆ E⨆ : SLat) where
 
     preG₂F₂-characterization : (R : Pred (D≈ ×-setoid E≈))
       → (R ∈ preRL F₂⊣G₂)
-      ↔ ((∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R))
+      ↔ ((∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R))
     preG₂F₂-characterization R = (α , α⁻¹)
      where
-     α₁ : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
-     α₁ R∈preG₂F₂ d e d₀ e₀ d₁ e₁ fan = R∈preG₂F₂ (fan→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , fan))
+     α₁ : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
+     α₁ R∈preG₂F₂ d e d₀ e₀ d₁ e₁ fan = R∈preG₂F₂ (brokenbowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , fan))
 
      α₂ : (R ∈ preRL F₂⊣G₂) → Is⨆Closed (D⨆ ×-slat E⨆) R
      α₂ = preGF-characterization R .proj₁ ∘ preRL-∘-⊆ F⊣G (H₀⊣I₀ ∘-galois H₁⊣I₁ ∘-galois H₂⊣I₂) {R}
 
-     α : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
+     α : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
      α = Product.< α₁ , α₂ >
 
-     α⁻¹ : ((∀ d e d₀ e₀ d₁ e₁ → IsFan R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R) → (R ∈ preRL F₂⊣G₂)
+     α⁻¹ : ((∀ d e d₀ e₀ d₁ e₁ → IsBrokenBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R) → (R ∈ preRL F₂⊣G₂)
      α⁻¹ (fan→R , ⨆closed) {(d , e)} (d≤⨆↓⊤e∩R∣₁ , e≤⨆↓⊤⊤∩R∣₂) =
        fan→R d e
          (D.⨆ ((↓≤ ⊤ ∩ R) ∣₁)) (E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂))
@@ -1655,8 +1670,8 @@ module _ (D⨆ E⨆ : SLat) where
   IsTilt : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (e₀ : E) (d₁ : D) → Set
   IsTilt R d e e₀ d₁ = e₀ E.≤ e × d D.≤ d₁ × (d₁ , e₀) ∈ R
 
-  IsTiltClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsTiltClosed R = ∀ d e e₀ d₁ → IsTilt R d e e₀ d₁ → (d , e) ∈ R
+  IsTiltConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTiltConnecting R = ∀ d e e₀ d₁ → IsTilt R d e e₀ d₁ → (d , e) ∈ R
 
   tilt→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsTilt R d e e₀ d₁) → d D.≤ D.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
   tilt→≤⨆ R d e (e₀ , d₁ , e₀≤e , d≤d₁ , d₁e₀∈R) =
@@ -1932,7 +1947,7 @@ module CheckOplaxMonoidalityForIntersection where
         _[∩]_ = liftOpAlong⊣ (F₁⊣G₁ D⨆ E⨆) _∩_
         open GaloisConnection (F₁⊣G₁ D⨆ E⨆)
       ∩-bowtieclosed : (R R' : Pred (D≈ ×-setoid E≈))
-        → IsBowTieClosed D⨆ E⨆ R → IsBowTieClosed D⨆ E⨆ R' → IsBowTieClosed D⨆ E⨆ (R ∩ R')
+        → IsBowTieConnecting D⨆ E⨆ R → IsBowTieConnecting D⨆ E⨆ R' → IsBowTieConnecting D⨆ E⨆ (R ∩ R')
       ∩-bowtieclosed R R' R-closed R'-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (d₁e₀∈R , d₁e₀∈R'))
         = (R-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)) , R'-closed d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R' , d₁e₀∈R')
 
@@ -2112,20 +2127,65 @@ module CheckOplaxMonoidalityForComposition where
         E = ∣ E⨆ ∣
         module E = SLat E⨆
 
-      ⋈-fanclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsFanClosed C⨆ D⨆ R → IsFanClosed D⨆ E⨆ R' → IsFanClosed C⨆ E⨆ (R ⋈ R')
-      ⋈-fanclosed R R' R-fanclosed R'-fanclosed c e c₀ e₀ c₁ e₁ (e₀≤e , c≤c₁ , e≤e₁ , (d , c₀d∈R , de₁∈R') , (d' , c₁d'∈R , d'e₀∈R')) =
-        let d'' = d D.⊔ d' in
-        (d'' , R-fanclosed c d'' c₀ d c₁ d'' ({!D.⨆-upper !} , c≤c₁ , D.Po.refl , {!!} , {!!}) , R'-fanclosed d'' e d' e₀ d'' e₁ {!!})
+      ⋈-⨆closed×brokenbowtieconnecting : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈))
+        → IsBrokenBowTieConnecting C⨆ D⨆ R × Is⨆Closed (C⨆ ×-slat D⨆) R
+        → IsBrokenBowTieConnecting D⨆ E⨆ R' × Is⨆Closed (D⨆ ×-slat E⨆) R'
+        → IsBrokenBowTieConnecting C⨆ E⨆ (R ⋈ R') × Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
+      ⋈-⨆closed×brokenbowtieconnecting R R' (R-brokenbowtieconnecting , R-⨆closed) (R'-brokenbowtieconnecting , R'-⨆closed) = R⋈R'-brokenbowtieconnecting , R⋈R'-⨆closed
+        where
+        R⋈R'-⨆closed = F⊣G.⋈-⨆closed C⨆ D⨆ E⨆ R R' R-⨆closed R'-⨆closed
+
+        R-fanoutconnecting = ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting C⨆ D⨆ R R-⨆closed .proj₁ R-brokenbowtieconnecting .proj₁
+        R-lowerinconnecting = ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting C⨆ D⨆ R R-⨆closed .proj₁ R-brokenbowtieconnecting .proj₂
+
+        R'-fanoutconnecting = ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting D⨆ E⨆ R' R'-⨆closed .proj₁ R'-brokenbowtieconnecting .proj₁
+        R'-lowerinconnecting = ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting D⨆ E⨆ R' R'-⨆closed .proj₁ R'-brokenbowtieconnecting .proj₂
+
+        R⋈R'-lowerinconnecting : IsLowerInConnecting C⨆ E⨆ (R ⋈ R')
+        R⋈R'-lowerinconnecting c e c₁ (c≤c₁ , c₁e∈R⋈R' @ (d , c₁d∈R , de∈R')) = d , R-lowerinconnecting c d c₁ (c≤c₁ , c₁d∈R) , de∈R'
+
+        R⋈R'-fanoutconnecting : IsFanOutConnecting C⨆ E⨆ (R ⋈ R')
+        R⋈R'-fanoutconnecting c e e₀ e₁ (e₀≤e , e≤e₁ , (ce₁∈R⋈R' @ (d₁ , cd₁∈R , d₁e₁∈R')) , (ce₀∈R⋈R' @ (d₀ , cd₀∈R , d₀e₀∈R'))) = ce∈R⋈R'
+          where
+          d' = d₀ D.⊔ d₁
+
+          private module _ where
+            open SLat (D⨆ ×-slat E⨆)
+            d₀e₀⊔d₁e₀∈R' : ((d₀ , e₀) ⊔ (d₁ , e₁)) ∈ R'
+            d₀e₀⊔d₁e₀∈R' = ⨆closed→⊔closed (D⨆ ×-slat E⨆) R' R'-⨆closed  (d₀ , e₀)  (d₁ , e₁) d₀e₀∈R' d₁e₁∈R'
+
+            d₀e₀⊔d₁e₁≈d'e₁ : ((d₀ , e₀) ⊔ (d₁ , e₁)) ≈ (d' , e₁)
+            d₀e₀⊔d₁e₁≈d'e₁ =
+              ( D.⨆-cong ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
+                ( (λ{ (_ , inj₁ (d₀≈ , e₀≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₁≈)) → inj₂ d₁≈})
+                , λ{ (inj₁ d₀≈) → (e₀ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₁ , inj₂ (d₁≈ , E.Eq.refl)) })
+              , E.Po.antisym
+                  (E.⨆-least ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁  λ { e₀' (d₀' , inj₁ (d₀≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁) ; e₁' (d₁' , inj₂ (d₁≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈)})
+                  (E.⨆-upper ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁ (d₁ , inj₂ Eq.refl)))
+
+            d'e₁∈R' : (d' , e₁) ∈ R'
+            d'e₁∈R' = R' .Pred.isWellDefined d₀e₀⊔d₁e₁≈d'e₁ d₀e₀⊔d₁e₀∈R' 
+
+          d₀≤d' : d₀ D.≤ d'
+          d₀≤d' = D.⊔-upper-l d₀ d₁
+
+          d₀e₁∈R' : (d₀ , e₁) ∈ R'
+          d₀e₁∈R' = R'-lowerinconnecting d₀ e₁ d' (d₀≤d' , d'e₁∈R')
+
+          d₀e∈R' : (d₀ , e) ∈ R'
+          d₀e∈R' = R'-fanoutconnecting d₀ e e₀ e₁ (e₀≤e , e≤e₁ , d₀e₁∈R' , d₀e₀∈R')
+
+          ce∈R⋈R' : (c , e) ∈ (R ⋈ R')
+          ce∈R⋈R' = d₀ , cd₀∈R , d₀e∈R'
+
+        R⋈R'-brokenbowtieconnecting = ⨆closed→brokenbowtieconnecting↔fanoutconnecting×lowerinconnecting C⨆ E⨆ (R ⋈ R') R⋈R'-⨆closed .proj₂ (R⋈R'-fanoutconnecting , R⋈R'-lowerinconnecting)
 
       ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
       ⋈-preRL-closed R R' R∈preRL R'∈preRL =
         preG₂F₂-characterization C⨆ E⨆ (R ⋈ R') .proj₂
-          ( ⋈-fanclosed R R'
-            (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₁)
-            (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₁)
-          , F⊣G.⋈-⨆closed C⨆ D⨆ E⨆ R R'
-            (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₂)
-            (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
+          (⋈-⨆closed×brokenbowtieconnecting R R'
+            (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL)
+            (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL))
 
   module F₃⊣G₃ where
     private
@@ -2147,7 +2207,7 @@ module CheckOplaxMonoidalityForComposition where
         E = ∣ E⨆ ∣
         module E = SLat E⨆
 
-      ⋈-tiltclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsTiltClosed C⨆ D⨆ R → IsTiltClosed D⨆ E⨆ R' → IsTiltClosed C⨆ E⨆ (R ⋈ R')
+      ⋈-tiltclosed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsTiltConnecting C⨆ D⨆ R → IsTiltConnecting D⨆ E⨆ R' → IsTiltConnecting C⨆ E⨆ (R ⋈ R')
       ⋈-tiltclosed R R' R-tiltclosed  R'-tiltclosed c e e₀ c₁ (e₀≤e , c≤c₁ , (d , c₁d∈R , de₀∈R)) =
         (d , R-tiltclosed c d d c₁ (D.Po.refl , c≤c₁ , c₁d∈R) , R'-tiltclosed d e e₀ d (e₀≤e , D.Po.refl , de₀∈R))
 
