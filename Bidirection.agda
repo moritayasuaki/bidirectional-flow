@@ -26,6 +26,7 @@ import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 import Relation.Binary.Reasoning.PartialOrder as PosetReasoning
 open import Algebra
 open import Data.Wrap
+open import Data.List
 
 infixr -100 -Σ -Π
 
@@ -62,7 +63,6 @@ instance
 
   poset-carrier : HasCarrier Poset
   poset-carrier .HasCarrier.Carrier = PosetPoly.Carrier
-
 
 module _ where
   import Relation.Binary.Morphism as BinRMorph
@@ -294,6 +294,10 @@ module _ {X : Setoid} where
   Pred.⟦ P ∪ Q ⟧ = ⟦ P ⟧ UniR.∪ ⟦ Q ⟧
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₁ x∈P) = inj₁ (P .Pred.isWellDefined x≈y x∈P)
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₂ x∈Q) = inj₂ (Q .Pred.isWellDefined x≈y x∈Q)
+
+listToPred : {X : Setoid} → List ∣ X ∣ → Pred X
+listToPred [] = ∅
+listToPred (x ∷ ls) =  ｛ x ｝ ∪ listToPred ls
 
 _⋈_ : {X Y Z : Setoid} → Pred (X ×-setoid Y) → Pred (Y ×-setoid Z) → Pred (X ×-setoid Z)
 (R ⋈ S) .Pred.⟦_⟧ = λ(x , z) → Σ y ∶ _ , (x , y) ∈ R × (y , z) ∈ S
@@ -630,6 +634,11 @@ record SLat : Set where
   _⊔_ : Op₂ Carrier
   x ⊔ y = ⨆ (｛ x ｝ ∪ ｛ y ｝)
 
+  ⊔-comm : ∀ x y → (x ⊔ y) ≈ (y ⊔ x)
+  ⊔-comm x y = ⨆-cong (｛ x ｝ ∪ ｛ y ｝) (｛ y ｝ ∪ ｛ x ｝)
+    ( (λ{ (inj₁ x≈) → inj₂ x≈ ; (inj₂ y≈) → inj₁ y≈})
+    , (λ{ (inj₁ y≈) → inj₂ y≈ ; (inj₂ x≈) → inj₁ x≈}))
+
   ⊔-upper-l : ∀ x y → x ≤ (x ⊔ y)
   ⊔-upper-l x y = ⨆-upper _ _ (inj₁ Eq.refl)
 
@@ -638,6 +647,9 @@ record SLat : Set where
 
   ⊔-least : ∀ x y → (∀ z → x ≤ z → y ≤ z → (x ⊔ y) ≤ z)
   ⊔-least x y z x≤z y≤z = ⨆-least _ _ λ { w (inj₁ x≈w) → Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z ; w (inj₂ y≈w) → Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z}
+
+  ≤→⊔-≈ : ∀ x y → x ≤ y → (x ⊔ y) ≈ y
+  ≤→⊔-≈ x y x≤y = Po.antisym (⊔-least x y y x≤y Po.refl) (⊔-upper-r x y)
 
   ⊓-lower-l : ∀ x y → (x ⊓ y) ≤ x
   ⊓-lower-l x y = proj₁ (⊓-inf x y)
@@ -813,6 +825,20 @@ module _ where
       d-upper d' (e' , de'∈R) = p-upper (d' , e') de'∈R .proj₁
       e-upper : (e' : E .Carrier) → e' ∈ (R ∣₂) → E ._≤_ e' e
       e-upper e' (d' , de'∈R) = p-upper (d' , e') de'∈R .proj₂
+
+module _ (D⨆ : SLat) (E⨆ : SLat) where
+  private
+    module D = SLat D⨆
+    module E = SLat E⨆
+  open SLat (D⨆ ×-slat E⨆)
+
+  ⊔-componentwise : ∀ d e d' e' → ((d , e) ⊔ (d' , e')) ≈ (d D.⊔ d' , e E.⊔ e')
+  ⊔-componentwise d e d' e' = Po.antisym
+    (⨆-least (｛(d , e)｝ ∪ ｛(d' , e')｝) (d D.⊔ d' , e E.⊔ e')
+       λ { p (inj₁ de≈p) → Po.trans (Po.reflexive (Eq.sym de≈p)) (D.⊔-upper-l d d' , E.⊔-upper-l e e')
+         ; p (inj₂ d'e'≈p) → Po.trans (Po.reflexive (Eq.sym d'e'≈p)) (D.⊔-upper-r d d' , E.⊔-upper-r e e')})
+    ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
+    , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
 
 module _ where
   open PosetPoly
@@ -1477,15 +1503,14 @@ module _ (D⨆ E⨆ : SLat) where
          e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
          e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
 
-  -- We define the following galois connection
+  -- A definition of an adjunction between `pair of backward and forward transfer functions' and `pair of a backward function and a forward constant' :
   --
-  -- ((E →m D) × (D →m E) , ≤)
+  -- ((E →mono D) × (D →mono E) , ≤)
   --        H₂ ↓ ⊣ ↑ I₂
-  --   ((E →m D) × E , ≤⨆↓∩→∈)
+  --   ((E →mono D) × E , ≤⨆↓∩→∈)
 
   -- H₂ : ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono ((E≤ →mono≤-poset D≤) ×-poset E≤)
   -- I₂ : ((E≤ →mono≤-poset D≤) ×-poset E≤) →mono ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
-  -- H₂⊣I₂ : H₂ ⊣ I₂
 
   module _ where
     H₂-raw : (E → D) × (D → E) → (E → D) × E
@@ -1562,13 +1587,9 @@ module _ (D⨆ E⨆ : SLat) where
     d' = d₀ D.⊔ d₁
 
     d₀e₁⊔d₁e₀≈d'e₁ : ((d₀ , e₁) ⊔ (d₁ , e₀)) ≈ (d' , e₁)
-    d₀e₁⊔d₁e₀≈d'e₁ =
-      ( D.⨆-cong ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
-        ( (λ{ (_ , inj₁ (d₀≈ , e₁≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₀≈)) → inj₂ d₁≈})
-        , λ{ (inj₁ d₀≈) → (e₁ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₀ , inj₂ (d₁≈ , E.Eq.refl)) })
-      , E.Po.antisym
-          (E.⨆-least ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ λ { e₁' (d₀' , inj₁ (d₀≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈) ; e₀' (d₁' , inj₂ (d₁≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁)})
-          (E.⨆-upper ((｛ d₀ , e₁ ｝ ∪ ｛ d₁ , e₀ ｝) ∣₂) e₁ (d₀ , inj₁ Eq.refl)))
+    d₀e₁⊔d₁e₀≈d'e₁ = Eq.trans
+      (⊔-componentwise D⨆ E⨆ d₀ e₁ d₁ e₀)
+      (D.Eq.refl , E.Eq.trans (E.⊔-comm e₁ e₀) (E.≤→⊔-≈ e₀ e₁ (E.Po.trans e₀≤e e≤e₁)))
 
     d₀e₁⊔d₁e₀∈R : ((d₀ , e₁) ⊔ (d₁ , e₀)) ∈ R
     d₀e₁⊔d₁e₀∈R = R-⊔closed (d₀ , e₁) (d₁ , e₀) d₀e₁∈R d₁e₀∈R
@@ -1707,7 +1728,6 @@ module _ (D⨆ E⨆ : SLat) where
         where
         e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) E.≤ e
         e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓≤ (D⨆ .SLat.⊤ , e) ∩ R) ∣₂) e (λ e₀ (d₁ , ((d₁≤⊤ , e₀≤e) , d₁e₀∈R)) → e₀≤e)
-
 
 module _ {C D : Poset} (F : C →mono D) where
   -- Definition of monoidal properties for non-indexed binary operation on poset maps
@@ -2151,17 +2171,25 @@ module CheckOplaxMonoidalityForComposition where
 
           private module _ where
             open SLat (D⨆ ×-slat E⨆)
+
+            R'-⊔closed : Is⊔Closed (D⨆ ×-slat E⨆) R'
+            R'-⊔closed = ⨆closed→⊔closed (D⨆ ×-slat E⨆) R' R'-⨆closed
+
             d₀e₀⊔d₁e₀∈R' : ((d₀ , e₀) ⊔ (d₁ , e₁)) ∈ R'
-            d₀e₀⊔d₁e₀∈R' = ⨆closed→⊔closed (D⨆ ×-slat E⨆) R' R'-⨆closed  (d₀ , e₀)  (d₁ , e₁) d₀e₀∈R' d₁e₁∈R'
+            d₀e₀⊔d₁e₀∈R' = R'-⊔closed  (d₀ , e₀)  (d₁ , e₁) d₀e₀∈R' d₁e₁∈R'
 
             d₀e₀⊔d₁e₁≈d'e₁ : ((d₀ , e₀) ⊔ (d₁ , e₁)) ≈ (d' , e₁)
-            d₀e₀⊔d₁e₁≈d'e₁ =
+            d₀e₀⊔d₁e₁≈d'e₁ = Eq.trans
+              (⊔-componentwise D⨆ E⨆ d₀ e₀ d₁ e₁)
+              (D.Eq.refl , E.≤→⊔-≈ e₀ e₁ (E.Po.trans e₀≤e e≤e₁))
+            {-
               ( D.⨆-cong ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₁) (｛ d₀ ｝ ∪ ｛ d₁ ｝)
                 ( (λ{ (_ , inj₁ (d₀≈ , e₀≈)) → inj₁ d₀≈ ; (_ , inj₂ (d₁≈ , e₁≈)) → inj₂ d₁≈})
                 , λ{ (inj₁ d₀≈) → (e₀ , inj₁ (d₀≈ , E.Eq.refl)) ; (inj₂ d₁≈) → (e₁ , inj₂ (d₁≈ , E.Eq.refl)) })
               , E.Po.antisym
                   (E.⨆-least ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁  λ { e₀' (d₀' , inj₁ (d₀≈ , e₀≈)) → E.Po.trans (E.Po.reflexive (E.Eq.sym e₀≈)) (E.Po.trans e₀≤e e≤e₁) ; e₁' (d₁' , inj₂ (d₁≈ , e₁≈)) → E.Po.reflexive (E.Eq.sym e₁≈)})
                   (E.⨆-upper ((｛ d₀ , e₀ ｝ ∪ ｛ d₁ , e₁ ｝) ∣₂) e₁ (d₁ , inj₂ Eq.refl)))
+                  -}
 
             d'e₁∈R' : (d' , e₁) ∈ R'
             d'e₁∈R' = R' .Pred.isWellDefined d₀e₀⊔d₁e₁≈d'e₁ d₀e₀⊔d₁e₀∈R' 
