@@ -135,24 +135,6 @@ curry-↔ a b c .proj₂ g = uncurry g
 _×-↔_ : {A B C D : Set} → (A ↔ B) → (C ↔ D) → (A × C) ↔ (B × D)
 (a→b , b→a) ×-↔ (c→d , d→c) = Product.map a→b c→d , Product.map b→a d→c
 
-{-
-module _ (D≤ : Poset) where
-  open PosetPoly D
-
-  yoneda : ∀ a b → (a ≤ b) → (∀ c → b ≤ c → a ≤ c)
-  yoneda a b a≤b c b≤c = trans a≤b b≤c
-
-  yoneda-↔ : ∀ a b → (a ≤ b) ↔ (∀ c → b ≤ c → a ≤ c)
-  yoneda-↔ a b .proj₁ = yoneda a b
-  yoneda-↔ a b .proj₂ ∀c→b≤c→a≤c = ∀c→b≤c→a≤c b refl
-
-  coyoneda : ∀ a b → (a ≤ b) → (∀ c → c ≤ a → c ≤ b)
-  coyoneda a b a≤b c c≤a = trans c≤a a≤b
-
-  coyoneda-↔ : ∀ a b → (a ≤ b) ↔ (∀ c → c ≤ a → c ≤ b)
-  coyoneda-↔ a b .proj₁ = coyoneda a b
-  coyoneda-↔ a b .proj₂ ∀c→c≤a→c≤b = ∀c→c≤a→c≤b a refl
--}
 module _ where
   open ProductBinR
   module _ where
@@ -721,46 +703,6 @@ record SLat : Set where
 instance
   slat-has-carrier : HasCarrier (SLat)
   slat-has-carrier .HasCarrier.Carrier = SLat.Carrier
-
-module _ (D⨆ : SLat) (E⨆ : SLat) where
-  private
-    module D = SLat D⨆
-    module E = SLat E⨆
-
-    D≤ = D.poset
-    D≈ = D.Eq.setoid
-    D = ∣ D⨆ ∣
-
-    E≤ = E.poset
-    E≈ = E.Eq.setoid
-    E = ∣ E⨆ ∣
-
-  IsCont : (D≈ →cong E≈) → Set
-  IsCont f≈ = (S : Pred D≈) → E.⨆ (imageR (liftFR f≈) S) E.≈ ⟦ f≈ ⟧ (D.⨆ S)
-
-  record Cont : Set where
-    field
-      ⟦_⟧cong'    : D≈ →cong E≈
-      isCont : IsCont ⟦_⟧cong'
-
-    ⟦_⟧' : D → E
-    ⟦_⟧' = ⟦ ⟦_⟧cong' ⟧
-
-    ⟦_⟧mono : D≤ →mono E≤
-    Mono.⟦ ⟦_⟧mono ⟧ = ⟦ ⟦_⟧cong' ⟧
-    ⟦ .Mono.isMonotone ⟧mono .IsMono.cong = Cong.isCongruent ⟦_⟧cong' .IsCong.cong
-    ⟦ .Mono.isMonotone ⟧mono .IsMono.mono {d} {d'} d≤d' = -- E.Po.trans (E.⨆-↓≥ (⟦_⟧' d)) (E.Po.trans {!!} (E.⨆-↓ (⟦_⟧' d')))
-      let open PosetReasoning E≤ in
-      begin
-      ⟦ d ⟧'                                   ≈˘⟨ ⟦_⟧cong' .Cong.isCongruent .IsCong.cong (D.⨆-↓ d) ⟩
-      ⟦ D.⨆ (D.↓ d) ⟧'                        ≈˘⟨ isCont (D.↓ d) ⟩
-      E.⨆ (imageR (liftFR ⟦_⟧cong') (D.↓ d))  ≤⟨ E.⨆-mono _ _ (λ {(d'' , f-≈d'' , d''≤d) → (d'' , f-≈d'' , D.Po.trans d''≤d d≤d')}) ⟩
-      E.⨆ (imageR (liftFR ⟦_⟧cong') (D.↓ d')) ≈⟨  isCont (D.↓ d') ⟩
-      ⟦ D.⨆ (D.↓ d') ⟧'                       ≈⟨  ⟦_⟧cong' .Cong.isCongruent .IsCong.cong (D.⨆-↓ d') ⟩
-      ⟦ d' ⟧'                                  ∎
-
-_→cont_ : SLat → SLat → Set
-_→cont_ = Cont
 
 module _ (D⨆ : SLat) where
   open SLat D⨆
@@ -1517,27 +1459,6 @@ module _ (D⨆ E⨆ : SLat) where
          e≥⨆↓⊤e∩R∣₂ : E.⨆ ((↓ (D.⊤ , e) ∩ R) ∣₂) E.≤ e
          e≥⨆↓⊤e∩R∣₂ = E.⨆-least ((↓ (D.⊤ , e) ∩ R) ∣₂) e (λ d₀ (e₀ , (d₀≤d , e₀≤e) , d₀e₀∈R) → e₀≤e)
 
-  -- A definition of an adjunction between `pair of backward and forward transfer functions' and `pair of a backward function and a forward constant' :
-  --
-  -- ((D →mono E) , ≤)
-  --        Hc ↓ ⊣ ↑ Ic
-  -- ((D →cont E) , ≤)
-
-  module _ where
-    Hc-cont : (D≤ →mono E≤) → (D⨆ →cont E⨆)
-    Cong.⟦ Cont.⟦ Hc-cont f≤ ⟧cong' ⟧ = {!!}
-    Cont.⟦ Hc-cont f≤ ⟧cong' .Cong.isCongruent = {!!}
-    Hc-cont f≤ .Cont.isCont = {!!}
-
-    Ic-mono : (D⨆ →cont E⨆) → (D≤ →mono E≤)
-    Ic-mono f⨆ = Cont.⟦ f⨆ ⟧mono
-
-
-  -- A definition of an adjunction between `pair of backward and forward transfer functions' and `pair of a backward function and a forward constant' :
-  --
-  -- ((E →mono D) × (D →mono E) , ≤)
-  --        H₂ ↓ ⊣ ↑ I₂
-  --   ((E →mono D) × E , ≤⨆↓∩→∈)
 
   -- H₂ : ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤)) →mono ((E≤ →mono≤-poset D≤) ×-poset E≤)
   -- I₂ : ((E≤ →mono≤-poset D≤) ×-poset E≤) →mono ((E≤ →mono≤-poset D≤) ×-poset (D≤ →mono≤-poset E≤))
