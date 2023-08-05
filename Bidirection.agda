@@ -1,6 +1,6 @@
 {-# OPTIONS --type-in-type --postfix-projections #-}
 
-module _ where
+module Bidirection where
 
 open import Agda.Primitive hiding (Prop) renaming (lzero to lzero ; _⊔_ to lmax ; Set to Set ; Setω to Setω) public
 open import Algebra as Algebra
@@ -27,6 +27,7 @@ import Relation.Binary.Reasoning.PartialOrder as PosetReasoning
 open import Algebra
 open import Data.Wrap
 open import Data.List
+open import Data.List.Relation.Unary.All
 
 infixr -100 -Σ -Π
 
@@ -687,6 +688,7 @@ record SLat : Set where
       begin
       f (ν f≈) ≤⟨ ⨆-upper (post≤ f≈) (f (ν f≈)) (f≤ .Mono.mono (⨆-least (post≤ f≈) (f (ν f≈)) ι)) ⟩
       ν f≈     ∎
+
   ν-gfp f≤ .proj₂ x' x'∈fixf = u -- proof that ν f is the greatest fixed point
     where
     f≈ = ⟦ f≤ ⟧cong
@@ -699,6 +701,9 @@ record SLat : Set where
 
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) \ {d} d≤fd → Po.trans d≤fd (f≤g d)
+
+  IsCompact : (x : Carrier)  → Set
+  IsCompact x = ∀ S → x ≤ ⨆ S → Σ xs ∶ List Carrier , All (_∈ S) xs × x ≤ ⨆ (listToPred xs)
 
 instance
   slat-has-carrier : HasCarrier (SLat)
