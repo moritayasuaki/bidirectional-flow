@@ -1,2 +1,2 @@
 check :
-	agda -c Everything.agda
+	agda Everything.agda
