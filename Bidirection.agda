@@ -58,6 +58,7 @@ Setoid = SetoidPoly lzero lzero
 Poset : Set
 Poset = PosetPoly lzero lzero lzero
 
+
 instance
   setoid-carrier : HasCarrier Setoid
   setoid-carrier .HasCarrier.Carrier = SetoidPoly.Carrier
@@ -282,6 +283,14 @@ listToPred : {X : Setoid} → List ∣ X ∣ → Pred X
 listToPred [] = ∅
 listToPred (x ∷ ls) =  ｛ x ｝ ∪ listToPred ls
 
+record FinSubset (X : Setoid) : Set where
+  field
+    pred : Pred X
+    list : List ∣ X ∣
+  open SetoidPoly X
+  field
+    list≈ : listToPred list ≐ pred
+
 _⋈_ : {X Y Z : Setoid} → Pred (X ×-setoid Y) → Pred (Y ×-setoid Z) → Pred (X ×-setoid Z)
 (R ⋈ S) .Pred.⟦_⟧ = λ(x , z) → Σ y ∶ _ , (x , y) ∈ R × (y , z) ∈ S
 _⋈_ {Y = Y} R S .Pred.isWellDefined {x , z} {x' , z'} (x≈x' , z≈z') (y , xy∈R , yz∈S)
@@ -348,6 +357,17 @@ module _ {X≈ Y≈ : Setoid} where
   Pred.⟦ liftFR f≈ ⟧ = liftFR-raw ⟦ f≈ ⟧
   liftFR f≈ .Pred.isWellDefined {(x , y)} {(x' , y')} (x≈x' , y≈y') fx≈y = Y.trans (f≈ .Cong.cong (X.sym x≈x')) (Y.trans fx≈y y≈y')
 
+module _ (C≤ : Poset) where
+  open PosetPoly C≤
+  private
+    C = ∣ C≤ ∣
+    C≈ = PosetPoly.Eq.setoid C≤
+
+  IsUpwardClosed : Pred C≈ → Set
+  IsUpwardClosed S = ∀ x y → x ≤ y → x ∈ S → y ∈ S
+
+  IsDownwardClosed : Pred C≈ → Set
+  IsDownwardClosed S = ∀ x y → x ≤ y → y ∈ S → x ∈ S
 
 module _ (C≈ : Setoid) where
   open SetoidPoly C≈
@@ -533,7 +553,6 @@ module _ (D≤ : Poset) where
   principal-upset-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → principal-upset d ≐ principal-upset d'
   principal-upset-cong d d' d≈d' = principal-upset-mono d' d (reflexive (Eq.sym d≈d')) , principal-upset-mono d d' (reflexive d≈d')
 
-
 record SLat : Set where
   field
     Carrier : Set
@@ -620,23 +639,6 @@ record SLat : Set where
   ⊤≈⨆U : ⊤ ≈ ⨆ U
   ⊤≈⨆U = Po.antisym (⨆-upper U _ tt ) (⊤-max (⨆ U))
 
-{-
-  ≤⊓→≤-l : ∀ x y z → z ≤ (x ⊓ y) → z ≤ x
-  ≤⊓→≤-l x y = coyoneda poset _ _ (⊓-lower-l x y)
-
-  ≤⊓→≤-r : ∀ x y z → z ≤ (x ⊓ y) → z ≤ y
-  ≤⊓→≤-r x y = coyoneda poset _ _ (⊓-lower-r x y)
-
-  ≤⊓→≤ : ∀ x y z → z ≤ (x ⊓ y) → z ≤ x × z ≤ y
-  ≤⊓→≤ x y z z≤x⊓y = ≤⊓→≤-l x y z z≤x⊓y , ≤⊓→≤-r x y z z≤x⊓y
-
-  ≤⊓←≤ : ∀ x y z → z ≤ x × z ≤ y → z ≤ (x ⊓ y)
-  ≤⊓←≤ x y z (z≤x , z≤y) = ⊓-greatest x y z z≤x z≤y
-
-  ≤⊓↔≤ : ∀ x y z → (z ≤ (x ⊓ y)) ↔ (z ≤ x × z ≤ y)
-  ≤⊓↔≤ x y z .proj₁ = ≤⊓→≤ x y z
-  ≤⊓↔≤ x y z .proj₂ = ≤⊓←≤ x y z
--}
   ⨆≤→∀≤ : ∀ S x → ⨆ S ≤ x → ∀ x' → x' ∈ S → x' ≤ x
   ⨆≤→∀≤ S x ⨆S≤x x' x'∈S = Po.trans (⨆-upper _ _ x'∈S) ⨆S≤x
 
@@ -700,14 +702,45 @@ record SLat : Set where
       ν f≈ ∎
 
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
-  ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) \ {d} d≤fd → Po.trans d≤fd (f≤g d)
+  ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
 
   IsCompact : (x : Carrier)  → Set
   IsCompact x = ∀ S → x ≤ ⨆ S → Σ xs ∶ List Carrier , All (_∈ S) xs × x ≤ ⨆ (listToPred xs)
 
+  IsDirected : (S : Pred Eq.setoid) → Set
+  IsDirected S = ∀ (xs : List Carrier) → All (λ x → x ∈ S) xs → Σ u ∶ Carrier , (u ∈ S × All (λ x → x ≤ u) xs)
+
+  -- Scott open [Taylor, 2010, A lambda calculus for real analysis, Def. 3.1]
+  IsScottOpen : (S : Pred Eq.setoid) → Set
+  IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred xs ⊆ T × ⨆ (listToPred xs) ∈ S)
+
 instance
   slat-has-carrier : HasCarrier (SLat)
   slat-has-carrier .HasCarrier.Carrier = SLat.Carrier
+
+module _ (D⨆ E⨆ : SLat) where
+  private
+    module D = SLat D⨆
+    D≤ = D.poset
+    D≈ = D.Eq.setoid
+    D = ∣ D⨆ ∣
+
+    module E = SLat E⨆
+    E≤ = E.poset
+    E≈ = E.Eq.setoid
+    E = ∣ E⨆ ∣
+
+  IsScottContinuous : (D≈ →cong E≈) → Set
+  IsScottContinuous f≈ = (S : Pred E≈) → E.IsScottOpen S → D.IsScottOpen (preimageR (liftFR f≈) S)
+
+  Is⨆Preserving : (D≈ →cong E≈) → Set
+  Is⨆Preserving f≈ = (S : Pred D≈) → ⟦ f≈ ⟧ (D.⨆ S) E.≈ E.⨆ (imageR (liftFR f≈) S)
+
+  record Cont : Set where
+    field
+      ⟦_⟧cong' : D≈ →cong E≈
+      cont : Is⨆Preserving ⟦_⟧cong'
+
 
 module _ (D⨆ : SLat) where
   open SLat D⨆
@@ -863,6 +896,53 @@ module _ where
 
   _⊣_ : {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) → Set _
   L ⊣ R = GaloisConnection L R
+
+  module _ {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) where
+    private
+      module C = PosetPoly C
+      module D = PosetPoly D
+
+      -- F : ⊆ → ⊆ preserves infs iff F is monotone and right ajoint
+      k1 : L ⊣ R → ∀ d → ⟦ R ⟧ d ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d)
+      k1 L⊣R d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , GaloisConnection.ε L⊣R d)
+      k2 : L ⊣ R → ∀ d c → c ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d) → c C.≤ ⟦ R ⟧ d
+      k2 L⊣R d c (d' , Lc≈d' , d'≤d) = C.trans (GaloisConnection.ψ L⊣R c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
+
+  module _ (C⨆ D⨆ : SLat) where
+    private
+      module C = SLat C⨆
+      C≤ = C.poset
+      C≈ = C.Eq.setoid
+      C = ∣ C⨆ ∣
+      module D = SLat D⨆
+      D≤ = D.poset
+      D≈ = D.Eq.setoid
+      D = ∣ D⨆ ∣
+
+    module _ (L : C≤ →mono D≤) (R : D≤ →mono C≤) (L⊣R : L ⊣ R) where
+      open GaloisConnection L⊣R
+      L-⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
+      L-⨆preserving S = D.Po.antisym L⨆≤⨆L ⨆L≤L⨆
+        where
+        ⨆L≤L⨆ : D.⨆ (imageR (liftFR ⟦ L ⟧cong) S) D.≤ ⟦ L ⟧ (C.⨆ S) -- from mono
+        ⨆L≤L⨆ = D.⨆-least (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ (C.⨆ S)) (λ d (e , Le≈d , e∈S)
+          → D.Po.trans (D.Po.reflexive (D.Eq.sym Le≈d)) (L .Mono.mono (C.⨆-upper S e e∈S)))
+
+        L⨆≤⨆L : ⟦ L ⟧ (C.⨆ S) D.≤ D.⨆ (imageR (liftFR ⟦ L ⟧cong) S) -- non-trivial
+        L⨆≤⨆L =
+          let open PosetReasoning D≤ in
+          begin
+          ⟦ L ⟧ (C.⨆ S)                                     ≤⟨ L .Mono.mono (C.⨆-least S (⟦ R ⟧ d) χ) ⟩
+          ⟦ L ⟧ (⟦ R ⟧ (D.⨆ (imageR (liftFR ⟦ L ⟧cong) S))) ≤⟨ ε d ⟩
+          D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)                 ∎
+          where
+
+          d : D
+          d = D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)
+
+          χ : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
+          χ c c∈S = ψ c d .proj₁ (D.⨆-upper (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))
+
 
 lift→ : {D : Set} → (P Q : UniR.Pred D lzero) → ((d : D) → P d → Q d) → (∀ d → P d) → (∀ d → Q d)
 lift→ P Q P⇒Q ∀P d = P⇒Q d (∀P d)
