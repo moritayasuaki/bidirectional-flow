@@ -714,6 +714,7 @@ record SLat : Set where
   IsScottOpen : (S : Pred Eq.setoid) → Set
   IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred xs ⊆ T × ⨆ (listToPred xs) ∈ S)
 
+
 instance
   slat-has-carrier : HasCarrier (SLat)
   slat-has-carrier .HasCarrier.Carrier = SLat.Carrier
@@ -903,10 +904,10 @@ module _ where
       module D = PosetPoly D
 
       -- F : ⊆ → ⊆ preserves infs iff F is monotone and right ajoint
-      k1 : L ⊣ R → ∀ d → ⟦ R ⟧ d ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d)
-      k1 L⊣R d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , GaloisConnection.ε L⊣R d)
-      k2 : L ⊣ R → ∀ d c → c ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d) → c C.≤ ⟦ R ⟧ d
-      k2 L⊣R d c (d' , Lc≈d' , d'≤d) = C.trans (GaloisConnection.ψ L⊣R c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
+      ex1 : L ⊣ R → ∀ d → ⟦ R ⟧ d ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d)
+      ex1 L⊣R d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , GaloisConnection.ε L⊣R d)
+      ex2 : L ⊣ R → ∀ d c → c ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d) → c C.≤ ⟦ R ⟧ d
+      ex2 L⊣R d c (d' , Lc≈d' , d'≤d) = C.trans (GaloisConnection.ψ L⊣R c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
 
   module _ (C⨆ D⨆ : SLat) where
     private
@@ -919,15 +920,22 @@ module _ where
       D≈ = D.Eq.setoid
       D = ∣ D⨆ ∣
 
+    ⨆m≤m⨆ : (m : C≤ →mono D≤) → (S : Pred C≈) → D.⨆ (imageR (liftFR ⟦ m ⟧cong) S) D.≤ ⟦ m ⟧ (C.⨆ S)
+    ⨆m≤m⨆ m S = D.⨆-least (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (C.⨆ S)) χ
+      where
+      χ : ∀ d → d ∈ imageR (liftFR ⟦ m ⟧cong) S → d D.≤ ⟦ m ⟧ (C.⨆ S)
+      χ d (c , mc≈d , c∈S) =
+        let open PosetReasoning D≤ in
+        begin
+        d ≈˘⟨ mc≈d ⟩
+        ⟦ m ⟧ c ≤⟨ m .Mono.mono (C.⨆-upper S c c∈S) ⟩
+        ⟦ m ⟧ (C.⨆ S) ∎
+
     module _ (L : C≤ →mono D≤) (R : D≤ →mono C≤) (L⊣R : L ⊣ R) where
       open GaloisConnection L⊣R
       L-⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
-      L-⨆preserving S = D.Po.antisym L⨆≤⨆L ⨆L≤L⨆
+      L-⨆preserving S = D.Po.antisym L⨆≤⨆L (⨆m≤m⨆ L S)
         where
-        ⨆L≤L⨆ : D.⨆ (imageR (liftFR ⟦ L ⟧cong) S) D.≤ ⟦ L ⟧ (C.⨆ S) -- from mono
-        ⨆L≤L⨆ = D.⨆-least (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ (C.⨆ S)) (λ d (e , Le≈d , e∈S)
-          → D.Po.trans (D.Po.reflexive (D.Eq.sym Le≈d)) (L .Mono.mono (C.⨆-upper S e e∈S)))
-
         L⨆≤⨆L : ⟦ L ⟧ (C.⨆ S) D.≤ D.⨆ (imageR (liftFR ⟦ L ⟧cong) S) -- non-trivial
         L⨆≤⨆L =
           let open PosetReasoning D≤ in
