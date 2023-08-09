@@ -343,12 +343,18 @@ module _ {X≈ Y≈ : Setoid} where
   Pred.⟦ imageR R P ⟧ = imageR-raw ⟦ R ⟧ ⟦ P ⟧
   imageR R P .Pred.isWellDefined {y} {y'} y≈y' (x , xy∈R , x∈P) = (x , R .Pred.isWellDefined (X.refl , y≈y') xy∈R , x∈P)
 
+  imageR-mono : (R : Pred (X≈ ×-setoid Y≈)) → (S S' : Pred X≈) → S ⊆ S' → imageR R S ⊆ imageR R S'
+  imageR-mono R S S' S⊆S' {y} (x , xy∈R , x∈S) = (x , xy∈R , S⊆S' x∈S)
+
   preimageR-raw : UniR.Pred (X × Y) lzero → UniR.Pred Y lzero → UniR.Pred X lzero
   preimageR-raw R Q x = Σ y ∶ Y , R (x , y) × Q y
 
   preimageR : Pred (X≈ ×-setoid Y≈) → Pred Y≈ → Pred X≈
   Pred.⟦ preimageR R Q ⟧ = preimageR-raw ⟦ R ⟧ ⟦ Q ⟧
   preimageR R Q .Pred.isWellDefined {x} {x'} x≈x' (y , xy∈R , y∈Q) = (y , R .Pred.isWellDefined (x≈x' , Y.refl) xy∈R , y∈Q)
+
+  preimageR-mono : (R : Pred (X≈ ×-setoid Y≈)) → (S S' : Pred Y≈) → S ⊆ S' → preimageR R S ⊆ preimageR R S'
+  preimageR-mono R S S' S⊆S' {x} (y , xy∈R , y∈S) = (y , xy∈R , S⊆S' y∈S)
 
   liftFR-raw : (X → Y) → UniR.Pred (X × Y) lzero
   liftFR-raw f (x , y) = f x Y.≈ y
@@ -360,9 +366,15 @@ module _ {X≈ Y≈ : Setoid} where
   ⃗ : (X≈ →cong Y≈) → Pred X≈ → Pred Y≈
   ⃗ f = imageR (liftFR f)
 
+  ⃗-mono : (f : X≈ →cong Y≈) → (S S' : Pred X≈) → S ⊆ S' → ⃗ f S ⊆ ⃗ f S'
+  ⃗-mono f = imageR-mono (liftFR f)
+
+
   ⃖ : (X≈ →cong Y≈) → Pred Y≈ → Pred X≈
   ⃖ f = preimageR (liftFR f)
 
+  ⃖-mono : (f : X≈ →cong Y≈) → (S S' : Pred Y≈) → S ⊆ S' → ⃖ f S ⊆ ⃖ f S'
+  ⃖-mono f = preimageR-mono (liftFR f)
 
 module _ (C≤ : Poset) where
   open PosetPoly C≤
@@ -540,6 +552,7 @@ module _ (D≤ : Poset) where
   open PosetPoly D≤
   private
     D≈ = PosetPoly.Eq.setoid D≤
+    D = ∣ D≤ ∣
   principal-downset : ∣ D≤ ∣ → Pred D≈
   Pred.⟦ principal-downset d ⟧ d' = d' ≤ d
   Pred.isWellDefined (principal-downset d) d'≈d'' d'≤d = trans (reflexive (Eq.sym d'≈d'')) d'≤d
@@ -550,23 +563,31 @@ module _ (D≤ : Poset) where
   principal-downset-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → principal-downset d ≐ principal-downset d'
   principal-downset-cong d d' d≈d' = principal-downset-mono d d' (reflexive d≈d') , principal-downset-mono d' d (reflexive (Eq.sym d≈d'))
 
-  downset : Pred (PosetPoly.Eq.setoid D≤) → Pred (PosetPoly.Eq.setoid D≤)
-  Pred.⟦ downset S ⟧ d = ∀ x → x ∈ S → d ≤ x
-  downset S .Pred.isWellDefined d≈d' φ x x∈S = trans (reflexive (Eq.sym d≈d')) (φ x x∈S) 
+  lowerbounds : Pred D≈ → Pred D≈
+  Pred.⟦ lowerbounds S ⟧ d = ∀ x → x ∈ S → d ≤ x
+  lowerbounds S .Pred.isWellDefined d≈d' φ x x∈S = trans (reflexive (Eq.sym d≈d')) (φ x x∈S)
 
-  principal-upset : ∣ D≤ ∣ → Pred (PosetPoly.Eq.setoid D≤)
+  downset : Pred D≈ → Pred D≈
+  Pred.⟦ downset S ⟧ d = Σ x ∶ D , (x ∈ S × d ≤ x)
+  downset S .Pred.isWellDefined d≈d' (x , x∈S , d≤x) = (x , x∈S , trans (reflexive (Eq.sym d≈d')) d≤x)
+
+  principal-upset : D → Pred D≈
   Pred.⟦ principal-upset d ⟧ d' = d ≤ d'
   Pred.isWellDefined (principal-upset d) d'≈d'' d≤d' = trans d≤d' (reflexive d'≈d'')
 
-  principal-upset-mono : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≤_ d d' → principal-upset d' ⊆ principal-upset d
+  principal-upset-mono : (d d' : D) → D≤ .PosetPoly._≤_ d d' → principal-upset d' ⊆ principal-upset d
   principal-upset-mono d d' d≤d' = \d'≤d'' → trans d≤d' d'≤d''
 
-  principal-upset-cong : (d d' : ∣ D≤ ∣) → D≤ .PosetPoly._≈_ d d' → principal-upset d ≐ principal-upset d'
+  principal-upset-cong : (d d' : D) → D≤ .PosetPoly._≈_ d d' → principal-upset d ≐ principal-upset d'
   principal-upset-cong d d' d≈d' = principal-upset-mono d' d (reflexive (Eq.sym d≈d')) , principal-upset-mono d d' (reflexive d≈d')
 
-  upset : Pred (PosetPoly.Eq.setoid D≤) → Pred (PosetPoly.Eq.setoid D≤)
-  Pred.⟦ upset S ⟧ u = ∀ x → x ∈ S → x ≤ u
-  upset S .Pred.isWellDefined u≈u' φ x x∈S = trans (φ x x∈S) (reflexive u≈u')
+  upperbounds : Pred D≈ → Pred D≈
+  Pred.⟦ upperbounds S ⟧ u = ∀ x → x ∈ S → x ≤ u
+  upperbounds S .Pred.isWellDefined u≈u' φ x x∈S = trans (φ x x∈S) (reflexive u≈u')
+
+  upset : Pred D≈ → Pred D≈
+  Pred.⟦ upset S ⟧ u = Σ x ∶ D , (x ∈ S × x ≤ u)
+  upset S .Pred.isWellDefined u≈u' (x , x∈S , x≤u) = (x , x∈S , trans x≤u (reflexive u≈u'))
 
 record SLat : Set where
   field
@@ -685,16 +706,16 @@ record SLat : Set where
   ⨆≤↔∀≤ S x .proj₂ = ⨆≤←∀≤ S x
 
   ⨅ : Pred Eq.setoid → Carrier
-  ⨅ S = ⨆ (↓ S)
+  ⨅ S = ⨆ (lowerbounds poset S)
 
   ⨅-lower : ∀ S x → x ∈ S → ⨅ S ≤ x
-  ⨅-lower S x x∈S = ⨆-least (↓ S) x x-upper
+  ⨅-lower S x x∈S = ⨆-least (lowerbounds poset S) x x-upper
     where
-    x-upper : ∀ y → y ∈ ↓ S → y ≤ x
-    x-upper y y∈↓S = y∈↓S x x∈S
+    x-upper : ∀ y → y ∈ lowerbounds poset S → y ≤ x
+    x-upper y y∈lbS = y∈lbS x x∈S
 
   ⨅-greatest : ∀ S y → (∀ x → x ∈ S → y ≤ x) → y ≤ ⨅ S
-  ⨅-greatest S y y-lower = ⨆-upper (↓ S) y y-lower
+  ⨅-greatest S y y-lower = ⨆-upper (lowerbounds poset S) y y-lower
 
   ⨅-inf : ∀ S → (∀ x → x ∈ S → ⨅ S ≤ x) × (∀ y → (∀ x → x ∈ S → y ≤ x) → y ≤ ⨅ S)
   ⨅-inf S = (⨅-lower S ,  ⨅-greatest S)
@@ -906,6 +927,19 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
     ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
     , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
 
+IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
+IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
+  where open PosetPoly D
+
+Is⨆Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
+Is⨆Closed D S = ∀ S' → S' ⊆ S → (SLat.⨆ D S') ∈ S
+
+Is⊔Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
+Is⊔Closed D S = ∀ x y → x ∈ S → y ∈ S → (SLat._⊔_ D x y) ∈ S
+
+⨆closed→⊔closed : (D : SLat) → (S : Pred (SLat.Eq.setoid D)) → Is⨆Closed D S → Is⊔Closed D S
+⨆closed→⊔closed D S ⨆closed x y x∈S y∈S = ⨆closed (｛ x ｝ ∪ ｛ y ｝) λ{ (inj₁ x≈) → S .Pred.isWellDefined x≈ x∈S ; (inj₂ y≈) → S .Pred.isWellDefined y≈ y∈S}
+
 module _ where
   open PosetPoly
   open Mono
@@ -947,7 +981,6 @@ module _ where
     L∈postLR : ∀ c → ⟦ L ⟧ c ∈ postLR
     L∈postLR = L .mono ∘ η
 
-
     LRL≈L : ∀ c → ⟦ L ∘-mono (R ∘-mono L) ⟧ c D.≈ ⟦ L ⟧ c
     LRL≈L c = D.antisym LRL≤L LRL≥L
       where
@@ -970,15 +1003,18 @@ module _ where
   L ⊣ R = GaloisConnection L R
 
   module _ {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) where
-    private
-      module C = PosetPoly C
-      module D = PosetPoly D
+    module _ (L⊣R : L ⊣ R) where
+      open GaloisConnection L⊣R
+      private
+        module C = PosetPoly C
+        module D = PosetPoly D
 
-      -- F : ⊆ → ⊆ preserves infs iff F is monotone and right ajoint
-      ex1 : L ⊣ R → ∀ d → ⟦ R ⟧ d ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d)
-      ex1 L⊣R d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , GaloisConnection.ε L⊣R d)
-      ex2 : L ⊣ R → ∀ d c → c ∈ preimageR (liftFR ⟦ L ⟧cong) (principal-downset D d) → c C.≤ ⟦ R ⟧ d
-      ex2 L⊣R d c (d' , Lc≈d' , d'≤d) = C.trans (GaloisConnection.ψ L⊣R c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
+        -- L ⊣ R → R d = max (L⁻¹ ↓ d)
+        R-belongs : ∀ d → ⟦ R ⟧ d ∈ ⃖ ⟦ L ⟧cong (principal-downset D d)
+        R-belongs d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , ε d)
+
+        R-greatest : ∀ d c → c ∈ ⃖ ⟦ L ⟧cong (principal-downset D d) → c C.≤ ⟦ R ⟧ d
+        R-greatest d c (d' , Lc≈d' , d'≤d) = C.trans (ψ c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
 
   module _ (C⨆ D⨆ : SLat) where
     private
@@ -991,10 +1027,10 @@ module _ where
       D≈ = D.Eq.setoid
       D = ∣ D⨆ ∣
 
-    ⨆m≤m⨆ : (m : C≤ →mono D≤) → (S : Pred C≈) → D.⨆ (imageR (liftFR ⟦ m ⟧cong) S) D.≤ ⟦ m ⟧ (C.⨆ S)
-    ⨆m≤m⨆ m S = D.⨆-least (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (C.⨆ S)) m⨆S-upper
+    ⨆m≤m⨆ : (m : C≤ →mono D≤) → (S : Pred C≈) → D.⨆ (⃗ ⟦ m ⟧cong S) D.≤ ⟦ m ⟧ (C.⨆ S)
+    ⨆m≤m⨆ m S = D.⨆-least (⃗ ⟦ m ⟧cong S) (⟦ m ⟧ (C.⨆ S)) m⨆S-upper
       where
-      m⨆S-upper : ∀ d → d ∈ imageR (liftFR ⟦ m ⟧cong) S → d D.≤ ⟦ m ⟧ (C.⨆ S)
+      m⨆S-upper : ∀ d → d ∈ ⃗ ⟦ m ⟧cong S → d D.≤ ⟦ m ⟧ (C.⨆ S)
       m⨆S-upper d (c , mc≈d , c∈S) =
         let open PosetReasoning D≤ in
         begin
@@ -1002,53 +1038,121 @@ module _ where
         ⟦ m ⟧ c        ≤⟨ m .Mono.mono (C.⨆-upper S c c∈S) ⟩
         ⟦ m ⟧ (C.⨆ S) ∎
 
-    m⨅≤⨅m : (m : D≤ →mono C≤) → (S : Pred D≈) → ⟦ m ⟧ (D.⨅ S) C.≤ C.⨅ (imageR (liftFR ⟦ m ⟧cong) S)
-    m⨅≤⨅m m S = C.⨅-greatest (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (D.⨅ S)) m⨅S-lower
+    m⨅≤⨅m : (m : D≤ →mono C≤) → (S : Pred D≈) → ⟦ m ⟧ (D.⨅ S) C.≤ C.⨅ (⃗ ⟦ m ⟧cong S)
+    m⨅≤⨅m m S = C.⨅-greatest (⃗ ⟦ m ⟧cong S) (⟦ m ⟧ (D.⨅ S)) m⨅S-lower
       where
-      m⨅S-lower : ∀ c → c ∈ imageR (liftFR ⟦ m ⟧cong) S → ⟦ m ⟧ (D.⨅ S) C.≤ c
+      m⨅S-lower : ∀ c → c ∈ ⃗ ⟦ m ⟧cong S → ⟦ m ⟧ (D.⨅ S) C.≤ c
       m⨅S-lower c (d , md≈c , d∈S) =
         let open PosetReasoning C≤ in
         begin
         ⟦ m ⟧ (D.⨅ S) ≤⟨ m .Mono.mono (D.⨅-lower S d d∈S) ⟩
-        ⟦ m ⟧ d ≈⟨ md≈c ⟩
-        c ∎
+        ⟦ m ⟧ d        ≈⟨ md≈c ⟩
+        c              ∎
 
     module _ (L : C≤ →mono D≤) (R : D≤ →mono C≤) (L⊣R : L ⊣ R) where
       open GaloisConnection L⊣R
-      L-⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
-      L-⨆preserving S = D.Po.antisym L⨆≤⨆L (⨆m≤m⨆ L S)
+      left-adjunction→⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
+      left-adjunction→⨆preserving S = D.Po.antisym L⨆≤⨆L (⨆m≤m⨆ L S)
         where
         d : D
-        d = D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)
+        d = D.⨆ (⃗ ⟦ L ⟧cong S)
 
         Rd-upper : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
-        Rd-upper c c∈S = ψ c d .proj₁ (D.⨆-upper (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))
+        Rd-upper c c∈S = ψ c d .proj₁ (D.⨆-upper (⃗ ⟦ L ⟧cong S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))
 
         L⨆≤⨆L : ⟦ L ⟧ (C.⨆ S) D.≤ d -- non-trivial
         L⨆≤⨆L =
           let open PosetReasoning D≤ in
           begin
-          ⟦ L ⟧ (C.⨆ S)                                     ≤⟨ L .Mono.mono (C.⨆-least S (⟦ R ⟧ d) Rd-upper) ⟩
-          ⟦ L ⟧ (⟦ R ⟧ (D.⨆ (imageR (liftFR ⟦ L ⟧cong) S))) ≤⟨ ε d ⟩
-          D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)                 ∎
+          ⟦ L ⟧ (C.⨆ S)       ≤⟨ L .Mono.mono (C.⨆-least S (⟦ R ⟧ d) Rd-upper) ⟩
+          ⟦ L ⟧ (⟦ R ⟧ d)      ≤⟨ ε d ⟩
+          D.⨆ (⃗ ⟦ L ⟧cong S) ∎
 
-
-      R-⨅preserving : Is⨅Preserving D⨆ C⨆ ⟦ R ⟧cong
-      R-⨅preserving S = C.Po.antisym (m⨅≤⨅m R S) ⨅R≤R⨅
+      right-adjunction→⨅preserving : Is⨅Preserving D⨆ C⨆ ⟦ R ⟧cong
+      right-adjunction→⨅preserving S = C.Po.antisym (m⨅≤⨅m R S) ⨅R≤R⨅
         where
         c : C
-        c = C.⨅ (imageR (liftFR ⟦ R ⟧cong) S)
+        c = C.⨅ (⃗ ⟦ R ⟧cong S)
 
         Lc-lower : ∀ d → d ∈ S → ⟦ L ⟧ c D.≤ d
-        Lc-lower d d∈S = ψ c d .proj₂ (C.⨅-lower (imageR (liftFR ⟦ R ⟧cong) S) (⟦ R ⟧ d) (d , (C.Eq.refl , d∈S)))
+        Lc-lower d d∈S = ψ c d .proj₂ (C.⨅-lower (⃗ ⟦ R ⟧cong S) (⟦ R ⟧ d) (d , (C.Eq.refl , d∈S)))
 
-        ⨅R≤R⨅ : C.⨅ (imageR (liftFR ⟦ R ⟧cong) S) C.≤ ⟦ R ⟧ (D.⨅ S)
+        ⨅R≤R⨅ : C.⨅ (⃗ ⟦ R ⟧cong S) C.≤ ⟦ R ⟧ (D.⨅ S)
         ⨅R≤R⨅ =
           let open PosetReasoning C≤ in
           begin
-          C.⨅ (imageR (liftFR ⟦ R ⟧cong) S) ≤⟨ η c ⟩
-          ⟦ R ⟧ (⟦ L ⟧ c) ≤⟨ R .Mono.mono (D.⨅-greatest S (⟦ L ⟧ c) Lc-lower) ⟩
-          ⟦ R ⟧ (D.⨅ S) ∎
+          C.⨅ (⃗ ⟦ R ⟧cong S) ≤⟨ η c ⟩
+          ⟦ R ⟧ (⟦ L ⟧ c)      ≤⟨ R .Mono.mono (D.⨅-greatest S (⟦ L ⟧ c) Lc-lower) ⟩
+          ⟦ R ⟧ (D.⨅ S)       ∎
+
+
+    module _ (L : C≤ →mono D≤) (L-⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong) where
+
+      private
+        R : D≤ →mono C≤
+        ⟦ R ⟧ d = C.⨆ (⃖ ⟦ L ⟧cong (D.↓! d))
+        R .isMonotone .IsMono.mono {d} {d'} d≤d' = C.⨆-mono (⃖ ⟦ L ⟧cong (D.↓! d)) (⃖ ⟦ L ⟧cong (D.↓! d')) (⃖-mono ⟦ L ⟧cong (D.↓! d) (D.↓! d')
+          (λ x≤d → D.Po.trans x≤d d≤d' ))
+        R .isMonotone .IsMono.cong d≈d' = C.Po.antisym
+          (R .isMonotone .IsMono.mono (D.Po.reflexive d≈d'))
+          (R .isMonotone .IsMono.mono (D.Po.reflexive (D.Eq.sym d≈d')))
+
+      ⨆preserving→left-transpose : ∀ c d → c C.≤ ⟦ R ⟧ d → ⟦ L ⟧ c D.≤ d
+      ⨆preserving→left-transpose c d = α
+        where
+        β : ⃗ ⟦ L ⟧cong (⃖ ⟦ L ⟧cong (D.↓! d)) ⊆ D.↓! d
+        β {d'} d'∈LL⁻¹↓d@(c' , Lc'≈d' , d'' , Lc'≈d'' , d''≤d) =
+          let open PosetReasoning D≤ in
+          begin
+          d'       ≈˘⟨ Lc'≈d' ⟩
+          ⟦ L ⟧ c' ≈⟨ Lc'≈d'' ⟩
+          d''      ≤⟨ d''≤d ⟩
+          d        ∎
+
+        α : c C.≤ ⟦ R ⟧ d → ⟦ L ⟧ c D.≤ d
+        α c≤Rd =
+          let open PosetReasoning D≤ in
+          begin
+          ⟦ L ⟧ c ≤⟨ L .isMonotone .IsMono.mono c≤Rd ⟩
+          ⟦ L ⟧ (⟦ R ⟧ d) ≈⟨ L-⨆preserving (⃖ ⟦ L ⟧cong (D.↓! d)) ⟩
+          D.⨆ (⃗ ⟦ L ⟧cong (⃖ ⟦ L ⟧cong (D.↓! d))) ≤⟨ D.⨆-mono (⃗ ⟦ L ⟧cong (⃖ ⟦ L ⟧cong (D.↓! d))) (D.↓! d) β ⟩
+          D.⨆ (D.↓! d) ≈⟨ D.⨆-↓! d ⟩
+          d ∎
+
+    module _ (L : C≤ →mono D≤) where
+
+      private
+        R : D≤ →mono C≤
+        ⟦ R ⟧ d = C.⨆ (⃖ ⟦ L ⟧cong (D.↓! d))
+        R .isMonotone .IsMono.mono {d} {d'} d≤d' = C.⨆-mono (⃖ ⟦ L ⟧cong (D.↓! d)) (⃖ ⟦ L ⟧cong (D.↓! d')) (⃖-mono ⟦ L ⟧cong (D.↓! d) (D.↓! d')
+          (λ x≤d → D.Po.trans x≤d d≤d' ))
+        R .isMonotone .IsMono.cong d≈d' = C.Po.antisym
+          (R .isMonotone .IsMono.mono (D.Po.reflexive d≈d'))
+          (R .isMonotone .IsMono.mono (D.Po.reflexive (D.Eq.sym d≈d')))
+
+      module _
+        (left-transpose : ∀ c d → c C.≤ ⟦ R ⟧ d → ⟦ L ⟧ c D.≤ d) where
+
+        left-transpose→⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
+        left-transpose→⨆preserving S = D.Po.antisym L⨆S≤⨆LS ⨆LS≤L⨆S
+          where
+          L⨆S≤⨆LS : ⟦ L ⟧ (C.⨆ S) D.≤ D.⨆ (⃗ ⟦ L ⟧cong S)
+          L⨆S≤⨆LS = left-transpose (C.⨆ S) (D.⨆ (⃗ ⟦ L ⟧cong S)) (C.⨆-mono S (⃖ ⟦ L ⟧cong (D.↓! (D.⨆ (⃗ ⟦ L ⟧cong S)))) S⊆L⁻¹↓[⨆LS])
+            where
+            S⊆L⁻¹↓[⨆LS] : S ⊆ ⃖ ⟦ L ⟧cong (D.↓! (D.⨆ (⃗ ⟦ L ⟧cong S)))
+            S⊆L⁻¹↓[⨆LS] {c} c∈S = (⟦ L ⟧ c , D.Eq.refl , D.⨆-upper (⃗ ⟦ L ⟧cong S) (⟦ L ⟧ c) (c , D.Eq.refl , c∈S))
+
+          ⨆LS≤L⨆S : D.⨆ (⃗ ⟦ L ⟧cong S) D.≤ ⟦ L ⟧ (C.⨆ S)
+          ⨆LS≤L⨆S = D.⨆-least (⃗ ⟦ L ⟧cong S) (⟦ L ⟧ (C.⨆ S)) L⨆S-upper
+            where
+            L⨆S-upper : ∀ d → d ∈ ⃗ ⟦ L ⟧cong S → d D.≤ ⟦ L ⟧ (C.⨆ S)
+            L⨆S-upper d (c , Lc≈d , c∈S) =
+              let open PosetReasoning D≤ in
+              begin
+              d              ≈˘⟨ Lc≈d ⟩
+              ⟦ L ⟧ c        ≤⟨ L .Mono.mono (C.⨆-upper S c c∈S) ⟩
+              ⟦ L ⟧ (C.⨆ S) ∎ -- d (c , Lc≈d , c∈S) = {!!}
+
 
 
 lift→ : {D : Set} → (P Q : UniR.Pred D lzero) → ((d : D) → P d → Q d) → (∀ d → P d) → (∀ d → Q d)
@@ -1176,18 +1280,6 @@ module _ (D⨆ E⨆ : SLat) where
 
   module _ (X : Poset) (F : 𝒫⊆ →mono X) (G : X →mono 𝒫⊆) (F⊣G : F ⊣ G) where
 
-IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
-IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
-  where open PosetPoly D
-
-Is⨆Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
-Is⨆Closed D S = ∀ S' → S' ⊆ S → (SLat.⨆ D S') ∈ S
-
-Is⊔Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
-Is⊔Closed D S = ∀ x y → x ∈ S → y ∈ S → (SLat._⊔_ D x y) ∈ S
-
-⨆closed→⊔closed : (D : SLat) → (S : Pred (SLat.Eq.setoid D)) → Is⨆Closed D S → Is⊔Closed D S
-⨆closed→⊔closed D S ⨆closed x y x∈S y∈S = ⨆closed (｛ x ｝ ∪ ｛ y ｝) λ{ (inj₁ x≈) → S .Pred.isWellDefined x≈ x∈S ; (inj₂ y≈) → S .Pred.isWellDefined y≈ y∈S}
 
 
 module _ (D⨆ E⨆ : SLat) where
