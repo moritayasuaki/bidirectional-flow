@@ -28,35 +28,3 @@ open import Algebra
 open import Data.Wrap
 open import Data.List
 open import Bidirection
-
-record ContLat : Set where
-  field
-    Carrier : Set
-    _≈_ : Rel Carrier
-    _≤_ : Rel Carrier
-    ≤-po : IsPartialOrder _≈_ _≤_
-
-  poset : Poset
-  poset = record {isPartialOrder = ≤-po}
-
-  module Po = PosetPoly poset
-  module Eq = Po.Eq
-
-  setoid : Setoid
-  setoid = Eq.setoid
-
-  field
-    ⨆ :  Pred Eq.setoid → Carrier
-    _⊓_ : Op₂ Carrier
-    ⊤ : Carrier
-    ⊓-inf : Infimum _≤_ _⊓_
-    ⊤-max : Maximum _≤_ ⊤
-    ⨆-sup : ∀ S → (∀ x → x ∈ S → x ≤ ⨆ S) × (∀ y → (∀ x → x ∈ S → x ≤ y) → ⨆ S ≤ y)
-
-  slat : SLat
-  slat = record {≤-po = ≤-po ; ⊓-inf = ⊓-inf ; ⊤-max = ⊤-max ; ⨆-sup = ⨆-sup}
-
-  open SLat slat hiding (Carrier ; _≈_ ; _≤_ ; ⨆ ; _⊓_ ; ⊤)
-
-  field
-    continuous : ∀ x → Σ S ∶ (Pred setoid) , ((⨆ S ≈ x) × (∀ y → y ∈ S → IsCompact y))
