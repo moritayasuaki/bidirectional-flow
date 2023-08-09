@@ -357,6 +357,13 @@ module _ {X≈ Y≈ : Setoid} where
   Pred.⟦ liftFR f≈ ⟧ = liftFR-raw ⟦ f≈ ⟧
   liftFR f≈ .Pred.isWellDefined {(x , y)} {(x' , y')} (x≈x' , y≈y') fx≈y = Y.trans (f≈ .Cong.cong (X.sym x≈x')) (Y.trans fx≈y y≈y')
 
+  ⃗ : (X≈ →cong Y≈) → Pred X≈ → Pred Y≈
+  ⃗ f = imageR (liftFR f)
+
+  ⃖ : (X≈ →cong Y≈) → Pred Y≈ → Pred X≈
+  ⃖ f = preimageR (liftFR f)
+
+
 module _ (C≤ : Poset) where
   open PosetPoly C≤
   private
@@ -793,10 +800,13 @@ module _ (D⨆ E⨆ : SLat) where
     E = ∣ E⨆ ∣
 
   IsScottContinuous : (D≈ →cong E≈) → Set
-  IsScottContinuous f≈ = (S : Pred E≈) → E.IsScottOpen S → D.IsScottOpen (preimageR (liftFR f≈) S)
+  IsScottContinuous f≈ = (S : Pred E≈) → E.IsScottOpen S → D.IsScottOpen (⃖ f≈ S)
 
   Is⨆Preserving : (D≈ →cong E≈) → Set
-  Is⨆Preserving f≈ = (S : Pred D≈) → ⟦ f≈ ⟧ (D.⨆ S) E.≈ E.⨆ (imageR (liftFR f≈) S)
+  Is⨆Preserving f≈ = (S : Pred D≈) → ⟦ f≈ ⟧ (D.⨆ S) E.≈ E.⨆ (⃗ f≈ S)
+
+  Is⨅Preserving : (D≈ →cong E≈) → Set
+  Is⨅Preserving f≈ = (S : Pred D≈) → ⟦ f≈ ⟧ (D.⨅ S) E.≈ E.⨅ (⃗ f≈ S)
 
   record Cont : Set where
     field
@@ -982,35 +992,63 @@ module _ where
       D = ∣ D⨆ ∣
 
     ⨆m≤m⨆ : (m : C≤ →mono D≤) → (S : Pred C≈) → D.⨆ (imageR (liftFR ⟦ m ⟧cong) S) D.≤ ⟦ m ⟧ (C.⨆ S)
-    ⨆m≤m⨆ m S = D.⨆-least (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (C.⨆ S)) χ
+    ⨆m≤m⨆ m S = D.⨆-least (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (C.⨆ S)) m⨆S-upper
       where
-      χ : ∀ d → d ∈ imageR (liftFR ⟦ m ⟧cong) S → d D.≤ ⟦ m ⟧ (C.⨆ S)
-      χ d (c , mc≈d , c∈S) =
+      m⨆S-upper : ∀ d → d ∈ imageR (liftFR ⟦ m ⟧cong) S → d D.≤ ⟦ m ⟧ (C.⨆ S)
+      m⨆S-upper d (c , mc≈d , c∈S) =
         let open PosetReasoning D≤ in
         begin
-        d ≈˘⟨ mc≈d ⟩
-        ⟦ m ⟧ c ≤⟨ m .Mono.mono (C.⨆-upper S c c∈S) ⟩
+        d              ≈˘⟨ mc≈d ⟩
+        ⟦ m ⟧ c        ≤⟨ m .Mono.mono (C.⨆-upper S c c∈S) ⟩
         ⟦ m ⟧ (C.⨆ S) ∎
+
+    m⨅≤⨅m : (m : D≤ →mono C≤) → (S : Pred D≈) → ⟦ m ⟧ (D.⨅ S) C.≤ C.⨅ (imageR (liftFR ⟦ m ⟧cong) S)
+    m⨅≤⨅m m S = C.⨅-greatest (imageR (liftFR ⟦ m ⟧cong) S) (⟦ m ⟧ (D.⨅ S)) m⨅S-lower
+      where
+      m⨅S-lower : ∀ c → c ∈ imageR (liftFR ⟦ m ⟧cong) S → ⟦ m ⟧ (D.⨅ S) C.≤ c
+      m⨅S-lower c (d , md≈c , d∈S) =
+        let open PosetReasoning C≤ in
+        begin
+        ⟦ m ⟧ (D.⨅ S) ≤⟨ m .Mono.mono (D.⨅-lower S d d∈S) ⟩
+        ⟦ m ⟧ d ≈⟨ md≈c ⟩
+        c ∎
 
     module _ (L : C≤ →mono D≤) (R : D≤ →mono C≤) (L⊣R : L ⊣ R) where
       open GaloisConnection L⊣R
       L-⨆preserving : Is⨆Preserving C⨆ D⨆ ⟦ L ⟧cong
       L-⨆preserving S = D.Po.antisym L⨆≤⨆L (⨆m≤m⨆ L S)
         where
-        L⨆≤⨆L : ⟦ L ⟧ (C.⨆ S) D.≤ D.⨆ (imageR (liftFR ⟦ L ⟧cong) S) -- non-trivial
+        d : D
+        d = D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)
+
+        Rd-upper : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
+        Rd-upper c c∈S = ψ c d .proj₁ (D.⨆-upper (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))
+
+        L⨆≤⨆L : ⟦ L ⟧ (C.⨆ S) D.≤ d -- non-trivial
         L⨆≤⨆L =
           let open PosetReasoning D≤ in
           begin
-          ⟦ L ⟧ (C.⨆ S)                                     ≤⟨ L .Mono.mono (C.⨆-least S (⟦ R ⟧ d) χ) ⟩
+          ⟦ L ⟧ (C.⨆ S)                                     ≤⟨ L .Mono.mono (C.⨆-least S (⟦ R ⟧ d) Rd-upper) ⟩
           ⟦ L ⟧ (⟦ R ⟧ (D.⨆ (imageR (liftFR ⟦ L ⟧cong) S))) ≤⟨ ε d ⟩
           D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)                 ∎
-          where
 
-          d : D
-          d = D.⨆ (imageR (liftFR ⟦ L ⟧cong) S)
 
-          χ : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
-          χ c c∈S = ψ c d .proj₁ (D.⨆-upper (imageR (liftFR ⟦ L ⟧cong) S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))
+      R-⨅preserving : Is⨅Preserving D⨆ C⨆ ⟦ R ⟧cong
+      R-⨅preserving S = C.Po.antisym (m⨅≤⨅m R S) ⨅R≤R⨅
+        where
+        c : C
+        c = C.⨅ (imageR (liftFR ⟦ R ⟧cong) S)
+
+        Lc-lower : ∀ d → d ∈ S → ⟦ L ⟧ c D.≤ d
+        Lc-lower d d∈S = ψ c d .proj₂ (C.⨅-lower (imageR (liftFR ⟦ R ⟧cong) S) (⟦ R ⟧ d) (d , (C.Eq.refl , d∈S)))
+
+        ⨅R≤R⨅ : C.⨅ (imageR (liftFR ⟦ R ⟧cong) S) C.≤ ⟦ R ⟧ (D.⨅ S)
+        ⨅R≤R⨅ =
+          let open PosetReasoning C≤ in
+          begin
+          C.⨅ (imageR (liftFR ⟦ R ⟧cong) S) ≤⟨ η c ⟩
+          ⟦ R ⟧ (⟦ L ⟧ c) ≤⟨ R .Mono.mono (D.⨅-greatest S (⟦ L ⟧ c) Lc-lower) ⟩
+          ⟦ R ⟧ (D.⨅ S) ∎
 
 
 lift→ : {D : Set} → (P Q : UniR.Pred D lzero) → ((d : D) → P d → Q d) → (∀ d → P d) → (∀ d → Q d)
