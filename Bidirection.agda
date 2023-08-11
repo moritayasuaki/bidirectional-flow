@@ -289,6 +289,12 @@ module _ {X≈ : Setoid} where
   ｛_،_｝ : X → X → Pred X≈
   ｛ x ، y ｝ = ｛ x ｝ ∪ ｛ y ｝
 
+  ∪-⊆-l : (S T : Pred X≈) → S ⊆ (S ∪ T)
+  ∪-⊆-l S T x∈S = (inj₁ x∈S)
+
+  ∪-⊆-r : (S T : Pred X≈) → T ⊆ (S ∪ T)
+  ∪-⊆-r S T x∈T = (inj₂ x∈T)
+
   listToPred : List X → Pred X≈
   listToPred [] = ∅
   listToPred (x ∷ ls) = ｛ x ｝ ∪ listToPred ls
@@ -689,6 +695,7 @@ record SLat : Set where
     ( (λ{ (inj₁ x≈) → inj₂ x≈ ; (inj₂ y≈) → inj₁ y≈})
     , (λ{ (inj₁ y≈) → inj₂ y≈ ; (inj₂ x≈) → inj₁ x≈}))
 
+
   ⊔-ub-l : ∀ x y → x ≤ (x ⊔ y)
   ⊔-ub-l x y = ⨆-ub _ _ (inj₁ Eq.refl)
 
@@ -701,6 +708,16 @@ record SLat : Set where
     z-ub : ∀ w → (x ≈ w) ⊎ (y ≈ w) → w ≤ z
     z-ub w (inj₁ x≈w) = Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z
     z-ub w (inj₂ y≈w) = Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z
+
+  ⨆-⊔-comm : ∀ P Q → (⨆ P ⊔ ⨆ Q) ≈ ⨆ (P ∪ Q)
+  ⨆-⊔-comm P Q = Po.antisym (⨆-least ｛ ⨆ P ، ⨆ Q ｝ (⨆ (P ∪ Q)) ⨆P∪Q-ub ) (⨆-least (P ∪ Q) (⨆ ｛ ⨆ P ، ⨆ Q ｝) ⨆P⊔⨆Q-ub)
+    where
+    ⨆P∪Q-ub : ∀ x → x ∈ ｛_،_｝{Eq.setoid} (⨆ P) (⨆ Q) → x ≤ ⨆ (P ∪ Q)
+    ⨆P∪Q-ub x (inj₁ ⨆P≈x) = Po.reflexive (Eq.sym ⨆P≈x) ⟨ Po.trans ⟩ ⨆-mono P (P ∪ Q) (∪-⊆-l P Q)
+    ⨆P∪Q-ub x (inj₂ ⨆Q≈x) = Po.reflexive (Eq.sym ⨆Q≈x) ⟨ Po.trans ⟩ ⨆-mono Q (P ∪ Q) (∪-⊆-r P Q)
+    ⨆P⊔⨆Q-ub : ∀ x → x ∈ (P ∪ Q) → x ≤ (⨆ P ⊔ ⨆ Q)
+    ⨆P⊔⨆Q-ub x (inj₁ x∈P) = ⨆-ub P x x∈P ⟨ Po.trans ⟩ ⊔-ub-l (⨆ P) (⨆ Q)
+    ⨆P⊔⨆Q-ub x (inj₂ x∈Q) = ⨆-ub Q x x∈Q ⟨ Po.trans ⟩ ⊔-ub-r (⨆ P) (⨆ Q)
 
   ≤→⊔-≈ : ∀ x y → x ≤ y → (x ⊔ y) ≈ y
   ≤→⊔-≈ x y x≤y = Po.antisym (⊔-least x y y x≤y Po.refl) (⊔-ub-r x y)
@@ -879,6 +896,9 @@ module _ (D⨆ E⨆ : SLat) where
 
   Is⨅Preserving : (D≈ →cong E≈) → Set
   Is⨅Preserving f≈ = (S : Pred D≈) → ⟦ f≈ ⟧ (D.⨅ S) E.≈ E.⨅ (⃗ f≈ S)
+
+
+
 
   record Cont : Set where
     field
@@ -1545,9 +1565,10 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
         χ⁻¹ = d≤⨆↓!d∩R
 
   -- Hypothesis
+  {-
   hypothesis : (R : Pred C≈) → Is⨆Closed C⨆ R → Is⨆Preserving C⨆ C⨆ (⟦ F-mono R ⟧cong) → IsChain R
-  hypothesis R R-⨆closed FR-⨆preserving x y x∈R y∈R =
-    let
+  hypothesis R R-⨆closed FR-⨆preserving x y x∈R y∈R = x-y-related
+    where
     n : (x ⊔ y) ≈ ⨆ (↓! (x ⊔ y))
     n = Eq.sym (⨆-↓! (x ⊔ y))
     o : ⨆ (↓! (x ⊔ y)) ≈ ⨆ (↓! (x ⊔ y) ∩ R)
@@ -1566,23 +1587,23 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     s : ( F-raw R x ⊔ F-raw R y) ≡ (⨆ (↓! x ∩ R) ⊔ ⨆ (↓! y ∩ R))
     s = _≡_.refl
     t : (⨆ (↓! x ∩ R) ⊔ ⨆ (↓! y ∩ R)) ≈ ⨆ ((↓! x ∩ R) ∪ (↓! y ∩ R)) -- (⨆ P ⊔ ⨆ Q) = ⨆ { ⨆ P , ⨆ Q } = ⨆ (P ∪ Q)
-    t = {!!}
+    t = ⨆-⊔-comm _ _
     u : ⨆ ((↓! x ∩ R) ∪ (↓! y ∩ R)) ≈ ⨆ (↓! x ∪ ↓! y) -- use x∈R and y∈R or maybe use destribution law in the internal step
-    u = {!!}
-    n-u : {!!}
+    u = Po.antisym {!!} {!!}
+    n-u : (x ⊔ y) ≈ ⨆ (↓! x ∪ ↓! y)
     n-u = n ⟨ Eq.trans ⟩ o ⟨ Eq.trans ⟩ p ⟨ Eq.trans ⟩ r ⟨ Eq.trans ⟩ t ⟨ Eq.trans ⟩ u
     v : (⨆ (↓! x ∪ ↓! y) ≈ x) ⊎ (⨆ (↓! x ∪ ↓! y) ≈ y) --
-    v = {!!}
-
+    v = {!⨆!}
     x⊔y=x⊎x⊔y=y : ((x ⊔ y) ≈ x) ⊎ ((x ⊔ y) ≈ y)
     x⊔y=x⊎x⊔y=y = case v of λ where
-      (inj₁ z≈x) → inj₁ (n-u ⟨ Eq.trans ⟩ z≈x) 
+      (inj₁ z≈x) → inj₁ (n-u ⟨ Eq.trans ⟩ z≈x)
       (inj₂ z≈y) → inj₂ (n-u ⟨ Eq.trans ⟩ z≈y)
     x-y-related : x ≤ y ⊎ y ≤ x
     x-y-related = case x⊔y=x⊎x⊔y=y of λ where
       (inj₁ x⊔y≈x) → inj₂ (⊔-ub-r x y ⟨ Po.trans ⟩ Po.reflexive x⊔y≈x)
       (inj₂ x⊔y≈y) → inj₁ (⊔-ub-l x y ⟨ Po.trans ⟩ Po.reflexive x⊔y≈y)
-    in {!x-y-related!}
+    -}
+
 
 module _ (D⨆ E⨆ : SLat) where
 
@@ -1622,7 +1643,13 @@ module _ (D⨆ E⨆ : SLat) where
       ( D.⨆-ub ((↓! (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
       , E.⨆-ub ((↓! (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
 
+  IsMonotoneRelation : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsMonotoneRelation R = ∀ d₀ d₁ e₀ e₁
+    → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d₁ → e₀ E.≤ e₁
 
+  IsSquareFilling : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsSquareFilling R = ∀ d₀ d d₁ e₀ e₁
+    → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d → d D.≤ d₁ → e₀ E.≤ e₁ → Σ e ∶ E , (d , e) ∈ R × e₀ E.≤ e × e E.≤ e₁
 
   -- We define the following galois connection
   --
@@ -1692,6 +1719,11 @@ module _ (D⨆ E⨆ : SLat) where
 
   IsTiltBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsTiltBowTieConnecting R = (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+
+  -- the property TiltBowtieConecting is not closed under ⋈ but by adding an extra condition
+  -- it becomes closed under ⋈ (TODO: proof)
+  Is⋈FriendlyTiltBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  Is⋈FriendlyTiltBowTieConnecting R = IsTiltBowTieConnecting R × IsMonotoneRelation R
 
   module _ where
     open GaloisConnection
@@ -1800,10 +1832,17 @@ module _ (D⨆ E⨆ : SLat) where
   IsBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
   IsBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
+  -- the property BowtieConecting is not closed under ⋈ but by adding monotonicity and square filling property
+  -- it becomes closed under ⋈ (TODO: proof)
+  -- This class seems quite narrow (possibly it only carries information as much as the unidirectional case does)
+  Is⋈FriendlyBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  Is⋈FriendlyBowTieConnecting R = IsTiltBowTieConnecting R × IsMonotoneRelation R × IsSquareFilling R
+
   bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
   bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
     ( D.Po.trans d≤d₁ (D.⨆-ub ((↓! (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
     , E.Po.trans e≤e₁ (E.⨆-ub ((↓! (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
+
 
   module _ where
     open GaloisConnection
