@@ -210,83 +210,88 @@ instance
   pred-map : {X : Setoid} → HasBracket (Pred X) (∣ X ∣ → Set)
   HasBracket.⟦ pred-map ⟧ = Pred.⟦_⟧
 
-
-≈→↔ : {X : Setoid} (P : Pred X) → {x y : ∣ X ∣} → SetoidPoly._≈_ X x y → (⟦ P ⟧ x) ↔ (⟦ P ⟧ y)
-≈→↔ {X = X} P x≈y = (Pred.isWellDefined P x≈y) , (Pred.isWellDefined P (SetoidPoly.sym X x≈y))
-
-
 Rel : Set → Set
 Rel X = RelPoly X lzero
 
-_∈_ : {X : Setoid} → ∣ X ∣ → Pred X → Set
-x ∈ P = x UniR.∈ ⟦ P ⟧
+module _ {X≈ : Setoid} where
+  open SetoidPoly X≈
+  private
+    X = ∣ X≈ ∣
 
-∅ : {X : Setoid} → Pred X
-Pred.⟦ ∅ ⟧ = UniR.∅
-Pred.isWellDefined ∅ _ ()
+  ≈→↔ : (P : Pred X≈) → {x y : X} → x ≈ y → (⟦ P ⟧ x) ↔ (⟦ P ⟧ y)
+  ≈→↔ P x≈y = (Pred.isWellDefined P x≈y) , (Pred.isWellDefined P (sym x≈y))
 
-｛_｝ : {X : Setoid} → ∣ X ∣ → Pred X
-Pred.⟦  ｛_｝ {X} x ⟧ = X .SetoidPoly._≈_ x
-｛_｝ {X} x .Pred.isWellDefined {y} {z} y≈z x≈y = X .SetoidPoly.trans x≈y y≈z
+  _∈_ : X → Pred X≈ → Set
+  x ∈ P = x UniR.∈ ⟦ P ⟧
 
-U : {X : Setoid} → Pred X
-Pred.⟦ U ⟧ = UniR.U
-U .Pred.isWellDefined _ _ = _
+  ∅ : Pred X≈
+  Pred.⟦ ∅ ⟧ = UniR.∅
+  Pred.isWellDefined ∅ _ ()
 
-
-_⊆_ : {X : Setoid} → Pred X → Pred X → Set
-P ⊆ Q = ⟦ P ⟧ UniR.⊆ ⟦ Q ⟧
-
-
-U-max : {X : Setoid} (P : Pred X) → P ⊆ U
-U-max _ _ = _
-
-_≐_ : {X : Setoid} → Pred X → Pred X → Set
-P ≐ Q = ⟦ P ⟧ UniR.≐ ⟦ Q ⟧
-
-∀↔→≐ : {X : Setoid} {P Q : Pred X} → ((x : ∣ X ∣) → x ∈ P ↔ x ∈ Q) → P ≐ Q
-∀↔→≐ φ = ((λ {x} → φ x .proj₁) , (λ {x} → φ x .proj₂))
+  ｛_｝ : X → Pred X≈
+  Pred.⟦  ｛ x ｝ ⟧ y = x ≈ y
+  ｛ x ｝ .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
 
 
-_∩_ : {X : Setoid} → Pred X → Pred X → Pred X
-(P ∩ Q) .Pred.⟦_⟧ = (⟦ P ⟧ UniR.∩ ⟦ Q ⟧)
-(P ∩ Q) .Pred.isWellDefined = λ{ x≈y (x∈P , x∈Q) → P.isWellDefined x≈y x∈P , Q.isWellDefined x≈y x∈Q }
-  where private
-    module P = Pred P
-    module Q = Pred Q
 
-∩-⊆-l : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ S
-∩-⊆-l S T (d∈S , d∈T) = d∈S
+  U : Pred X≈
+  Pred.⟦ U ⟧ = UniR.U
+  U .Pred.isWellDefined _ _ = _
 
-∩-⊆-r : {X : Setoid} (S T : Pred X) → (S ∩ T) ⊆ T
-∩-⊆-r S T (d∈S , d∈T) = d∈T
+  _⊆_ : Pred X≈ → Pred X≈ → Set
+  P ⊆ Q = ⟦ P ⟧ UniR.⊆ ⟦ Q ⟧
 
 
-∩-mono-l : {X : Setoid} (P Q S : Pred X) → P ⊆ Q → (P ∩ S) ⊆ (Q ∩ S)
-∩-mono-l P Q S P⊆Q = (λ (x∈P , x∈S) → (P⊆Q x∈P , x∈S))
+  U-max : (P : Pred X≈) → P ⊆ U
+  U-max _ _ = _
 
-∩-mono-r : {X : Setoid} (P Q S : Pred X) → P ⊆ Q → (S ∩ P) ⊆ (S ∩ Q)
-∩-mono-r P Q S P⊆Q = (λ (x∈S , x∈P) → (x∈S , P⊆Q x∈P))
+  _≐_ : Pred X≈ → Pred X≈ → Set
+  P ≐ Q = ⟦ P ⟧ UniR.≐ ⟦ Q ⟧
 
-∩-mono : {X : Setoid} (P Q S R : Pred X) → P ⊆ Q → S ⊆ R → (P ∩ S) ⊆ (Q ∩ R)
-∩-mono P Q S R P⊆Q S⊆R = (λ (x∈P , x∈S) → (P⊆Q x∈P , S⊆R x∈S))
+  ∀↔→≐ : {P Q : Pred X≈} → ((x : X) → x ∈ P ↔ x ∈ Q) → P ≐ Q
+  ∀↔→≐ φ = ((λ {x} → φ x .proj₁) , (λ {x} → φ x .proj₂))
 
-∩-cong-l : {X : Setoid} (P Q S : Pred X) → P ≐ Q → (P ∩ S) ≐ (Q ∩ S)
-∩-cong-l P Q S P≐Q = ∩-mono-l P Q S (P≐Q .proj₁) , ∩-mono-l Q P S (P≐Q .proj₂)
 
-∩-cong-r : {X : Setoid} (P Q S : Pred X) → P ≐ Q → (S ∩ P) ≐ (S ∩ Q)
-∩-cong-r P Q S P≐Q = ∩-mono-r P Q S (P≐Q .proj₁) , ∩-mono-r Q P S (P≐Q .proj₂)
+  _∩_ : Pred X≈ → Pred X≈ → Pred X≈
+  (P ∩ Q) .Pred.⟦_⟧ = (⟦ P ⟧ UniR.∩ ⟦ Q ⟧)
+  (P ∩ Q) .Pred.isWellDefined = λ{ x≈y (x∈P , x∈Q) → P.isWellDefined x≈y x∈P , Q.isWellDefined x≈y x∈Q }
+    where private
+      module P = Pred P
+      module Q = Pred Q
 
-module _ {X : Setoid} where
-  open SetoidPoly X
-  _∪_ : Pred X → Pred X → Pred X
+  ∩-⊆-l : (S T : Pred X≈) → (S ∩ T) ⊆ S
+  ∩-⊆-l S T (d∈S , d∈T) = d∈S
+
+  ∩-⊆-r : (S T : Pred X≈) → (S ∩ T) ⊆ T
+  ∩-⊆-r S T (d∈S , d∈T) = d∈T
+
+
+  ∩-mono-l : (P Q S : Pred X≈) → P ⊆ Q → (P ∩ S) ⊆ (Q ∩ S)
+  ∩-mono-l P Q S P⊆Q = (λ (x∈P , x∈S) → (P⊆Q x∈P , x∈S))
+
+  ∩-mono-r : (P Q S : Pred X≈) → P ⊆ Q → (S ∩ P) ⊆ (S ∩ Q)
+  ∩-mono-r P Q S P⊆Q = (λ (x∈S , x∈P) → (x∈S , P⊆Q x∈P))
+
+  ∩-mono : (P Q S R : Pred X≈) → P ⊆ Q → S ⊆ R → (P ∩ S) ⊆ (Q ∩ R)
+  ∩-mono P Q S R P⊆Q S⊆R = (λ (x∈P , x∈S) → (P⊆Q x∈P , S⊆R x∈S))
+
+  ∩-cong-l : (P Q S : Pred X≈) → P ≐ Q → (P ∩ S) ≐ (Q ∩ S)
+  ∩-cong-l P Q S P≐Q = ∩-mono-l P Q S (P≐Q .proj₁) , ∩-mono-l Q P S (P≐Q .proj₂)
+
+  ∩-cong-r : (P Q S : Pred X≈) → P ≐ Q → (S ∩ P) ≐ (S ∩ Q)
+  ∩-cong-r P Q S P≐Q = ∩-mono-r P Q S (P≐Q .proj₁) , ∩-mono-r Q P S (P≐Q .proj₂)
+
+  _∪_ : Pred X≈ → Pred X≈ → Pred X≈
   Pred.⟦ P ∪ Q ⟧ = ⟦ P ⟧ UniR.∪ ⟦ Q ⟧
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₁ x∈P) = inj₁ (P .Pred.isWellDefined x≈y x∈P)
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₂ x∈Q) = inj₂ (Q .Pred.isWellDefined x≈y x∈Q)
 
-listToPred : {X : Setoid} → List ∣ X ∣ → Pred X
-listToPred [] = ∅
-listToPred (x ∷ ls) =  ｛ x ｝ ∪ listToPred ls
+  ｛_،_｝ : X → X → Pred X≈
+  ｛ x ، y ｝ = ｛ x ｝ ∪ ｛ y ｝
+
+  listToPred : List X → Pred X≈
+  listToPred [] = ∅
+  listToPred (x ∷ ls) = ｛ x ｝ ∪ listToPred ls
 
 record FinSubset (X : Setoid) : Set where
   field
@@ -373,6 +378,16 @@ module _ {X≈ Y≈ : Setoid} where
 
   ⃗-mono : (f : X≈ →cong Y≈) → (S S' : Pred X≈) → S ⊆ S' → ⃗ f S ⊆ ⃗ f S'
   ⃗-mono f = imageR-mono (liftFR f)
+
+  ⃗single : (f : X≈ →cong Y≈) → ∀ x →  ⃗ f ｛ x ｝ ≐ ｛ ⟦ f ⟧ x ｝
+  ⃗single f x =
+    ( (λ {y} (x' , fx'≈y , x≈x') → Y.trans (f .Cong.cong x≈x') fx'≈y)
+    , (λ {y} fx≈y → (x , fx≈y , X.refl)))
+
+  ⃗pair  : (f : X≈ →cong Y≈) → ∀ x x' →  ⃗ f ｛ x ، x' ｝ ≐ ｛ ⟦ f ⟧ x ، ⟦ f ⟧ x' ｝
+  ⃗pair f x x' =
+    ( (λ { {y} (x'' , fx''≈y , inj₁ x≈x'') → inj₁ (Y.trans (f .Cong.cong x≈x'') fx''≈y) ; {y} (x'' , fx''≈y , inj₂ x'≈x'') → inj₂ (Y.trans (f .Cong.cong x'≈x'') fx''≈y)})
+    , (λ { {y} (inj₁ fx≈y) → (x , fx≈y , inj₁ X.refl) ; {y} (inj₂ fx'≈y) → (x' , fx'≈y , inj₂ X.refl) }))
 
 
   ⃖ : (X≈ →cong Y≈) → Pred Y≈ → Pred X≈
@@ -667,10 +682,10 @@ record SLat : Set where
     x-ub y ()
 
   _⊔_ : Op₂ Carrier
-  x ⊔ y = ⨆ (｛ x ｝ ∪ ｛ y ｝)
+  x ⊔ y = ⨆ ｛ x ، y ｝
 
   ⊔-comm : ∀ x y → (x ⊔ y) ≈ (y ⊔ x)
-  ⊔-comm x y = ⨆-cong (｛ x ｝ ∪ ｛ y ｝) (｛ y ｝ ∪ ｛ x ｝)
+  ⊔-comm x y = ⨆-cong (｛ x ، y ｝) (｛ y ، x ｝)
     ( (λ{ (inj₁ x≈) → inj₂ x≈ ; (inj₂ y≈) → inj₁ y≈})
     , (λ{ (inj₁ y≈) → inj₂ y≈ ; (inj₂ x≈) → inj₁ x≈}))
 
@@ -681,11 +696,11 @@ record SLat : Set where
   ⊔-ub-r x y = ⨆-ub _ _ (inj₂ Eq.refl)
 
   ⊔-least : ∀ x y → (∀ z → x ≤ z → y ≤ z → (x ⊔ y) ≤ z)
-  ⊔-least x y z x≤z y≤z = ⨆-least _ _ z-upper
+  ⊔-least x y z x≤z y≤z = ⨆-least _ _ z-ub
     where
-    z-upper : ∀ w → (x ≈ w) ⊎ (y ≈ w) → w ≤ z
-    z-upper w (inj₁ x≈w) = Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z
-    z-upper w (inj₂ y≈w) = Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z
+    z-ub : ∀ w → (x ≈ w) ⊎ (y ≈ w) → w ≤ z
+    z-ub w (inj₁ x≈w) = Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z
+    z-ub w (inj₂ y≈w) = Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z
 
   ≤→⊔-≈ : ∀ x y → x ≤ y → (x ⊔ y) ≈ y
   ≤→⊔-≈ x y x≤y = Po.antisym (⊔-least x y y x≤y Po.refl) (⊔-ub-r x y)
@@ -960,8 +975,8 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
     (⨆-least (｛(d , e)｝ ∪ ｛(d' , e')｝) (d D.⊔ d' , e E.⊔ e')
        λ { p (inj₁ de≈p) → Po.trans (Po.reflexive (Eq.sym de≈p)) (D.⊔-ub-l d d' , E.⊔-ub-l e e')
          ; p (inj₂ d'e'≈p) → Po.trans (Po.reflexive (Eq.sym d'e'≈p)) (D.⊔-ub-r d d' , E.⊔-ub-r e e')})
-    ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
-    , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ d , e ｝ ∪ ｛ d' , e' ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
+    ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
+    , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
 
 IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
 IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
@@ -1505,10 +1520,6 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   all-subset-is-postGF : (R : Pred C≈) → (R ∈ post (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong)
   all-subset-is-postGF R = GaloisConnection.η F⊣G R
 
-  -- Hypothesis
-  hypothesis : (R : Pred C≈) → Is⨆Preserving C⨆ C⨆ (⟦ F-mono R ⟧cong) → IsChain R
-  hypothesis = {!!}
-
   module _ where
     open GaloisConnection
     preGF-characterization : (R : Pred C≈) → R ∈ preRL F⊣G ↔ Is⨆Closed C⨆ R
@@ -1532,6 +1543,46 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
 
         χ⁻¹ : d ≤ ⨆ (↓! d ∩ R)
         χ⁻¹ = d≤⨆↓!d∩R
+
+  -- Hypothesis
+  hypothesis : (R : Pred C≈) → Is⨆Closed C⨆ R → Is⨆Preserving C⨆ C⨆ (⟦ F-mono R ⟧cong) → IsChain R
+  hypothesis R R-⨆closed FR-⨆preserving x y x∈R y∈R =
+    let
+    n : (x ⊔ y) ≈ ⨆ (↓! (x ⊔ y))
+    n = Eq.sym (⨆-↓! (x ⊔ y))
+    o : ⨆ (↓! (x ⊔ y)) ≈ ⨆ (↓! (x ⊔ y) ∩ R)
+    o = Po.antisym
+      (⨆-ub (↓! (x ⊔ y) ∩ R) (⨆ (↓! (x ⊔ y)))
+        ((↓! (x ⊔ y) ∩ R) .Pred.isWellDefined n
+          ( Po.refl
+          , (R-⨆closed ｛ x ، y ｝ (λ { {z} (inj₁ x≈z) → R .Pred.isWellDefined x≈z x∈R ; {z} (inj₂ y≈z) → R .Pred.isWellDefined y≈z y∈R})))))
+      (⨆-mono (↓! (x ⊔ y) ∩ R) (↓! (x ⊔ y)) proj₁)
+    p :  ⨆ (↓! (x ⊔ y) ∩ R) ≈ ⨆ (⃗ ⟦ F-mono R ⟧cong (｛ x ، y ｝))
+    p = FR-⨆preserving (｛ x ، y ｝)
+    q : (⃗ ⟦ F-mono R ⟧cong (｛ x ، y ｝)) ≐ ｛  F-raw R x ،  F-raw R y  ｝
+    q = ⃗pair ⟦ F-mono R ⟧cong x y
+    r : ⨆ (⃗ ⟦ F-mono R ⟧cong (｛ x ، y ｝)) ≈ ( F-raw R x ⊔ F-raw R y)
+    r = ⨆-cong (⃗ ⟦ F-mono R ⟧cong (｛ x ، y ｝)) (｛  F-raw R x ،  F-raw R y  ｝) q
+    s : ( F-raw R x ⊔ F-raw R y) ≡ (⨆ (↓! x ∩ R) ⊔ ⨆ (↓! y ∩ R))
+    s = _≡_.refl
+    t : (⨆ (↓! x ∩ R) ⊔ ⨆ (↓! y ∩ R)) ≈ ⨆ ((↓! x ∩ R) ∪ (↓! y ∩ R)) -- (⨆ P ⊔ ⨆ Q) = ⨆ { ⨆ P , ⨆ Q } = ⨆ (P ∪ Q)
+    t = {!!}
+    u : ⨆ ((↓! x ∩ R) ∪ (↓! y ∩ R)) ≈ ⨆ (↓! x ∪ ↓! y) -- use x∈R and y∈R or maybe use destribution law in the internal step
+    u = {!!}
+    n-u : {!!}
+    n-u = n ⟨ Eq.trans ⟩ o ⟨ Eq.trans ⟩ p ⟨ Eq.trans ⟩ r ⟨ Eq.trans ⟩ t ⟨ Eq.trans ⟩ u
+    v : (⨆ (↓! x ∪ ↓! y) ≈ x) ⊎ (⨆ (↓! x ∪ ↓! y) ≈ y) --
+    v = {!!}
+
+    x⊔y=x⊎x⊔y=y : ((x ⊔ y) ≈ x) ⊎ ((x ⊔ y) ≈ y)
+    x⊔y=x⊎x⊔y=y = case v of λ where
+      (inj₁ z≈x) → inj₁ (n-u ⟨ Eq.trans ⟩ z≈x) 
+      (inj₂ z≈y) → inj₂ (n-u ⟨ Eq.trans ⟩ z≈y)
+    x-y-related : x ≤ y ⊎ y ≤ x
+    x-y-related = case x⊔y=x⊎x⊔y=y of λ where
+      (inj₁ x⊔y≈x) → inj₂ (⊔-ub-r x y ⟨ Po.trans ⟩ Po.reflexive x⊔y≈x)
+      (inj₂ x⊔y≈y) → inj₁ (⊔-ub-l x y ⟨ Po.trans ⟩ Po.reflexive x⊔y≈y)
+    in {!x-y-related!}
 
 module _ (D⨆ E⨆ : SLat) where
 
@@ -2217,7 +2268,7 @@ module CheckOplaxMonoidalityForIntersection where
     [∩]-ν-representation : ∀ f g p₀ → ⟦ f [∩] g ⟧ p₀ ≈ ν (h f g p₀)
     [∩]-ν-representation f g p₀ =
       ⨆-cong (↓! p₀ ∩ (⟦ G ⟧ f ∩ ⟦ G ⟧ g)) (post poset (h f g p₀))
-        (∀↔→≐ {X = C≈} {↓! p₀ ∩ (⟦ G ⟧ f ∩ ⟦ G ⟧ g)} {post poset (h f g p₀)} φ)
+        (∀↔→≐ {X≈ = C≈} {↓! p₀ ∩ (⟦ G ⟧ f ∩ ⟦ G ⟧ g)} {post poset (h f g p₀)} φ)
       where
       lhs = λ p → p ≤ p₀ × (p ≤ ⟦ f ⟧ p) × (p ≤ ⟦ g ⟧ p)
       rhs = λ p → p ≤ (p₀ ⊓ (⟦ f ⟧ p ⊓ ⟦ g ⟧ p))
