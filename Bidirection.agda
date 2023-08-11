@@ -832,6 +832,9 @@ record SLat : Set where
   IsDirected : (S : Pred Eq.setoid) → Set
   IsDirected S = ∀ (xs : List Carrier) → All (λ x → x ∈ S) xs → Σ u ∶ Carrier , (u ∈ S × All (λ x → x ≤ u) xs)
 
+  IsChain : (S : Pred Eq.setoid) → Set
+  IsChain S = ∀ x y → x ∈ S → y ∈ S → x ≤ y ⊎ y ≤ x
+
   -- Scott open [Taylor, 2010, A lambda calculus for real analysis, Def. 3.1]
   IsScottOpen : (S : Pred Eq.setoid) → Set
   IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred xs ⊆ T × ⨆ (listToPred xs) ∈ S)
@@ -1499,8 +1502,12 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
         f d ≤⟨ ⨆-ub (↓! d ∩ post C≤ f≈) (f d) (fd≤d , fd≤ffd) ⟩
         ⨆ (↓! d ∩ post C≤ f≈) ∎
 
-  postGF : (R : Pred C≈) → (R ∈ post (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong)
-  postGF R = GaloisConnection.η F⊣G R
+  all-subset-is-postGF : (R : Pred C≈) → (R ∈ post (Pred⊆-poset C≈) ⟦ G ∘-mono F ⟧cong)
+  all-subset-is-postGF R = GaloisConnection.η F⊣G R
+
+  -- Hypothesis
+  hypothesis : (R : Pred C≈) → Is⨆Preserving C⨆ C⨆ (⟦ F-mono R ⟧cong) → IsChain R
+  hypothesis = {!!}
 
   module _ where
     open GaloisConnection
@@ -1563,6 +1570,8 @@ module _ (D⨆ E⨆ : SLat) where
     preGF→⊔closed R ≤⨆↓!∩→∈ (d , e) (d₀ , e₀) (d₀≤d , e₀≤e) (d₀e∈R , de₀∈R) = ≤⨆↓!∩→∈ (d , e)
       ( D.⨆-ub ((↓! (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
       , E.⨆-ub ((↓! (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
+
+
 
   -- We define the following galois connection
   --
@@ -1630,8 +1639,8 @@ module _ (D⨆ E⨆ : SLat) where
     ( D.⨆-ub ((↓! (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
     , E.Po.trans e≤e₁ (E.⨆-ub ((↓! (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
-  IsTiltBowTieClosed : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsTiltBowTieClosed R = (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+  IsTiltBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTiltBowTieConnecting R = (∀ d e d₀ e₀ e₁ → IsTiltBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
 
   module _ where
     open GaloisConnection
@@ -2321,7 +2330,7 @@ module CheckOplaxMonoidalityForIntersection where
         _[∩]_ = liftOpAlong⊣ (F₀⊣G₀ D⨆ E⨆) _∩_
         open GaloisConnection (F₀⊣G₀ D⨆ E⨆)
       ∩-tiltbowtieclosed : (R R' : Pred (D≈ ×-setoid E≈))
-        → IsTiltBowTieClosed D⨆ E⨆ R → IsTiltBowTieClosed D⨆ E⨆ R' → IsTiltBowTieClosed D⨆ E⨆ (R ∩ R')
+        → IsTiltBowTieConnecting D⨆ E⨆ R → IsTiltBowTieConnecting D⨆ E⨆ R' → IsTiltBowTieConnecting D⨆ E⨆ (R ∩ R')
       ∩-tiltbowtieclosed R R' R-closed R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (de₀∈R , de₀∈R'))
         = (R-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R)) , R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R' , de₀∈R')
 
