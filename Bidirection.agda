@@ -2187,6 +2187,13 @@ module _
       = ∩∈imageR→[∩]-∩-right-adjoint-oplax-monoidal
       ∘ preRL-∩closed→∩∈imageR
 
+    [∩]-∩-right-adjoint-oplax-monoidal→monoidal :
+      IsOplaxMonoidal R _[∩]_ _∩_
+      → IsMonoidal R _[∩]_ _∩_
+    [∩]-∩-right-adjoint-oplax-monoidal→monoidal oplax =
+      lax∧oplax→monoidal R _[∩]_ _∩_ [∩]-∩-right-adjoint-lax-monoidal oplax
+
+
 module _
   (Index : Set) where
   -- Definitions for indexed binary operations
@@ -2340,7 +2347,7 @@ module CheckOplaxMonoidalityForIntersection where
     [∩]-∩-lax-monoidal = [∩]-∩-right-adjoint-lax-monoidal C≈ F⊣G
 
     [∩]-∩-monoidal : IsMonoidal G _[∩]_ _∩_
-    [∩]-∩-monoidal = lax∧oplax→monoidal G _[∩]_ _∩_ [∩]-∩-lax-monoidal [∩]-∩-oplax-monoidal
+    [∩]-∩-monoidal = [∩]-∩-right-adjoint-oplax-monoidal→monoidal (C≈) F⊣G [∩]-∩-oplax-monoidal
 
     -- show exsistance of cheaper (efficient) version of operation that is also oplax-monoidal
     private
