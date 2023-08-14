@@ -1648,8 +1648,10 @@ module _ (D⨆ E⨆ : SLat) where
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d₁ → e₀ E.≤ e₁
 
   IsSquareFilling : (R : Pred (D≈ ×-setoid E≈)) → Set
-  IsSquareFilling R = ∀ d₀ d d₁ e₀ e₁
-    → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d → d D.≤ d₁ → e₀ E.≤ e₁ → Σ e ∶ E , (d , e) ∈ R × e₀ E.≤ e × e E.≤ e₁
+  IsSquareFilling R = ∀ d₀ d₁ e₀ e₁
+    → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R
+    → d₀ D.≤ d₁ → e₀ E.≤ e₁
+    → ∀ d → d₀ D.≤ d → d D.≤ d₁ → Σ e ∶ E , e₀ E.≤ e × e E.≤ e₁ × (d , e) ∈ R
 
   -- We define the following galois connection
   --
