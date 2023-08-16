@@ -593,10 +593,10 @@ module _ (D⨆ E⨆ : SLat) where
 
   -- The Galois connection between relations and backward functions with forward constants
 
-  F₂ : 𝒫⊆ →mono ((E≤ →mono-pw D≤) ×-poset E≤)
+  F₂ : 𝒫⊆ →mono BackConst
   F₂ = H₂ ∘-mono F₁
 
-  G₂ : ((E≤ →mono-pw D≤) ×-poset E≤) →mono 𝒫⊆
+  G₂ : BackConst →mono 𝒫⊆
   G₂ = G₁ ∘-mono I₂
 
   F₂⊣G₂ : F₂ ⊣ G₂
@@ -712,12 +712,12 @@ module _ (D⨆ E⨆ : SLat) where
   I₃-mono : (E≤ →mono D≤) → (E≤ →mono D≤) × E
   I₃-mono f⃖ = (f⃖ , E.⊤)
 
-  H₃ : ((E≤ →mono-pw D≤) ×-poset E≤) →mono (E≤ →mono-pw D≤)
+  H₃ : BackConst →mono Back
   Mono.⟦ H₃ ⟧ = H₃-mono
   H₃ .Mono.isMonotone .IsMono.cong f⃖ᶜ≈g⃖ᶜ e = f⃖ᶜ≈g⃖ᶜ .proj₁ e
   H₃ .Mono.isMonotone .IsMono.mono f⃖ᶜ≤g⃖ᶜ e = f⃖ᶜ≤g⃖ᶜ .proj₁ e
 
-  I₃ : (E≤ →mono-pw D≤) →mono ((E≤ →mono-pw D≤) ×-poset E≤)
+  I₃ : Back →mono BackConst
   Mono.⟦ I₃ ⟧ = I₃-mono
   I₃ .Mono.isMonotone .IsMono.cong f⃖≈g⃖ = f⃖≈g⃖ , E.Eq.refl
   I₃ .Mono.isMonotone .IsMono.mono f⃖≤g⃖ = f⃖≤g⃖ , E.Po.refl
@@ -727,10 +727,10 @@ module _ (D⨆ E⨆ : SLat) where
   H₃⊣I₃ .GaloisConnection.ψ f⃖ᶜ f⃖ .proj₂ f⃖ᶜ≤I₃f⃖ e = f⃖ᶜ≤I₃f⃖ .proj₁ e
 
   -- The Galois connection between relations and backward functions
-  F₃ : 𝒫⊆ →mono (E≤ →mono-pw D≤)
+  F₃ : 𝒫⊆ →mono Back
   F₃ = H₃ ∘-mono F₂
 
-  G₃ : (E≤ →mono-pw D≤) →mono 𝒫⊆
+  G₃ : Back →mono 𝒫⊆
   G₃ = G₂ ∘-mono I₃
 
   F₃⊣G₃ : F₃ ⊣ G₃

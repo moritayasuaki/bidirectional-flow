@@ -160,6 +160,46 @@ module _ where
     (D ×-poset E) ._≤_ = Componentwise (D ._≤_) (E ._≤_)
     (D ×-poset E) .isPartialOrder = ×-isPartialOrder (D .isPartialOrder) (E .isPartialOrder)
 
+Rel : Set → Set
+Rel X = RelPoly X lzero
+
+Pointwise : {D : Set} (C : Set) → Rel D → Rel (C → D)
+Pointwise C _R_ f g = (c : C) → (f c) R (g c)
+
+module FunBinR where
+  open IsPartialOrder using (isPreorder)
+  open IsPreorder using (isEquivalence)
+
+
+  →isEquivalence : {D : Set} (C : Set) {_≈_ : Rel D} → IsEquivalence _≈_ → IsEquivalence (Pointwise C _≈_)
+  →isEquivalence C ≈-eqv .IsEquivalence.refl c = ≈-eqv .IsEquivalence.refl
+  →isEquivalence C ≈-eqv .IsEquivalence.sym f≈g c = ≈-eqv .IsEquivalence.sym (f≈g c)
+  →isEquivalence C ≈-eqv .IsEquivalence.trans f≈g g≈h c = ≈-eqv .IsEquivalence.trans (f≈g c) (g≈h c)
+
+  →isPartialOrder : {D : Set} (C : Set) {_≈_ _≤_ : Rel D} → IsPartialOrder _≈_ _≤_ → IsPartialOrder (Pointwise C _≈_) (Pointwise C _≤_)
+  →isPartialOrder C ≤-po .isPreorder .isEquivalence = →isEquivalence C (≤-po .isPreorder .isEquivalence )
+  →isPartialOrder C ≤-po .isPreorder .IsPreorder.reflexive f≈g c = ≤-po .isPreorder .IsPreorder.reflexive (f≈g c)
+  →isPartialOrder C ≤-po .isPreorder .IsPreorder.trans f≤g g≤h c = ≤-po .isPreorder .IsPreorder.trans (f≤g c) (g≤h c)
+  →isPartialOrder C ≤-po .IsPartialOrder.antisym f≤g g≤f c = ≤-po .IsPartialOrder.antisym (f≤g c) (g≤f c)
+
+  module _ (C D : Poset) where
+    open PosetPoly D
+    MonoPointwise : Rel ∣ D ∣ → Rel (C →mono D)
+    MonoPointwise _R_ f g = (c : ∣ C ∣) → (⟦ f ⟧ c) R (⟦ g ⟧ c)
+
+    →mono-isEquivalence : IsEquivalence (MonoPointwise (_≈_))
+    →mono-isEquivalence .IsEquivalence.refl c = Eq.refl
+    →mono-isEquivalence .IsEquivalence.sym f≈g c = Eq.sym (f≈g c)
+    →mono-isEquivalence .IsEquivalence.trans f≈g g≈h c = Eq.trans (f≈g c) (g≈h c)
+
+    →mono-isPartialOrder : IsPartialOrder (MonoPointwise _≈_) (MonoPointwise _≤_)
+    →mono-isPartialOrder .isPreorder .isEquivalence = →mono-isEquivalence
+    →mono-isPartialOrder .isPreorder .IsPreorder.reflexive f≈g c = reflexive (f≈g c)
+    →mono-isPartialOrder .isPreorder .IsPreorder.trans f≤g g≤h c = trans (f≤g c) (g≤h c)
+    →mono-isPartialOrder .IsPartialOrder.antisym f≤g g≤f c = antisym (f≤g c) (g≤f c)
+
+
+
 module _ (D : Setoid) (E : Setoid) where
   private
     module D = SetoidPoly D
@@ -209,12 +249,11 @@ record Pred (X : Setoid) : Set where
     ⟦_⟧ : ∣ X ∣ → Set
     isWellDefined : {x y : _} → x ≈ y → ⟦ x ⟧ → ⟦ y ⟧
 
+
 instance
   pred-map : {X : Setoid} → HasBracket (Pred X) (∣ X ∣ → Set)
   HasBracket.⟦ pred-map ⟧ = Pred.⟦_⟧
 
-Rel : Set → Set
-Rel X = RelPoly X lzero
 
 module _ {X≈ : Setoid} where
   open SetoidPoly X≈
@@ -238,7 +277,6 @@ module _ {X≈ : Setoid} where
   ｛_｝ : X → Pred X≈
   Pred.⟦  ｛ x ｝ ⟧ y = x ≈ y
   ｛ x ｝ .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
-
 
 
   U : Pred X≈
@@ -325,6 +363,54 @@ module _ {X≈ : Setoid} where
   listToPred : List X → Pred X≈
   listToPred [] = ∅
   listToPred (x ∷ ls) = ｛ x ｝ ∪ listToPred ls
+
+module _ where
+  open PosetPoly
+
+  _→pw_ : (C : Set) (D : Poset) → Poset
+  _→pw_ C D .Carrier = C → ∣ D ∣
+  _→pw_ C D ._≈_ = Pointwise C (D ._≈_)
+  _→pw_ C D ._≤_ = Pointwise C (D ._≤_)
+  _→pw_ C D .isPartialOrder = FunBinR.→isPartialOrder C (D .isPartialOrder)
+
+  _→mono-pw_ : (C : Poset) (D : Poset) → Poset
+  _→mono-pw_ C D .Carrier = C →mono D
+  _→mono-pw_ C D ._≈_ f g = Pointwise ∣ C ∣ (D ._≈_) ⟦ f ⟧ ⟦ g ⟧
+  _→mono-pw_ C D ._≤_ f g = Pointwise ∣ C ∣ (D ._≤_) ⟦ f ⟧ ⟦ g ⟧
+  _→mono-pw_ C D .isPartialOrder = FunBinR.→mono-isPartialOrder C D
+
+  open IsPartialOrder using (isPreorder)
+  open IsPreorder using (isEquivalence)
+  Pred⊆-poset : (D : Setoid) → Poset
+  Pred⊆-poset D .Carrier = Pred D
+  Pred⊆-poset D ._≈_ P Q = P ≐ Q
+  Pred⊆-poset D ._≤_ = _⊆_
+  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.refl = id , id
+  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.sym (⊆ , ⊇) = (⊇ , ⊆)
+  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.trans (⊆₁ , ⊇₁) (⊆₂ , ⊇₂) = (⊆₂ ∘ ⊆₁) , (⊇₁ ∘ ⊇₂)
+  Pred⊆-poset D .isPartialOrder .isPreorder .IsPreorder.reflexive = proj₁
+  Pred⊆-poset D .isPartialOrder .isPreorder .IsPreorder.trans ⊆₁ ⊆₂ = ⊆₂ ∘ ⊆₁
+  Pred⊆-poset D .isPartialOrder .IsPartialOrder.antisym ⊆ ⊇ = ⊆ , ⊇
+
+  Pred≐-setoid : (D : Setoid) → Setoid
+  Pred≐-setoid D = PosetPoly.Eq.setoid (Pred⊆-poset D)
+
+  Pred→Prop : (D : Setoid) → Pred D → Set
+  Pred→Prop D P = ∀ d → d ∈ P
+
+  Pred⊆-→mono-Prop→ : (D : Setoid) → Pred⊆-poset D →mono Prop→-poset
+  Pred⊆-→mono-Prop→ D = mkMono (Pred⊆-poset D) Prop→-poset (Pred→Prop D)
+    (λ {P} {Q} P⊆Q ∀d→d∈P d → P⊆Q (∀d→d∈P d))
+
+module _ {X≈ : Setoid} where
+  open SetoidPoly X≈
+  private
+    X = ∣ X≈ ∣
+
+  ∩-∘-mono₂ : (Pred⊆-poset X≈ ×-poset Pred⊆-poset X≈) →mono Pred⊆-poset X≈
+  ∩-∘-mono₂ = mkMono (Pred⊆-poset X≈ ×-poset Pred⊆-poset X≈) (Pred⊆-poset X≈)
+    (uncurry _∩_)
+    (λ {(x , y)} {(z , w)} → uncurry (∩-mono x z y w))
 
 record FinSubset (X : Setoid) : Set where
   field
@@ -896,6 +982,15 @@ record SLat : Set where
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
 
+  -- TODO: implement curry-uncurry for ν
+
+  ub-post→≤ν↔∈post : ∀ (f≈ : Eq.setoid →cong Eq.setoid) (c : Carrier) → ⟦ f≈ ⟧ c ∈ ubs (post≤ f≈) → c ≤ ν f≈ ↔ c ∈ post≤ f≈
+  ub-post→≤ν↔∈post f≈ c fc∈ubpostf = let open SetoidReasoning (Prop↔-setoid) in
+    begin
+    (c ≤ ν f≈) ≈⟨  ≤⨆↔≤ubs c (post≤ f≈)  ⟩
+    (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) ≈⟨ (λ c-lb-of-ubs → c-lb-of-ubs (⟦ f≈ ⟧ c) fc∈ubpostf) , (λ c∈postf u u-ub → u-ub c c∈postf) ⟩
+    (c ≤ ⟦ f≈ ⟧ c) ∎
+
 
   μ : (Eq.setoid →cong Eq.setoid) → Carrier
   μ f = ⨅ (pre poset f)
@@ -1300,93 +1395,7 @@ module _ {C : Poset} {D : Poset} {E : Poset} {L : C →mono D} {R : D →mono C}
     c ∎
 
 
-Pointwise : {D : Set} (C : Set) → Rel D → Rel (C → D)
-Pointwise C _R_ f g = (c : C) → (f c) R (g c)
 
-module FunBinR where
-  open IsPartialOrder using (isPreorder)
-  open IsPreorder using (isEquivalence)
-
-
-  →isEquivalence : {D : Set} (C : Set) {_≈_ : Rel D} → IsEquivalence _≈_ → IsEquivalence (Pointwise C _≈_)
-  →isEquivalence C ≈-eqv .IsEquivalence.refl c = ≈-eqv .IsEquivalence.refl
-  →isEquivalence C ≈-eqv .IsEquivalence.sym f≈g c = ≈-eqv .IsEquivalence.sym (f≈g c)
-  →isEquivalence C ≈-eqv .IsEquivalence.trans f≈g g≈h c = ≈-eqv .IsEquivalence.trans (f≈g c) (g≈h c)
-
-  →isPartialOrder : {D : Set} (C : Set) {_≈_ _≤_ : Rel D} → IsPartialOrder _≈_ _≤_ → IsPartialOrder (Pointwise C _≈_) (Pointwise C _≤_)
-  →isPartialOrder C ≤-po .isPreorder .isEquivalence = →isEquivalence C (≤-po .isPreorder .isEquivalence )
-  →isPartialOrder C ≤-po .isPreorder .IsPreorder.reflexive f≈g c = ≤-po .isPreorder .IsPreorder.reflexive (f≈g c)
-  →isPartialOrder C ≤-po .isPreorder .IsPreorder.trans f≤g g≤h c = ≤-po .isPreorder .IsPreorder.trans (f≤g c) (g≤h c)
-  →isPartialOrder C ≤-po .IsPartialOrder.antisym f≤g g≤f c = ≤-po .IsPartialOrder.antisym (f≤g c) (g≤f c)
-
-  module _ (C D : Poset) where
-    open PosetPoly D
-    MonoPointwise : Rel ∣ D ∣ → Rel (C →mono D)
-    MonoPointwise _R_ f g = (c : ∣ C ∣) → (⟦ f ⟧ c) R (⟦ g ⟧ c)
-
-    →mono-isEquivalence : IsEquivalence (MonoPointwise (_≈_))
-    →mono-isEquivalence .IsEquivalence.refl c = Eq.refl
-    →mono-isEquivalence .IsEquivalence.sym f≈g c = Eq.sym (f≈g c)
-    →mono-isEquivalence .IsEquivalence.trans f≈g g≈h c = Eq.trans (f≈g c) (g≈h c)
-
-    →mono-isPartialOrder : IsPartialOrder (MonoPointwise _≈_) (MonoPointwise _≤_)
-    →mono-isPartialOrder .isPreorder .isEquivalence = →mono-isEquivalence
-    →mono-isPartialOrder .isPreorder .IsPreorder.reflexive f≈g c = reflexive (f≈g c)
-    →mono-isPartialOrder .isPreorder .IsPreorder.trans f≤g g≤h c = trans (f≤g c) (g≤h c)
-    →mono-isPartialOrder .IsPartialOrder.antisym f≤g g≤f c = antisym (f≤g c) (g≤f c)
-
-
-module _ where
-  open PosetPoly
-
-  _→pw_ : (C : Set) (D : Poset) → Poset
-  _→pw_ C D .Carrier = C → ∣ D ∣
-  _→pw_ C D ._≈_ = Pointwise C (D ._≈_)
-  _→pw_ C D ._≤_ = Pointwise C (D ._≤_)
-  _→pw_ C D .isPartialOrder = FunBinR.→isPartialOrder C (D .isPartialOrder)
-
-  _→mono-pw_ : (C : Poset) (D : Poset) → Poset
-  _→mono-pw_ C D .Carrier = C →mono D
-  _→mono-pw_ C D ._≈_ f g = Pointwise ∣ C ∣ (D ._≈_) ⟦ f ⟧ ⟦ g ⟧
-  _→mono-pw_ C D ._≤_ f g = Pointwise ∣ C ∣ (D ._≤_) ⟦ f ⟧ ⟦ g ⟧
-  _→mono-pw_ C D .isPartialOrder = FunBinR.→mono-isPartialOrder C D
-
-  open IsPartialOrder using (isPreorder)
-  open IsPreorder using (isEquivalence)
-  Pred⊆-poset : (D : Setoid) → Poset
-  Pred⊆-poset D .Carrier = Pred D
-  Pred⊆-poset D ._≈_ P Q = P ≐ Q
-  Pred⊆-poset D ._≤_ = _⊆_
-  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.refl = id , id
-  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.sym (⊆ , ⊇) = (⊇ , ⊆)
-  Pred⊆-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.trans (⊆₁ , ⊇₁) (⊆₂ , ⊇₂) = (⊆₂ ∘ ⊆₁) , (⊇₁ ∘ ⊇₂)
-  Pred⊆-poset D .isPartialOrder .isPreorder .IsPreorder.reflexive = proj₁
-  Pred⊆-poset D .isPartialOrder .isPreorder .IsPreorder.trans ⊆₁ ⊆₂ = ⊆₂ ∘ ⊆₁
-  Pred⊆-poset D .isPartialOrder .IsPartialOrder.antisym ⊆ ⊇ = ⊆ , ⊇
-
-  Pred≐-setoid : (D : Setoid) → Setoid
-  Pred≐-setoid D = PosetPoly.Eq.setoid (Pred⊆-poset D)
-
-  Pred→Prop : (D : Setoid) → Pred D → Set
-  Pred→Prop D P = ∀ d → d ∈ P
-
-  Pred⊆-→mono-Prop→ : (D : Setoid) → Pred⊆-poset D →mono Prop→-poset
-  Pred⊆-→mono-Prop→ D = mkMono (Pred⊆-poset D) Prop→-poset (Pred→Prop D)
-    (λ {P} {Q} P⊆Q ∀d→d∈P d → P⊆Q (∀d→d∈P d))
-
-module _ (D⨆ E⨆ : SLat) where
-  private
-    module D = SLat D⨆
-    module E = SLat E⨆
-    D≤ = D.poset
-    E≤ = E.poset
-    D≈ = D.Eq.setoid
-    E≈ = E.Eq.setoid
-    D = ∣ D⨆ ∣
-    E = ∣ E⨆ ∣
-    𝒫⊆ = Pred⊆-poset (D≈ ×-setoid E≈)
-
-  module _ (X : Poset) (F : 𝒫⊆ →mono X) (G : X →mono 𝒫⊆) (F⊣G : F ⊣ G) where
 
 module _ (D⨆ E⨆ : SLat) where
 

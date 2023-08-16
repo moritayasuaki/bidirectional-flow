@@ -45,7 +45,7 @@ module _ where
       D = ∣ D⨆ ∣
       module D = SLat D⨆
 
-    mono→tbt-conn : (P : Pred (C≈ ×-setoid D≈)) → IsMonotoneRelation C⨆ D⨆ P → IsTiltBowTieConnecting C⨆ D⨆ P
+    mono→tbt-conn : (P : Pred (C≈ ×-setoid D≈)) → IsMonotoneRelation C⨆ D⨆ P → IsTiltedBowTieConnecting C⨆ D⨆ P
     mono→tbt-conn P P-mono c d c₀ d₀ d₁ tbt@(c₀≤c , d₀≤d , d≤d₁ , c₀d₁∈P , cd₀∈P)
       = cd∈P
       where
@@ -174,7 +174,6 @@ module _ (C⨆ D⨆ : SLat) where
       cd₁∈Q = Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈Q c₁d₁∈Q c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
       in
       (cd₁∈P , cd₁∈Q)
-
 
 module _ (C⨆ D⨆ E⨆ : SLat) where
   private
