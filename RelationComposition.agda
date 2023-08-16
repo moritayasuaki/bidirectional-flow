@@ -28,12 +28,13 @@ open import Algebra
 open import Data.Wrap
 open import Data.List
 open import Data.List.Relation.Unary.All
-
+open import Relation.Binary.Consequences using (mono⇒cong)
 open import Base
 open import Bidirection
 
 module _ where
   module _ (C⨆ D⨆ : SLat) where
+
     private
       C≤ = SLat.poset C⨆
       C≈ = SLat.Eq.setoid C⨆
@@ -56,6 +57,39 @@ module _ where
       d₀≈d = D.Po.antisym d₀≤d d≤d₀
       cd∈P : (c , d) ∈ P
       cd∈P = P .Pred.isWellDefined (C.Eq.refl , d₀≈d) cd₀∈P
+
+    private
+      module Lens = PosetPoly (Lens C⨆ D⨆)
+
+    module _ where
+      open GaloisConnection (F₀⊣G₀ C⨆ D⨆)
+      ⨆closed-mono→∈preG₀F₀ : ∀ (P : Pred (C≈ ×-setoid D≈))
+        → Is⨆Closed (C⨆ ×-slat D⨆) P × IsMonotoneRelation C⨆ D⨆ P
+        → P ∈ preRL
+      ⨆closed-mono→∈preG₀F₀ P (P-⨆closed , P-mono) = preG₀F₀-characterization C⨆ D⨆ P .proj₂ (mono→tbt-conn P P-mono , P-⨆closed)
+
+      image-of-⨆closed-mono→∈postF₀G₀ : ∀ (f : ∣ Lens C⨆ D⨆ ∣)
+        → (Σ P ∶ Pred (C≈ ×-setoid D≈) , f Lens.≈ ⟦ F₀ C⨆ D⨆ ⟧ P × Is⨆Closed (C⨆ ×-slat D⨆) P × IsMonotoneRelation C⨆ D⨆ P )
+        → f ∈ postLR
+      image-of-⨆closed-mono→∈postF₀G₀ f (P , f≈F₀P , P-⨆closed-mono) = f∈postF₀G₀
+        where
+        f∈fixF₀G₀ : f Lens.≈ ⟦ F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆ ⟧ f
+        f∈fixF₀G₀ = 
+          let open SetoidReasoning (PosetPoly.Eq.setoid (Lens C⨆ D⨆)) in
+          begin
+          f ≈⟨  f≈F₀P ⟩
+          ⟦ F₀ C⨆ D⨆ ⟧ P  ≈˘⟨ LRL≈L P ⟩
+          ⟦ F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆ ∘-mono F₀ C⨆ D⨆ ⟧ P ≈˘⟨ (F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆) .Mono.cong {f} {⟦ F₀ C⨆ D⨆ ⟧ P} f≈F₀P ⟩
+          ⟦ F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆ ⟧ f ∎
+
+        f∈postF₀G₀ : f Lens.≤ ⟦ F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆ ⟧ f
+        f∈postF₀G₀ = Lens.reflexive {f} {⟦ F₀ C⨆ D⨆ ∘-mono G₀ C⨆ D⨆ ⟧ f} f∈fixF₀G₀
+
+      mono-explicit : ∀ (f : ∣ Lens C⨆ D⨆ ∣)
+        → let (f⃖ , f⃗) = f
+        in IsMonotoneRelation C⨆ D⨆ (⟦ G₀ C⨆ D⨆ ⟧ f)
+        ↔ (∀ c₀ c₁ d₀ d₁ → c₀ C.≤ ⟦ f⃖ ⟧ (c₀ , d₀) × d₀ D.≤ ⟦ f⃗ ⟧ c₀ → c₁ C.≤ ⟦ f⃖ ⟧ (c₁ , d₁) × d₁ D.≤ ⟦ f⃗ ⟧ c₁ → c₀ C.≤ c₁ → d₀ D.≤ d₁)
+      mono-explicit f = (id , id)
 
     mono×sqfill→bt-conn : (P : Pred (C≈ ×-setoid D≈))
       → IsMonotoneRelation C⨆ D⨆ P
@@ -92,6 +126,9 @@ module _ (C⨆ D⨆ : SLat) where
     D≤ = SLat.poset D⨆
     D≈ = SLat.Eq.setoid D⨆
     D = ∣ D⨆ ∣
+    module D = SLat D⨆
+
+    open SLat (C⨆ ×-slat D⨆)
 
   monotone-∩closed
     : (P : Pred (C≈ ×-setoid D≈)) → IsMonotoneRelation C⨆ D⨆ P
@@ -104,27 +141,40 @@ module _ (C⨆ D⨆ : SLat) where
     P∩Q-mono c₀ c₁ d₀ d₁ c₀d₀∈P∩Q@(c₀d₀∈P , c₀d₀∈Q) c₁d₁∈P∩Q@(c₁d₁∈P , c₁d₁∈Q) c₀≤c₁
       = P-mono c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁
 
-  squarefilling-∩closed
-    : (P : Pred (C≈ ×-setoid D≈)) → IsSquareFilling C⨆ D⨆ P
-    → (Q : Pred (C≈ ×-setoid D≈)) → IsSquareFilling C⨆ D⨆ Q
-    → IsSquareFilling C⨆ D⨆ (P ∩ Q)
-  squarefilling-∩closed P P-sqfill Q Q-sqfill
+  squarefillingdown-∩closed
+    : (P : Pred (C≈ ×-setoid D≈)) → IsSquareFillingDown C⨆ D⨆ P
+    → (Q : Pred (C≈ ×-setoid D≈)) → IsSquareFillingDown C⨆ D⨆ Q
+    → IsSquareFillingDown C⨆ D⨆ (P ∩ Q)
+  squarefillingdown-∩closed P P-sqfill Q Q-sqfill
     = P∩Q-sqfill
     where
-    P∩Q-sqfill : IsSquareFilling C⨆ D⨆ (P ∩ Q)
-    P∩Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P∩Q@(c₀d₀∈P , c₀d₀∈Q) c₁d₁∈P∩Q@(c₁d₁∈P , c₁d₁∈Q) c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
-      = let
-      (d , d₀≤d , d≤d₁ , cd∈P)  = P-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
-      (d' , d₀≤d' , d'≤d₁ , cd'∈Q)  = Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈Q c₁d₁∈Q c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
+    P∩Q-sqfill : IsSquareFillingDown C⨆ D⨆ (P ∩ Q)
+    P∩Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P∩Q@(c₀d₀∈P , c₀d₀∈Q) c₁d₁∈P∩Q@(c₁d₁∈P , c₁d₁∈Q) c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁ =
+      let
+      cd₀∈P : (c , d₀) ∈ P
+      cd₀∈P = P-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
+      cd₀∈Q : (c , d₀) ∈ Q
+      cd₀∈Q = Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈Q c₁d₁∈Q c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
       in
-      {!       !}
-    {-
-    We need to show something like (c , d ⊓ d') ∈ P∩Q
-    But I can't prove. It seems that monotonity does not helps.
-    Maybe we need some continuity here?
-    There is some discussion on MathOverflow about a notion of `continuous relation'
-        https://mathoverflow.net/questions/179123/continuous-relations
-    -}
+      (cd₀∈P , cd₀∈Q)
+
+  squarefillingup-∩closed
+    : (P : Pred (C≈ ×-setoid D≈)) → IsSquareFillingUp C⨆ D⨆ P
+    → (Q : Pred (C≈ ×-setoid D≈)) → IsSquareFillingUp C⨆ D⨆ Q
+    → IsSquareFillingUp C⨆ D⨆ (P ∩ Q)
+  squarefillingup-∩closed P P-sqfill Q Q-sqfill
+    = P∩Q-sqfill
+    where
+    P∩Q-sqfill : IsSquareFillingUp C⨆ D⨆ (P ∩ Q)
+    P∩Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P∩Q@(c₀d₀∈P , c₀d₀∈Q) c₁d₁∈P∩Q@(c₁d₁∈P , c₁d₁∈Q) c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁ =
+      let
+      cd₁∈P : (c , d₁) ∈ P
+      cd₁∈P = P-sqfill c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
+      cd₁∈Q : (c , d₁) ∈ Q
+      cd₁∈Q = Q-sqfill c₀ c₁ d₀ d₁ c₀d₀∈Q c₁d₁∈Q c₀≤c₁ d₀≤d₁ c c₀≤c c≤c₁
+      in
+      (cd₁∈P , cd₁∈Q)
+
 
 module _ (C⨆ D⨆ E⨆ : SLat) where
   private

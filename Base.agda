@@ -231,6 +231,10 @@ module _ {X≈ : Setoid} where
   Pred.⟦ ∅ ⟧ = UniR.∅
   Pred.isWellDefined ∅ _ ()
 
+  singleton : X → Pred X≈
+  Pred.⟦ singleton x ⟧ y = x ≈ y
+  singleton x .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
+
   ｛_｝ : X → Pred X≈
   Pred.⟦  ｛ x ｝ ⟧ y = x ≈ y
   ｛ x ｝ .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
@@ -289,14 +293,34 @@ module _ {X≈ : Setoid} where
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₁ x∈P) = inj₁ (P .Pred.isWellDefined x≈y x∈P)
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₂ x∈Q) = inj₂ (Q .Pred.isWellDefined x≈y x∈Q)
 
+
+  doubleton : X → X → Pred X≈
+  doubleton x y = singleton x ∩ singleton y
+
   ｛_،_｝ : X → X → Pred X≈
   ｛ x ، y ｝ = ｛ x ｝ ∪ ｛ y ｝
+
+  ∪-mono-l : (P Q S : Pred X≈) → P ⊆ Q → (P ∪ S) ⊆ (Q ∪ S)
+  ∪-mono-l P Q S P⊆Q (inj₁ x∈P) = inj₁ (P⊆Q x∈P)
+  ∪-mono-l P Q S P⊆Q (inj₂ x∈S) = inj₂ x∈S
+
+  ∪-mono-r : (P Q S : Pred X≈) → P ⊆ Q → (S ∪ P) ⊆ (S ∪ Q)
+  ∪-mono-r P Q S P⊆Q (inj₁ x∈S) = inj₁ x∈S
+  ∪-mono-r P Q S P⊆Q (inj₂ x∈P) = inj₂ (P⊆Q x∈P)
 
   ∪-⊆-l : (S T : Pred X≈) → S ⊆ (S ∪ T)
   ∪-⊆-l S T x∈S = (inj₁ x∈S)
 
   ∪-⊆-r : (S T : Pred X≈) → T ⊆ (S ∪ T)
   ∪-⊆-r S T x∈T = (inj₂ x∈T)
+
+  ∪-∅-runit : (P : Pred X≈) → (P ∪ ∅) ≐ P
+  ∪-∅-runit P .proj₁ (inj₁ x∈P) = x∈P
+  ∪-∅-runit P .proj₂ x∈P = inj₁ x∈P
+
+  singleton-belongs : ∀ x (S : Pred X≈) → ｛ x ｝ ⊆ S ↔ x ∈ S
+  singleton-belongs x S .proj₁ [x]⊆S = [x]⊆S {x} refl
+  singleton-belongs x S .proj₂ x∈S x≈y = S .Pred.isWellDefined x≈y x∈S
 
   listToPred : List X → Pred X≈
   listToPred [] = ∅
@@ -639,7 +663,7 @@ record SLat : Set where
   ubs = upperbounds poset
 
   lbs : Pred Eq.setoid → Pred Eq.setoid
-  lbs = upperbounds poset
+  lbs = lowerbounds poset
 
   ↓! : Carrier → Pred Eq.setoid
   ↓! = principal-downset poset
@@ -735,7 +759,6 @@ record SLat : Set where
 
   ≤⨆↔≤ubs : ∀ x S → x ≤ ⨆ S ↔ (∀ u → u ∈ ubs S → x ≤ u)
   ≤⨆↔≤ubs x S = (≤⨆→≤ubs x S , ≤⨆←≤ubs x S)
-
 
   ≤→⊔-≈ : ∀ x y → x ≤ y → (x ⊔ y) ≈ y
   ≤→⊔-≈ x y x≤y = Po.antisym (⊔-least x y y x≤y Po.refl) (⊔-ub-r x y)
@@ -872,6 +895,7 @@ record SLat : Set where
 
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
+
 
   μ : (Eq.setoid →cong Eq.setoid) → Carrier
   μ f = ⨅ (pre poset f)
@@ -1082,8 +1106,6 @@ module _ where
       RLR≤R = R∈preRL d
       RLR≥R : ⟦ R ⟧ d C.≤ (⟦ R ⟧ ∘ ⟦ L ⟧ ∘ ⟦ R ⟧) d
       RLR≥R = η (⟦ R ⟧ d)
-
-
 
   _⊣_ : {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) → Set _
   L ⊣ R = GaloisConnection L R
