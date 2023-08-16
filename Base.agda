@@ -76,6 +76,7 @@ module _ where
   _→cong_ = BinRMorph.SetoidHomomorphism
   _→mono_ = BinRMorph.PosetHomomorphism
 
+
 record HasBracket (A : Set) (B : Set) : Set where
   field
     ⟦_⟧ : A → B
@@ -159,6 +160,23 @@ module _ where
     (D ×-poset E) ._≈_ = Componentwise (D ._≈_) (E ._≈_)
     (D ×-poset E) ._≤_ = Componentwise (D ._≤_) (E ._≤_)
     (D ×-poset E) .isPartialOrder = ×-isPartialOrder (D .isPartialOrder) (E .isPartialOrder)
+
+swap-cong : {D≈ E≈ : Setoid} → (D≈ ×-setoid E≈) →cong (E≈ ×-setoid D≈)
+Cong.⟦ swap-cong ⟧ = Product.swap
+swap-cong .Cong.isCongruent .IsCong.cong = Product.swap
+
+flip-cong : {D≈ E≈ C≈ : Setoid} → (D≈ ×-setoid E≈) →cong C≈ → (E≈ ×-setoid D≈) →cong C≈
+flip-cong f = f ∘-cong swap-cong
+
+curry-cong : {D≈ E≈ C≈ : Setoid} → (D≈ ×-setoid E≈) →cong C≈ → ∣ D≈ ∣ → E≈ →cong C≈
+curry-cong {D≈} {E≈} {C≈} f d = partially-applied
+  where
+  partially-applied : E≈ →cong C≈
+  Cong.⟦ partially-applied ⟧ = curry ⟦ f ⟧ d
+  partially-applied .Cong.isCongruent .IsCong.cong e≈e' = f .Cong.cong ((SetoidPoly.refl D≈) , e≈e')
+
+curry-flip-cong : {D≈ E≈ C≈ : Setoid} → (D≈ ×-setoid E≈) →cong C≈ → ∣ E≈ ∣ → (D≈ →cong C≈)
+curry-flip-cong f≈ = curry-cong (flip-cong f≈)
 
 Rel : Set → Set
 Rel X = RelPoly X lzero
@@ -1118,10 +1136,18 @@ module _ where
       e-upper : (e' : E .Carrier) → e' ∈ (R ∣₂) → E ._≤_ e' e
       e-upper e' (d' , de'∈R) = p-upper (d' , e') de'∈R .proj₂
 
+
 module _ (D⨆ : SLat) (E⨆ : SLat) where
   private
     module D = SLat D⨆
+    D≤ = D.poset
+    D≈ = D.Eq.setoid
+    D = D.Carrier
     module E = SLat E⨆
+    E≤ = E.poset
+    E≈ = E.Eq.setoid
+    E = E.Carrier
+
   open SLat (D⨆ ×-slat E⨆)
 
   ⊔-componentwise : ∀ d e d' e' → ((d , e) ⊔ (d' , e')) ≈ (d D.⊔ d' , e E.⊔ e')
@@ -1131,6 +1157,33 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
          ; p (inj₂ d'e'≈p) → Po.trans (Po.reflexive (Eq.sym d'e'≈p)) (D.⊔-ub-r d d' , E.⊔-ub-r e e')})
     ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
     , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
+
+  νproj₁ : (D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈) → (D≈ →cong D≈)
+  νproj₁ f = proj₁≈ _ _ ∘-cong (curry-flip-cong f (ν f .proj₂))
+
+  νproj₂ : (D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈) → (E≈ →cong E≈)
+  νproj₂ f = proj₂≈ _ _ ∘-cong (curry-cong f (ν f .proj₁))
+
+  νproj₁-≈ : (f≤ : (D≤ ×-poset E≤) →mono (D≤ ×-poset E≤)) → D.ν (νproj₁ ⟦ f≤ ⟧cong) D.≈ ν ⟦ f≤ ⟧cong .proj₁
+  νproj₁-≈ f≤ = D.⨆-cong (post D.poset (νproj₁ ⟦ f≤ ⟧cong)) (post poset ⟦ f≤ ⟧cong ∣₁) (P $- , Q $-) -- (P , Q)
+    where
+    P :  ∀ d → d D.≤ ⟦ νproj₁ ⟦ f≤ ⟧cong ⟧ d  → Σ e ∶ E , (d , e) ≤ ⟦ f≤ ⟧ (d , e)
+    P d d≤νproj₁fd = (e* , (d≤νproj₁fd , P'))
+      where
+      e* = ν ⟦ f≤ ⟧cong .proj₂
+      Q' : ∀ e → (Σ d ∶ D , (d , e) ≤ ⟦ f≤ ⟧ (d , e)) → e E.≤ proj₂ (⟦ f≤ ⟧ (⨆ (post≤ ⟦ f≤ ⟧cong)))
+      Q' e (d , de≤fde) = E.Po.trans (proj₂ de≤fde) (proj₂-mono D≤ E≤ .IsMono.mono (f≤ .Mono.mono {!!}))
+      G' : ∀ u → u ∈ (post≤ ⟦ f≤ ⟧cong ∣₁) → u D.≤ d
+      G' u x = {!d≤νproj₁fd!}
+      P' : E.⨆ ((post≤ ⟦ f≤ ⟧cong) ∣₂) E.≤ proj₂ (⟦ f≤ ⟧ (d , E.⨆ ((post≤ ⟦ f≤ ⟧cong) ∣₂)))
+      P' = let open PosetReasoning E.poset in
+        begin
+        E.⨆ (post≤ ⟦ f≤ ⟧cong ∣₂) ≤⟨ E.⨆-least (post≤ ⟦ f≤ ⟧cong ∣₂) (proj₂ (⟦ f≤ ⟧ (⨆ (post≤ ⟦ f≤ ⟧cong)))) Q' ⟩
+        proj₂ (⟦ f≤ ⟧ (⨆ (post≤ ⟦ f≤ ⟧cong))) ≤⟨ proj₂-mono D≤ E≤ .IsMono.mono (f≤ .Mono.mono (D.⨆-least (post≤ ⟦ f≤ ⟧cong ∣₁) d G'  , E.Po.refl)) ⟩
+        proj₂ (⟦ f≤ ⟧ (d , E.⨆ ((post≤ ⟦ f≤ ⟧cong) ∣₂))) ∎
+
+    Q : ∀ d → Σ e ∶ E , (d , e) ≤ ⟦ f≤ ⟧ (d , e) → d D.≤ ⟦ νproj₁ ⟦ f≤ ⟧cong ⟧ d
+    Q d (e , de≤fde) = D.Po.trans (proj₁ de≤fde) (proj₁-mono D≤ E≤ .IsMono.mono (f≤ .Mono.mono (D.Po.refl , (E.Po.trans (proj₂ de≤fde) (E.⨆-ub (post poset ⟦ f≤ ⟧cong ∣₂) (proj₂ (⟦ f≤ ⟧ (d , e))) (⟦ f≤ ⟧ (d , e) .proj₁ , f≤ .Mono.mono de≤fde))))))
 
 IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
 IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
@@ -1393,8 +1446,6 @@ module _ {C : Poset} {D : Poset} {E : Poset} {L : C →mono D} {R : D →mono C}
     ⟦ R ∘-mono L ⟧ c ≤⟨ R .Mono.mono (η β (⟦ L ⟧ c)) ⟩
     ⟦ (R ∘-mono R') ∘-mono L' ∘-mono L ⟧ c ≤⟨ RR'L'Lc≤c ⟩
     c ∎
-
-
 
 
 module _ (D⨆ E⨆ : SLat) where
