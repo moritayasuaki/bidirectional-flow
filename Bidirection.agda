@@ -4,8 +4,8 @@ module Bidirection where
 
 open import Agda.Primitive hiding (Prop) renaming (lzero to lzero ; _⊔_ to lmax ; Set to Set ; Setω to Setω) public
 open import Algebra as Algebra
-open import Data.Unit as Unit hiding (⊤)
-open import Data.Empty as Empty hiding (⊥)
+import Data.Unit as Unit
+import Data.Empty as Empty
 open import Data.Sum as Sum
 open import Data.Sum.Properties as SumProps
 import Data.Product as Product
@@ -30,9 +30,8 @@ open import Data.List
 open import Data.List.Relation.Unary.All
 open import Base
 
-
 -- First abstraction
-module 𝒫⊆-and-Endo (C⨆ : SLat) where
+module Powerset⊆-and-Endo (C⨆ : SLat) where
 
   private
     C≤ = SLat.poset C⨆
@@ -40,18 +39,18 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     C = ∣ C⨆ ∣
     module C = SLat C⨆
 
-  𝒫⊆ = Pred⊆-poset C≈
+  Powerset⊆ = Pred⊆-poset C≈
   Endo = C≤ →mono-pw C≤
   open SLat C⨆
 
 
   -- This module gives an adjoint poset map between binary relations and endo monotone functions on product
-  --     (𝒫 (D × E) , ⊆)
+  --     (Powerset (D × E) , ⊆)
   --        F ↓! ⊣ ↑! G
   --  ((D × E →m D × E) , ≤)
   --
   -- This is followed by adjoint poset map between subsets and endo monotone functions (general setting)
-  --    (𝒫 (C) , ⊆)
+  --    (Powerset (C) , ⊆)
   --     F ↓! ⊣ ↑! G
   --   ((C →m C) , ≤)
 
@@ -74,8 +73,8 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   G-pred : (C≤ →mono C≤) → Pred C≈
   G-pred f = post C≤ ⟦ f ⟧cong
 
-  F : 𝒫⊆ →mono Endo
-  F = mkMono 𝒫⊆ Endo F-mono
+  F : Powerset⊆ →mono Endo
+  F = mkMono Powerset⊆ Endo F-mono
     (λ {P} {Q} P⊆Q d → ⨆-mono (↓! d ∩ P) (↓! d ∩ Q)
              (∩-mono-r P Q (↓! d) P⊆Q))
 
@@ -83,8 +82,8 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   G-mono {f} {g} f≤g {c} c≤fc =
     C.Po.trans c≤fc (f≤g c)
 
-  G : Endo →mono 𝒫⊆
-  G = mkMono Endo 𝒫⊆ G-pred (λ {f} {g} → G-mono {f} {g})
+  G : Endo →mono Powerset⊆
+  G = mkMono Endo Powerset⊆ G-pred (λ {f} {g} → G-mono {f} {g})
 
   F⊣G : F ⊣ G
   F⊣G .GaloisConnection.ψ P f .proj₁ FP≤f {d} d∈P = Po.trans (⨆-ub (↓! d ∩ P) d (Po.refl , d∈P)) (FP≤f d)
@@ -188,12 +187,14 @@ module _ (D⨆ E⨆ : SLat) where
 
     module D = SLat D⨆
     module E = SLat E⨆
+
+  Relation = Pred (D≈ ×-setoid E≈)
   open SLat (D⨆ ×-slat E⨆)
-  open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
+  open Powerset⊆-and-Endo (D⨆ ×-slat E⨆)
 
   module _ where
     open GaloisConnection
-    preGF-explicit : (R : Pred (D≈ ×-setoid E≈)) → R ∈ preRL F⊣G ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preGF-explicit : (R : Relation) → R ∈ preRL F⊣G ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
     preGF-explicit R =
       let open SetoidReasoning (Prop↔-setoid) in
       begin
@@ -201,30 +202,30 @@ module _ (D⨆ E⨆ : SLat) where
       (G-raw ∘ F-raw) R UniR.⊆ Pred.⟦ R ⟧                                                                        ≈⟨ λ- , _$- ⟩
       (((d , e) : D × E) → d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁) × (e E.≤ E.⨆ ((↓! (d , e) ∩ R) ∣₂)) → (d , e) ∈ R) ∎
 
-    preGF→⊔closed : (R : Pred (D≈ ×-setoid E≈))
+    preGF→⊔closed : (R : Relation)
                   → (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , e) ∩ R) ∣₂)) → (d , e) ∈ R)
                   → (((d , e) : D × E) ((d₀ , e₀) : D × E) → (d₀ , e₀) ≤ (d , e) → (d₀ , e) ∈ R × (d , e₀) ∈ R → (d , e) ∈ R)
     preGF→⊔closed R ≤⨆↓!∩→∈ (d , e) (d₀ , e₀) (d₀≤d , e₀≤e) (d₀e∈R , de₀∈R) = ≤⨆↓!∩→∈ (d , e)
       ( D.⨆-ub ((↓! (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
       , E.⨆-ub ((↓! (d , e) ∩ R) ∣₂) e (d₀ , (d₀≤d , E.Po.refl) , d₀e∈R))
 
-  IsMonotoneRelation : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsMonotoneRelation : (R : Relation) → Set
   IsMonotoneRelation R = ∀ d₀ d₁ e₀ e₁
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d₁ → e₀ E.≤ e₁
 
-  IsSquareFilling : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsSquareFilling : (R : Relation) → Set
   IsSquareFilling R = ∀ d₀ d₁ e₀ e₁
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R
     → d₀ D.≤ d₁ → e₀ E.≤ e₁
     → ∀ d → d₀ D.≤ d → d D.≤ d₁ → Σ e ∶ E , e₀ E.≤ e × e E.≤ e₁ × (d , e) ∈ R
 
-  IsSquareFillingDown : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsSquareFillingDown : (R : Relation) → Set
   IsSquareFillingDown R = ∀ d₀ d₁ e₀ e₁
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R
     → d₀ D.≤ d₁ → e₀ E.≤ e₁
     → ∀ d → d₀ D.≤ d → d D.≤ d₁ → (d , e₀) ∈ R
 
-  IsSquareFillingUp : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsSquareFillingUp : (R : Relation) → Set
   IsSquareFillingUp R = ∀ d₀ d₁ e₀ e₁
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R
     → d₀ D.≤ d₁ → e₀ E.≤ e₁
@@ -278,37 +279,37 @@ module _ (D⨆ E⨆ : SLat) where
 
   -- The Galois connection between relations and lenses
 
-  F₀ : 𝒫⊆ →mono (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤))
+  F₀ : Powerset⊆ →mono (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤))
   F₀ = H₀ ∘-mono F
 
-  G₀ : (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤)) →mono 𝒫⊆
+  G₀ : (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤)) →mono Powerset⊆
   G₀ = G ∘-mono I₀
 
   F₀⊣G₀ : F₀ ⊣ G₀
   F₀⊣G₀ = F⊣G ∘-galois H₀⊣I₀
 
-  IsTiltedBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (e₁ : E) → Set
+  IsTiltedBowTie : (R : Relation) → (d : D) (e : E) (d₀ : D) (e₀ : E) (e₁ : E) → Set
   IsTiltedBowTie R d e d₀ e₀ e₁ = (d₀ D.≤ d) × (e₀ E.≤ e) × (e E.≤ e₁) × (d₀ , e₁) ∈ R × (d , e₀) ∈ R
 
-  tiltedbowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsTiltedBowTie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
+  tiltedbowtie→≤⨆ : (R : Relation) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ e₁ ∶ E , IsTiltedBowTie R d e d₀ e₀ e₁ → d D.≤ (D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
   tiltedbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R) =
     ( D.⨆-ub ((↓! (d , e) ∩ R) ∣₁) d (e₀ , (D.Po.refl , e₀≤e) , de₀∈R)
     , E.Po.trans e≤e₁ (E.⨆-ub ((↓! (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
 
-  IsTiltedBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsTiltedBowTieConnecting : (R : Relation) → Set
   IsTiltedBowTieConnecting R = (∀ d e d₀ e₀ e₁ → IsTiltedBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
 
   -- the property TiltBowtieConecting is not closed under ⋈ but by adding an extra condition
   -- it becomes closed under ⋈ (TODO: proof)
-  Is⋈FriendlyTiltedBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  Is⋈FriendlyTiltedBowTieConnecting : (R : Relation) → Set
   Is⋈FriendlyTiltedBowTieConnecting R = IsTiltedBowTieConnecting R × IsMonotoneRelation R
 
   module _ where
     open GaloisConnection
-    preG₀F₀-explicit : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
+    preG₀F₀-explicit : (R : Relation) → (R ∈ preRL F₀⊣G₀) ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (d , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₀F₀-explicit R = (λ- , _$-)
 
-    preG₀F₀-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₀⊣G₀) ↔ IsTiltedBowTieConnecting R × Is⨆Closed (D⨆ ×-slat E⨆) R
+    preG₀F₀-characterization : (R : Relation) → (R ∈ preRL F₀⊣G₀) ↔ IsTiltedBowTieConnecting R × Is⨆Closed (D⨆ ×-slat E⨆) R
     preG₀F₀-characterization R = (α , α⁻¹)
      where
      α₁ : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsTiltedBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
@@ -489,28 +490,28 @@ module _ (D⨆ E⨆ : SLat) where
 
   -- The Galois connection between relations and bidirectional functions
 
-  F₁ : 𝒫⊆ →mono Bidir
+  F₁ : Powerset⊆ →mono Bidir
   F₁ = H₁ ∘-mono F₀
 
-  G₁ : Bidir →mono 𝒫⊆
+  G₁ : Bidir →mono Powerset⊆
   G₁ = G₀ ∘-mono I₁
 
   F₁⊣G₁ : F₁ ⊣ G₁
   F₁⊣G₁ = F₀⊣G₀ ∘-galois H₁⊣I₁
 
-  IsBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
+  IsBowTie : (R : Relation) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
   IsBowTie R d e d₀ e₀ d₁ e₁ = d₀ D.≤ d × e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
 
-  IsBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsBowTieConnecting : (R : Relation) → Set
   IsBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
   -- the property BowtieConecting is not closed under ⋈ but by adding monotonicity and square filling property
   -- it becomes closed under ⋈ (TODO: proof)
   -- This class seems quite narrow (possibly it only carries information as much as the unidirectional case does)
-  Is⋈FriendlyBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  Is⋈FriendlyBowTieConnecting : (R : Relation) → Set
   Is⋈FriendlyBowTieConnecting R = IsTiltedBowTieConnecting R × IsMonotoneRelation R × IsSquareFilling R
 
-  bowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
+  bowtie→≤⨆ : (R : Relation) → ∀ d e → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsBowTie R d e d₀ e₀ d₁ e₁ → d D.≤ (D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁)) × e E.≤ (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
   bowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) =
     ( D.Po.trans d≤d₁ (D.⨆-ub ((↓! (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , (D.⊤-max _ , e₀≤e) , d₁e₀∈R))
     , E.Po.trans e≤e₁ (E.⨆-ub ((↓! (d , E.⊤) ∩ R) ∣₂) e₁ (d₀ , (d₀≤d , E.⊤-max _) , d₀e₁∈R)))
@@ -518,12 +519,12 @@ module _ (D⨆ E⨆ : SLat) where
 
   module _ where
     open GaloisConnection
-    preG₁F₁-explicit : (R : Pred (D≈ ×-setoid E≈))
+    preG₁F₁-explicit : (R : Relation)
       → (R ∈ preRL F₁⊣G₁)
       ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₁F₁-explicit R = (λ- , _$-)
 
-    preG₁F₁-characterization : (R : Pred (D≈ ×-setoid E≈)) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₁F₁-characterization : (R : Relation) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
     preG₁F₁-characterization R = (α , α⁻¹)
       where
       α₁ : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
@@ -593,34 +594,34 @@ module _ (D⨆ E⨆ : SLat) where
 
   -- The Galois connection between relations and backward functions with forward constants
 
-  F₂ : 𝒫⊆ →mono BackConst
+  F₂ : Powerset⊆ →mono BackConst
   F₂ = H₂ ∘-mono F₁
 
-  G₂ : BackConst →mono 𝒫⊆
+  G₂ : BackConst →mono Powerset⊆
   G₂ = G₁ ∘-mono I₂
 
   F₂⊣G₂ : F₂ ⊣ G₂
   F₂⊣G₂ = F₁⊣G₁ ∘-galois H₂⊣I₂
 
-  IsLooseBowTie : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
+  IsLooseBowTie : (R : Relation) → (d : D) (e : E) (d₀ : D) (e₀ : E) (d₁ : D) (e₁ : E) → Set
   IsLooseBowTie R d e d₀ e₀ d₁ e₁ = e₀ E.≤ e × d D.≤ d₁ × e E.≤ e₁ × (d₀ , e₁) ∈ R × (d₁ , e₀) ∈ R
 
-  IsLooseBowTieConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsLooseBowTieConnecting : (R : Relation) → Set
   IsLooseBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
-  IsFanOut : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (e₀ : E) (e₁ : E) → Set
+  IsFanOut : (R : Relation) → (d : D) (e : E) (e₀ : E) (e₁ : E) → Set
   IsFanOut R d e e₀ e₁ = e₀ E.≤ e × e E.≤ e₁ × (d , e₁) ∈ R × (d , e₀) ∈ R
 
-  IsFanOutConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsFanOutConnecting : (R : Relation) → Set
   IsFanOutConnecting R = ∀ d e e₀ e₁ → IsFanOut R d e e₀ e₁ → (d , e) ∈ R
 
-  IsLowerIn : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (d₁ : D) → Set
+  IsLowerIn : (R : Relation) → (d : D) (e : E) (d₁ : D) → Set
   IsLowerIn R d e d₁ = d D.≤ d₁ × (d₁ , e) ∈ R
 
-  IsLowerInConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsLowerInConnecting : (R : Relation) → Set
   IsLowerInConnecting R = ∀ d e d₁ → IsLowerIn R d e d₁ → (d , e) ∈ R
 
-  ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting : (R : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsLooseBowTieConnecting R ↔ IsFanOutConnecting R × IsLowerInConnecting R
+  ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting : (R : Relation) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsLooseBowTieConnecting R ↔ IsFanOutConnecting R × IsLowerInConnecting R
   ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₁ φ .proj₁ d e e₀ e₁ (e₀≤e , e≤e₁ , de₁∈R , de₀∈R) = φ d e d e₀ d e₁ (e₀≤e , D.Po.refl , e≤e₁ , de₁∈R , de₀∈R)
   ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₁ φ .proj₂ d e d₁ (d≤d₁ , d₁e∈R) = φ d e d₁ e d₁ e (E.Po.refl , d≤d₁ , E.Po.refl , d₁e∈R , d₁e∈R)
   ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting R R-⨆closed .proj₂ (α , β) d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)
@@ -652,7 +653,7 @@ module _ (D⨆ E⨆ : SLat) where
     de∈R : (d , e) ∈ R
     de∈R = α d e e₀ e₁ (e₀≤e , e≤e₁ , de₁∈R , de₀∈R)
 
-  loosebowtie→≤⨆ : (R : Pred (D≈ ×-setoid E≈))
+  loosebowtie→≤⨆ : (R : Relation)
     → ∀ d e
     → Σ d₀ ∶ D , Σ e₀ ∶ E , Σ d₁ ∶ D , Σ e₁ ∶ E , IsLooseBowTie R d e d₀ e₀ d₁ e₁
     → d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓! (D.⊤ , E.⊤) ∩ R) ∣₂)
@@ -662,12 +663,12 @@ module _ (D⨆ E⨆ : SLat) where
 
   module _ where
     open GaloisConnection
-    preG₂F₂-explicit : (R : Pred (D≈ ×-setoid E≈))
+    preG₂F₂-explicit : (R : Relation)
       → (R ∈ preRL F₂⊣G₂)
       ↔ (((d , e) : D × E) →  d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⨆ ((↓! (D.⊤ , E.⊤) ∩ R) ∣₂) → (d , e) ∈ R)
     preG₂F₂-explicit R = (λ- , _$-)
 
-    preG₂F₂-characterization : (R : Pred (D≈ ×-setoid E≈))
+    preG₂F₂-characterization : (R : Relation)
       → (R ∈ preRL F₂⊣G₂)
       ↔ ((∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R))
     preG₂F₂-characterization R = (α , α⁻¹)
@@ -727,34 +728,34 @@ module _ (D⨆ E⨆ : SLat) where
   H₃⊣I₃ .GaloisConnection.ψ f⃖ᶜ f⃖ .proj₂ f⃖ᶜ≤I₃f⃖ e = f⃖ᶜ≤I₃f⃖ .proj₁ e
 
   -- The Galois connection between relations and backward functions
-  F₃ : 𝒫⊆ →mono Back
+  F₃ : Powerset⊆ →mono Back
   F₃ = H₃ ∘-mono F₂
 
-  G₃ : Back →mono 𝒫⊆
+  G₃ : Back →mono Powerset⊆
   G₃ = G₂ ∘-mono I₃
 
   F₃⊣G₃ : F₃ ⊣ G₃
   F₃⊣G₃ = F₂⊣G₂ ∘-galois H₃⊣I₃
 
-  IsSlope : (R : Pred (D≈ ×-setoid E≈)) → (d : D) (e : E) (e₀ : E) (d₁ : D) → Set
+  IsSlope : (R : Relation) → (d : D) (e : E) (e₀ : E) (d₁ : D) → Set
   IsSlope R d e e₀ d₁ = e₀ E.≤ e × d D.≤ d₁ × (d₁ , e₀) ∈ R
 
-  IsSlopeConnecting : (R : Pred (D≈ ×-setoid E≈)) → Set
+  IsSlopeConnecting : (R : Relation) → Set
   IsSlopeConnecting R = ∀ d e e₀ d₁ → IsSlope R d e e₀ d₁ → (d , e) ∈ R
 
-  slope→≤⨆ : (R : Pred (D≈ ×-setoid E≈)) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsSlope R d e e₀ d₁) → d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
+  slope→≤⨆ : (R : Relation) → ∀ d e → (Σ e₀ ∶ E , Σ d₁ ∶ D , IsSlope R d e e₀ d₁) → d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤
   slope→≤⨆ R d e (e₀ , d₁ , e₀≤e , d≤d₁ , d₁e₀∈R) =
     ( D.Po.trans d≤d₁ (D.⨆-ub ((↓! (D.⊤ , e) ∩ R) ∣₁) d₁ (e₀ , ((D.⊤-max d₁ , e₀≤e) , d₁e₀∈R)))
     , E.⊤-max e)
 
   module _ where
     open GaloisConnection
-    preG₃F₃-explicit : (R : Pred (D≈ ×-setoid E≈))
+    preG₃F₃-explicit : (R : Relation)
       → (R ∈ preRL F₃⊣G₃)
       ↔ (((d , e) : D × E) → d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁) × e E.≤ E.⊤ → (d , e) ∈ R)
     preG₃F₃-explicit R = (λ- , _$-)
 
-    preG₃F₃-characterization : (R : Pred (D≈ ×-setoid E≈))
+    preG₃F₃-characterization : (R : Relation)
       → (R ∈ preRL F₃⊣G₃)
       ↔ (∀ d e e₀ d₁ → IsSlope R d e e₀ d₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
     preG₃F₃-characterization R = (α , α⁻¹)
@@ -809,9 +810,9 @@ module _
   -- General results about ∩ and its lift along with any ⊣
 
   private
-    𝒫⊆ = Pred⊆-poset C≈
+    Powerset⊆ = Pred⊆-poset C≈
 
-  module _ {D≤ : Poset} {L : 𝒫⊆ →mono D≤} {R : D≤ →mono 𝒫⊆} (L⊣R : L ⊣ R) where
+  module _ {D≤ : Poset} {L : Powerset⊆ →mono D≤} {R : D≤ →mono Powerset⊆} (L⊣R : L ⊣ R) where
     private
       open PosetPoly D≤
       D≈ = PosetPoly.Eq.setoid D≤
@@ -820,11 +821,11 @@ module _
       _[∩]_ = liftOpAlong⊣ L⊣R _∩_
       open GaloisConnection L⊣R
 
-    -- Any right adjoint functor to 𝒫⊆ is lax monoidal wrt [∩]
+    -- Any right adjoint functor to Powerset⊆ is lax monoidal wrt [∩]
     [∩]-∩-right-adjoint-lax-monoidal : IsLaxMonoidal R _[∩]_ _∩_
     [∩]-∩-right-adjoint-lax-monoidal a b = η (⟦ R ⟧ a ∩ ⟦ R ⟧ b)
 
-    -- Any left adjoint functor from 𝒫⊆ is oplax monoidal wrt ∩
+    -- Any left adjoint functor from Powerset⊆ is oplax monoidal wrt ∩
     ∩-[∩]-left-adjoint-oplax-monoidal : IsOplaxMonoidal L _∩_ _[∩]_
     ∩-[∩]-left-adjoint-oplax-monoidal S S' = L .Mono.mono ((∩-mono S (⟦ R ⟧ (⟦ L ⟧ S)) S' (⟦ R ⟧ (⟦ L ⟧ S')) (η S) (η S')))
 
@@ -907,28 +908,28 @@ module _
   module _ (∣_∣Ix : Index → Setoid) where
     -- general results about ⋈ and ⊣
     private
-      𝒫⊆ : Index → Index → Poset
-      𝒫⊆ C D = Pred⊆-poset (∣ C ∣Ix ×-setoid ∣ D ∣Ix)
+      Powerset⊆ : Index → Index → Poset
+      Powerset⊆ C D = Pred⊆-poset (∣ C ∣Ix ×-setoid ∣ D ∣Ix)
 
 
     module _ (P≤ : Index → Index → Poset)
-      {L : (C D : Index) → 𝒫⊆ C D →mono P≤ C D}
-      {R : (C D : Index) → P≤ C D →mono 𝒫⊆ C D}
+      {L : (C D : Index) → Powerset⊆ C D →mono P≤ C D}
+      {R : (C D : Index) → P≤ C D →mono Powerset⊆ C D}
       (L⊣R : (C D : Index) → L C D ⊣ R C D) where
 
       private module _ (C D : Index) where
         open GaloisConnection (L⊣R C D) public
 
-      module _ (C D E : Index) (let _[⋈]_ = indexedLiftOpAlong⊣ 𝒫⊆ P≤ L⊣R C D E _⋈_)  where
+      module _ (C D E : Index) (let _[⋈]_ = indexedLiftOpAlong⊣ Powerset⊆ P≤ L⊣R C D E _⋈_)  where
         private
           C≈ = ∣ C ∣Ix
           D≈ = ∣ D ∣Ix
           E≈ = ∣ E ∣Ix
 
-        [⋈]-⋈-right-adjoint-lax-monoidal : IsIndexedLaxMonoidal P≤ 𝒫⊆ R C D E _[⋈]_ _⋈_
+        [⋈]-⋈-right-adjoint-lax-monoidal : IsIndexedLaxMonoidal P≤ Powerset⊆ R C D E _[⋈]_ _⋈_
         [⋈]-⋈-right-adjoint-lax-monoidal a b = η C E (⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b)
 
-        ⋈-[⋈]-left-adjoint-oplax-monoidal : IsIndexedOplaxMonoidal 𝒫⊆ P≤  L C D E _⋈_ _[⋈]_
+        ⋈-[⋈]-left-adjoint-oplax-monoidal : IsIndexedOplaxMonoidal Powerset⊆ P≤  L C D E _⋈_ _[⋈]_
         ⋈-[⋈]-left-adjoint-oplax-monoidal S S' = L C E .Mono.mono (⋈-mono S (⟦ R C D ∘-mono L C D ⟧ S) S' (⟦ (R D E ∘-mono L D E) ⟧ S') (η C D S) (η D E S'))
 
         PreRL⋈Closed = ((S : Pred (C≈ ×-setoid D≈)) (S' : Pred (D≈ ×-setoid E≈)) → S ∈ preRL C D → S' ∈ preRL D E → (S ⋈ S') ∈ preRL C E)
@@ -942,7 +943,7 @@ module _
           in
           preRL⊆imageR _ _ Ra⋈Rb∈preRL
 
-        ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal : ⋈∈ImageR → IsIndexedOplaxMonoidal P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_
+        ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal : ⋈∈ImageR → IsIndexedOplaxMonoidal P≤ Powerset⊆  R C D E _[⋈]_ _⋈_
         ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal ⋈∈imageR a b =
             let
             (c , Rc≐Ra⋈Rb) = ⋈∈imageR a b
@@ -957,20 +958,20 @@ module _
             ⟦ R C E ⟧ c                                           ≈⟨ Rc≐Ra⋈Rb ⟩
             ⟦ R C D ⟧ a ⋈ ⟦ R D E ⟧ b                            ∎
 
-        preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal : PreRL⋈Closed → IsIndexedOplaxMonoidal P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_
+        preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal : PreRL⋈Closed → IsIndexedOplaxMonoidal P≤ Powerset⊆  R C D E _[⋈]_ _⋈_
         preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal
           = ⋈∈imageR→[⋈]-⋈-right-adjoint-oplax-monoidal
           ∘ preRL-⋈closed→⋈∈imageR
 
-      module _ (C D E : Index) (let _[⋈]_ = indexedLiftOpAlong⊣ 𝒫⊆ P≤ L⊣R C D E _⋈_)  where
+      module _ (C D E : Index) (let _[⋈]_ = indexedLiftOpAlong⊣ Powerset⊆ P≤ L⊣R C D E _⋈_)  where
         private
           C≈ = ∣ C ∣Ix
           D≈ = ∣ D ∣Ix
           E≈ = ∣ E ∣Ix
 
-        [⋈]-⋈-right-adjoint-oplax-monoidal→monoidal : IsIndexedOplaxMonoidal P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_ → IsIndexedMonoidal  P≤ 𝒫⊆  R C D E _[⋈]_ _⋈_
+        [⋈]-⋈-right-adjoint-oplax-monoidal→monoidal : IsIndexedOplaxMonoidal P≤ Powerset⊆  R C D E _[⋈]_ _⋈_ → IsIndexedMonoidal  P≤ Powerset⊆  R C D E _[⋈]_ _⋈_
         [⋈]-⋈-right-adjoint-oplax-monoidal→monoidal oplax =
-           indexed-lax∧oplax→monoidal P≤ 𝒫⊆ R C D E _[⋈]_ _⋈_ ([⋈]-⋈-right-adjoint-lax-monoidal C D E) oplax
+           indexed-lax∧oplax→monoidal P≤ Powerset⊆ R C D E _[⋈]_ _⋈_ ([⋈]-⋈-right-adjoint-lax-monoidal C D E) oplax
 
 module CheckOplaxMonoidalityForIntersection where
   -- Here we check the oplax-monoidality of G G₀ G₁ G₂ G₃, wrt ∩ and [∩], ⋈ and [⋈]
@@ -982,7 +983,7 @@ module CheckOplaxMonoidalityForIntersection where
       C≈ = SLat.Eq.setoid C⨆
       C = ∣ C⨆ ∣
       open SLat C⨆
-      open 𝒫⊆-and-Endo C⨆
+      open Powerset⊆-and-Endo C⨆
       open GaloisConnection F⊣G
       -- naive operation for nondeterministic choice
       _[∩]_ : Op₂ ∣ Endo ∣
@@ -1050,7 +1051,7 @@ module CheckOplaxMonoidalityForIntersection where
 
       [⊓]-∩-oplax-monoidal : IsOplaxMonoidal G _[⊓]_ _∩_
       [⊓]-∩-oplax-monoidal f g =
-        let open PosetReasoning 𝒫⊆ in
+        let open PosetReasoning Powerset⊆ in
         begin
         ⟦ G ⟧ (f [⊓] g) ≤⟨ (λ {x} → φ x) ⟩
         (⟦ G ⟧ f ∩ ⟦ G ⟧ g ) ∎
@@ -1069,7 +1070,7 @@ module CheckOplaxMonoidalityForIntersection where
 
       [⊓]-∩-lax-monoidal : IsLaxMonoidal G _[⊓]_ _∩_
       [⊓]-∩-lax-monoidal f g =
-        let open PosetReasoning 𝒫⊆ in
+        let open PosetReasoning Powerset⊆ in
         begin
         (⟦ G ⟧ f ∩ ⟦ G ⟧ g) ≈˘⟨ [∩]-∩-monoidal f g  ⟩
         ⟦ G ⟧ (f [∩] g) ≤⟨ G .Mono.mono {f[∩]g} {f⊓g} ([∩]≤[⊓] f g) ⟩
@@ -1104,18 +1105,18 @@ module CheckOplaxMonoidalityForIntersection where
       E = ∣ E⨆ ∣
       module E = SLat E⨆
 
-      open 𝒫⊆-and-Endo (D⨆ ×-slat E⨆)
+      open Powerset⊆-and-Endo (D⨆ ×-slat E⨆)
 
     module F₀⊣G₀ where
       private
         _[∩]_ = liftOpAlong⊣ (F₀⊣G₀ D⨆ E⨆) _∩_
         open GaloisConnection (F₀⊣G₀ D⨆ E⨆)
-      ∩-tiltedbowtieconnecting : (R R' : Pred (D≈ ×-setoid E≈))
+      ∩-tiltedbowtieconnecting : (R R' : Relation D⨆ E⨆)
         → IsTiltedBowTieConnecting D⨆ E⨆ R → IsTiltedBowTieConnecting D⨆ E⨆ R' → IsTiltedBowTieConnecting D⨆ E⨆ (R ∩ R')
       ∩-tiltedbowtieconnecting R R' R-closed R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (de₀∈R , de₀∈R'))
         = (R-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R)) , R'-closed d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R' , de₀∈R')
 
-      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed : (R R' : Relation D⨆ E⨆) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
       ∩-preRL-closed R R' R∈preRL R'∈preRL =
         preG₀F₀-characterization D⨆ E⨆ (R ∩ R') .proj₂
           ( ∩-tiltedbowtieconnecting R R'
@@ -1135,12 +1136,12 @@ module CheckOplaxMonoidalityForIntersection where
       private
         _[∩]_ = liftOpAlong⊣ (F₁⊣G₁ D⨆ E⨆) _∩_
         open GaloisConnection (F₁⊣G₁ D⨆ E⨆)
-      ∩-bowtieconnecting : (R R' : Pred (D≈ ×-setoid E≈))
+      ∩-bowtieconnecting : (R R' : Relation D⨆ E⨆)
         → IsBowTieConnecting D⨆ E⨆ R → IsBowTieConnecting D⨆ E⨆ R' → IsBowTieConnecting D⨆ E⨆ (R ∩ R')
       ∩-bowtieconnecting R R' R-connecting R'-connecting d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (d₁e₀∈R , d₁e₀∈R'))
         = (R-connecting d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R)) , R'-connecting d e d₀ e₀ d₁ e₁ (d₀≤d , e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R' , d₁e₀∈R')
 
-      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed : (R R' : Relation D⨆ E⨆) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
       ∩-preRL-closed R R' R∈preRL R'∈preRL =
         preG₁F₁-characterization D⨆ E⨆ (R ∩ R') .proj₂
           ( ∩-bowtieconnecting R R'
@@ -1160,12 +1161,12 @@ module CheckOplaxMonoidalityForIntersection where
       private
         _[∩]_ = liftOpAlong⊣ (F₂⊣G₂ D⨆ E⨆) _∩_
         open GaloisConnection (F₂⊣G₂ D⨆ E⨆)
-      ∩-loosebowtieconnecting : (R R' : Pred (D≈ ×-setoid E≈))
+      ∩-loosebowtieconnecting : (R R' : Relation D⨆ E⨆)
         → IsLooseBowTieConnecting D⨆ E⨆ R → IsLooseBowTieConnecting D⨆ E⨆ R' → IsLooseBowTieConnecting D⨆ E⨆ (R ∩ R')
       ∩-loosebowtieconnecting R R' R-connecting R'-connecting d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , (d₀e₁∈R , d₀e₁∈R') , (d₁e₀∈R , d₁e₀∈R'))
         = (R-connecting d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R , d₁e₀∈R) ,  R'-connecting d e d₀ e₀ d₁ e₁ (e₀≤e , d≤d₁ , e≤e₁ , d₀e₁∈R' , d₁e₀∈R'))
 
-      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed : (R R' : Relation D⨆ E⨆) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
       ∩-preRL-closed R R' R∈preRL R'∈preRL =
         preG₂F₂-characterization D⨆ E⨆ (R ∩ R') .proj₂
           ( ∩-loosebowtieconnecting R R'
@@ -1185,12 +1186,12 @@ module CheckOplaxMonoidalityForIntersection where
       private
         _[∩]_ = liftOpAlong⊣ (F₃⊣G₃ D⨆ E⨆) _∩_
         open GaloisConnection (F₃⊣G₃ D⨆ E⨆)
-      ∩-slopeconnecting : (R R' : Pred (D≈ ×-setoid E≈))
+      ∩-slopeconnecting : (R R' : Relation D⨆ E⨆)
         → IsSlopeConnecting D⨆ E⨆ R → IsSlopeConnecting D⨆ E⨆ R' → IsSlopeConnecting D⨆ E⨆ (R ∩ R')
       ∩-slopeconnecting R R' R-connecting R'-connecting d e e₀ d₁ (e₀≤e , d≤d₁ , (d₁e₀∈R , d₁e₀∈R'))
         = (R-connecting d e e₀ d₁ (e₀≤e , d≤d₁ , d₁e₀∈R) ,  R'-connecting d e e₀ d₁ (e₀≤e , d≤d₁ , d₁e₀∈R'))
 
-      ∩-preRL-closed : (R R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
+      ∩-preRL-closed : (R R' : Relation D⨆ E⨆) → R ∈ preRL → R' ∈ preRL → (R ∩ R') ∈ preRL
       ∩-preRL-closed R R' R∈preRL R'∈preRL =
         preG₃F₃-characterization D⨆ E⨆ (R ∩ R') .proj₂
           ( ∩-slopeconnecting R R'
@@ -1210,14 +1211,14 @@ module CheckOplaxMonoidalityForIntersection where
 module CheckOplaxMonoidalityForComposition where
   private
     module _ (C⨆ D⨆ : SLat) where
-      open 𝒫⊆-and-Endo (C⨆ ×-slat D⨆) public
+      open Powerset⊆-and-Endo (C⨆ ×-slat D⨆) public
 
   module F⊣G where
     private
       module _ (C⨆ D⨆ : SLat) where
         open GaloisConnection (F⊣G C⨆ D⨆) public
 
-    module _ (C⨆ D⨆ E⨆ : SLat) (let _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ Endo F⊣G C⨆ D⨆ E⨆ _⋈_) where
+    module _ (C⨆ D⨆ E⨆ : SLat) (let _[⋈]_ = indexedLiftOpAlong⊣ SLat Powerset⊆ Endo F⊣G C⨆ D⨆ E⨆ _⋈_) where
       private
         C≤ = SLat.poset C⨆
         C≈ = SLat.Eq.setoid C⨆
@@ -1232,7 +1233,7 @@ module CheckOplaxMonoidalityForComposition where
         E = ∣ E⨆ ∣
         module E = SLat E⨆
 
-      ⋈-⨆closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → Is⨆Closed (C⨆ ×-slat D⨆) R → Is⨆Closed (D⨆ ×-slat E⨆) R' → Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
+      ⋈-⨆closed : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆) → Is⨆Closed (C⨆ ×-slat D⨆) R → Is⨆Closed (D⨆ ×-slat E⨆) R' → Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
       ⋈-⨆closed R R' R-⨆closed R'-⨆closed S S⊆R⋈R' = (⨆T₂ , [⨆S₁,⨆T₂]∈R , [⨆T₂,⨆S₂]∈R')
         where
 
@@ -1266,10 +1267,10 @@ module CheckOplaxMonoidalityForComposition where
           (d , c , ce∈S , cde∈T)
         S₂≐T₃ .proj₂ (d , c , ce∈S , cde∈T) = (c , ce∈S)
 
-        T₁₂ : Pred (C≈ ×-setoid D≈)
+        T₁₂ : Relation C⨆ D⨆
         T₁₂ = (Pred-assoc-rl T) ∣₁
 
-        T₂₃ : Pred (D≈ ×-setoid E≈)
+        T₂₃ : Relation D⨆ E⨆
         T₂₃ = T ∣₂
 
         [T₁₂]₁≐T₁ : (T₁₂ ∣₁) ≐ T₁
@@ -1336,14 +1337,14 @@ module CheckOplaxMonoidalityForComposition where
           [⨆T₂,⨆S₂]∈R' : (⨆T₂ , ⨆S₂) ∈ R'
           [⨆T₂,⨆S₂]∈R' = R' .Pred.isWellDefined (D.Eq.refl , E.Eq.sym ⨆S₂≈⨆T₃) [⨆T₂,⨆T₃]∈R'
 
-      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
       ⋈-preRL-closed R R' R∈preGF R'∈preGF =
         preGF-characterization C⨆ E⨆ (R ⋈ R') .proj₂
           (⋈-⨆closed R R'
             (preGF-characterization C⨆ D⨆ R .proj₁ R∈preGF)
             (preGF-characterization D⨆ E⨆ R' .proj₁ R'∈preGF))
 
-      [⋈]-⋈-oplax-monoidal : IsIndexedOplaxMonoidal SLat Endo 𝒫⊆ G C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal : IsIndexedOplaxMonoidal SLat Endo Powerset⊆ G C⨆ D⨆ E⨆ _[⋈]_ _⋈_
       [⋈]-⋈-oplax-monoidal = preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid Endo F⊣G C⨆ D⨆ E⨆ ⋈-preRL-closed
 
       -- TODO: show cheaper (efficient) version of oplax-monoidal operation
@@ -1386,7 +1387,7 @@ module CheckOplaxMonoidalityForComposition where
         open GaloisConnection (F₂⊣G₂ C⨆ D⨆) public
     module _ (C⨆ D⨆ E⨆ : SLat) where
       private
-        _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ _ F₂⊣G₂ C⨆ D⨆ E⨆ _⋈_
+        _[⋈]_ = indexedLiftOpAlong⊣ SLat Powerset⊆ _ F₂⊣G₂ C⨆ D⨆ E⨆ _⋈_
         C≤ = SLat.poset C⨆
         C≈ = SLat.Eq.setoid C⨆
         C = ∣ C⨆ ∣
@@ -1400,7 +1401,7 @@ module CheckOplaxMonoidalityForComposition where
         E = ∣ E⨆ ∣
         module E = SLat E⨆
 
-      ⋈-⨆closed×loosebowtieconnecting : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈))
+      ⋈-⨆closed×loosebowtieconnecting : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆)
         → IsLooseBowTieConnecting C⨆ D⨆ R × Is⨆Closed (C⨆ ×-slat D⨆) R
         → IsLooseBowTieConnecting D⨆ E⨆ R' × Is⨆Closed (D⨆ ×-slat E⨆) R'
         → IsLooseBowTieConnecting C⨆ E⨆ (R ⋈ R') × Is⨆Closed (C⨆ ×-slat E⨆) (R ⋈ R')
@@ -1453,17 +1454,17 @@ module CheckOplaxMonoidalityForComposition where
 
         R⋈R'-loosebowtieconnecting = ⨆closed→loosebowtieconnecting↔fanoutconnecting×lowerinconnecting C⨆ E⨆ (R ⋈ R') R⋈R'-⨆closed .proj₂ (R⋈R'-fanoutconnecting , R⋈R'-lowerinconnecting)
 
-      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
       ⋈-preRL-closed R R' R∈preRL R'∈preRL =
         preG₂F₂-characterization C⨆ E⨆ (R ⋈ R') .proj₂
           (⋈-⨆closed×loosebowtieconnecting R R'
             (preG₂F₂-characterization C⨆ D⨆ R .proj₁ R∈preRL)
             (preG₂F₂-characterization D⨆ E⨆ R' .proj₁ R'∈preRL))
 
-      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat BackConst 𝒫⊆ G₂ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat BackConst Powerset⊆ G₂ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
       [⋈]-⋈-oplax-monoidal = preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid BackConst F₂⊣G₂ C⨆ D⨆ E⨆ ⋈-preRL-closed
 
-      [⋈]-⋈-monoidal :  IsIndexedMonoidal SLat BackConst 𝒫⊆ G₂ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-monoidal :  IsIndexedMonoidal SLat BackConst Powerset⊆ G₂ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
       [⋈]-⋈-monoidal =  [⋈]-⋈-right-adjoint-oplax-monoidal→monoidal SLat SLat.Eq.setoid BackConst F₂⊣G₂ C⨆ D⨆ E⨆ [⋈]-⋈-oplax-monoidal
 
   module F₃⊣G₃ where
@@ -1472,7 +1473,7 @@ module CheckOplaxMonoidalityForComposition where
         open GaloisConnection (F₃⊣G₃ C⨆ D⨆) public
     module _ (C⨆ D⨆ E⨆ : SLat) where
       private
-        _[⋈]_ = indexedLiftOpAlong⊣ SLat 𝒫⊆ _ F₃⊣G₃ C⨆ D⨆ E⨆ _⋈_
+        _[⋈]_ = indexedLiftOpAlong⊣ SLat Powerset⊆ _ F₃⊣G₃ C⨆ D⨆ E⨆ _⋈_
         C≤ = SLat.poset C⨆
         C≈ = SLat.Eq.setoid C⨆
         C = ∣ C⨆ ∣
@@ -1486,11 +1487,11 @@ module CheckOplaxMonoidalityForComposition where
         E = ∣ E⨆ ∣
         module E = SLat E⨆
 
-      ⋈-slopeconnecting : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → IsSlopeConnecting C⨆ D⨆ R → IsSlopeConnecting D⨆ E⨆ R' → IsSlopeConnecting C⨆ E⨆ (R ⋈ R')
+      ⋈-slopeconnecting : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆) → IsSlopeConnecting C⨆ D⨆ R → IsSlopeConnecting D⨆ E⨆ R' → IsSlopeConnecting C⨆ E⨆ (R ⋈ R')
       ⋈-slopeconnecting R R' R-tiltclosed  R'-tiltclosed c e e₀ c₁ (e₀≤e , c≤c₁ , (d , c₁d∈R , de₀∈R)) =
         (d , R-tiltclosed c d d c₁ (D.Po.refl , c≤c₁ , c₁d∈R) , R'-tiltclosed d e e₀ d (e₀≤e , D.Po.refl , de₀∈R))
 
-      ⋈-preRL-closed : (R : Pred (C≈ ×-setoid D≈)) (R' : Pred (D≈ ×-setoid E≈)) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
+      ⋈-preRL-closed : (R : Relation C⨆ D⨆) (R' : Relation D⨆ E⨆) → R ∈ preRL C⨆ D⨆ → R' ∈ preRL D⨆ E⨆ → (R ⋈ R') ∈ preRL C⨆ E⨆
       ⋈-preRL-closed R R' R∈preRL R'∈preRL =
         preG₃F₃-characterization C⨆ E⨆ (R ⋈ R') .proj₂
           ( ⋈-slopeconnecting R R'
@@ -1500,8 +1501,8 @@ module CheckOplaxMonoidalityForComposition where
             (preG₃F₃-characterization C⨆ D⨆ R .proj₁ R∈preRL .proj₂)
             (preG₃F₃-characterization D⨆ E⨆ R' .proj₁ R'∈preRL .proj₂))
 
-      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat Back 𝒫⊆ G₃ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-oplax-monoidal :  IsIndexedOplaxMonoidal SLat Back Powerset⊆ G₃ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
       [⋈]-⋈-oplax-monoidal = preRL-⋈closed→[⋈]-⋈-right-adjoint-oplax-monoidal SLat SLat.Eq.setoid Back F₃⊣G₃ C⨆ D⨆ E⨆ ⋈-preRL-closed
 
-      [⋈]-⋈-monoidal :  IsIndexedMonoidal SLat Back 𝒫⊆ G₃ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
+      [⋈]-⋈-monoidal :  IsIndexedMonoidal SLat Back Powerset⊆ G₃ C⨆ D⨆ E⨆ _[⋈]_ _⋈_
       [⋈]-⋈-monoidal =  [⋈]-⋈-right-adjoint-oplax-monoidal→monoidal SLat SLat.Eq.setoid Back F₃⊣G₃ C⨆ D⨆ E⨆ [⋈]-⋈-oplax-monoidal

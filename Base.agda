@@ -4,8 +4,8 @@ module Base where
 
 open import Agda.Primitive hiding (Prop) renaming (lzero to lzero ; _⊔_ to lmax ; Set to Set ; Setω to Setω) public
 open import Algebra as Algebra
-open import Data.Unit as Unit hiding (⊤)
-open import Data.Empty as Empty hiding (⊥)
+import Data.Unit as Unit
+import Data.Empty as Empty
 open import Data.Sum as Sum
 open import Data.Sum.Properties as SumProps
 import Data.Product as Product
@@ -144,23 +144,23 @@ _×-↔_ : {A B C D : Set} → (A ↔ B) → (C ↔ D) → (A × C) ↔ (B × D)
 ∀↔→Σ↔ p = ((λ (x , fx) → x , p x .proj₁ fx) , (λ (x , gx) → x , p x .proj₂ gx))
 
 module _ where
-  open ProductBinR
+  -- open ProductBinR
   module _ where
     open SetoidPoly
 
     _×-setoid_ : (D : Setoid) (E : Setoid) → Setoid
     (D ×-setoid E) .Carrier = ∣ D ∣ × ∣ E ∣
-    (D ×-setoid E) ._≈_ = Componentwise (D ._≈_) (E ._≈_)
-    (D ×-setoid E) .isEquivalence = ×-isEquivalence (D .isEquivalence) (E .isEquivalence)
+    (D ×-setoid E) ._≈_ = ProductBinR.Componentwise (D ._≈_) (E ._≈_)
+    (D ×-setoid E) .isEquivalence = ProductBinR.×-isEquivalence (D .isEquivalence) (E .isEquivalence)
 
   module _ where
     open PosetPoly
 
     _×-poset_ : (D : Poset) (E : Poset) → Poset
     (D ×-poset E) .Carrier = ∣ D ∣ × ∣ E ∣
-    (D ×-poset E) ._≈_ = Componentwise (D ._≈_) (E ._≈_)
-    (D ×-poset E) ._≤_ = Componentwise (D ._≤_) (E ._≤_)
-    (D ×-poset E) .isPartialOrder = ×-isPartialOrder (D .isPartialOrder) (E .isPartialOrder)
+    (D ×-poset E) ._≈_ = ProductBinR.Componentwise (D ._≈_) (E ._≈_)
+    (D ×-poset E) ._≤_ = ProductBinR.Componentwise (D ._≤_) (E ._≤_)
+    (D ×-poset E) .isPartialOrder = ProductBinR.×-isPartialOrder (D .isPartialOrder) (E .isPartialOrder)
 
 swap-cong : {D≈ E≈ : Setoid} → (D≈ ×-setoid E≈) →cong (E≈ ×-setoid D≈)
 Cong.⟦ swap-cong ⟧ = Product.swap
@@ -310,7 +310,7 @@ module _ {X≈ : Setoid} where
   U-max _ _ = _
 
   _≐_ : Pred X≈ → Pred X≈ → Set
-  P ≐ Q = ⟦ P ⟧ UniR.≐ ⟦ Q ⟧
+  P ≐ Q = ⟦ P ⟧ UniR.⊆ ⟦ Q ⟧ × ⟦ Q ⟧ UniR.⊆ ⟦ P ⟧
 
   ∀↔→≐ : {P Q : Pred X≈} → ((x : X) → x ∈ P ↔ x ∈ Q) → P ≐ Q
   ∀↔→≐ φ = ((λ {x} → φ x .proj₁) , (λ {x} → φ x .proj₂))
@@ -873,10 +873,10 @@ record SLat : Set where
   ⊤ = ⨆ U
 
   ⊤-max : Maximum _≤_ ⊤
-  ⊤-max x = ⨆-ub U x tt
+  ⊤-max x = ⨆-ub U x _
 
   ⊤≈⨆U : ⊤ ≈ ⨆ U
-  ⊤≈⨆U = Po.antisym (⨆-ub U _ tt ) (⊤-max (⨆ U))
+  ⊤≈⨆U = Po.antisym (⨆-ub U _ _ ) (⊤-max (⨆ U))
 
   ⨆≤→∀≤ : ∀ S x → ⨆ S ≤ x → ∀ x' → x' ∈ S → x' ≤ x
   ⨆≤→∀≤ S x ⨆S≤x x' x'∈S = Po.trans (⨆-ub _ _ x'∈S) ⨆S≤x
@@ -997,19 +997,6 @@ record SLat : Set where
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
 
-  ub-post→≤ν↔∈post : ∀ (f≈ : Eq.setoid →cong Eq.setoid) (c : Carrier) → ⟦ f≈ ⟧ c ∈ ubs (post≤ f≈) → c ≤ ν f≈ ↔ c ∈ post≤ f≈
-  ub-post→≤ν↔∈post f≈ c fc∈ubpostf =
-    let open SetoidReasoning (Prop↔-setoid) in
-    begin
-    (c ≤ ν f≈)                            ≈⟨  ≤⨆↔≤ubs c (post≤ f≈)  ⟩
-    (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) ≈⟨ Y , P ⟩
-    (c ≤ ⟦ f≈ ⟧ c)                       ∎
-    where
-    Y : (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) → c ≤ ⟦ f≈ ⟧ c
-    Y c-lb-of-ubs = c-lb-of-ubs (⟦ f≈ ⟧ c) fc∈ubpostf
-    P : (c ≤ ⟦ f≈ ⟧ c) → ∀ u → u ∈ ubs (post≤ f≈) → c ≤ u
-    P c∈postf u u-ub = u-ub c c∈postf
-
   μ : (Eq.setoid →cong Eq.setoid) → Carrier
   μ f = ⨅ (pre poset f)
 
@@ -1026,10 +1013,31 @@ record SLat : Set where
   IsScottOpen : (S : Pred Eq.setoid) → Set
   IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred xs ⊆ T × ⨆ (listToPred xs) ∈ S)
 
-
 instance
   slat-has-carrier : HasCarrier (SLat)
   slat-has-carrier .HasCarrier.Carrier = SLat.Carrier
+
+module _ (C⨆ : SLat) where
+  open SLat C⨆
+  private
+    C = Carrier
+    C≈ = Eq.setoid
+    C≤ = poset
+
+  module _ (f≈ : C≈ →cong C≈) (c : C) where
+    private
+      f = ⟦ f≈ ⟧
+      c* = ν f≈
+
+    ∈post→≤ν : c ∈ post≤ f≈ → c ≤ c*
+    ∈post→≤ν c-post-f = ⨆-ub (post≤ f≈) c c-post-f
+
+    module _ (fc-ub-of-post-f : ∀ x → x ≤ f x → x ≤ f c) where
+      app-ub-of-post∧≤ν→∈post : c ≤ c* → c ∈ post≤ f≈
+      app-ub-of-post∧≤ν→∈post c≤νf = Po.trans c≤νf (⨆-least (post≤ f≈) (f c) fc-ub-of-post-f)
+
+      app-ub-of-post→≤ν↔∈post : c ≤ c* ↔ c ∈ post≤ f≈
+      app-ub-of-post→≤ν↔∈post = ( app-ub-of-post∧≤ν→∈post , ∈post→≤ν)
 
 module _ (D⨆ E⨆ : SLat) where
   private
@@ -1166,51 +1174,77 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
   Cong.⟦ endo-proj₁-cong f≈ ⟧ = endo-proj₁ f≈
   endo-proj₁-cong f≈ .Cong.isCongruent .IsCong.cong {d} {d'} d≈d' = proj₁ (f≈ .Cong.cong (d≈d' , E.Eq.refl))
 
+  endo-proj₂ : ((D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈)) → E → E
+  endo-proj₂ f≈ e = proj₂ (⟦ f≈ ⟧ (proj₁ (ν f≈) , e))
+
+  endo-proj₂-cong : ((D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈)) → E≈ →cong E≈
+  Cong.⟦ endo-proj₂-cong f≈ ⟧ = endo-proj₂ f≈
+  endo-proj₂-cong f≈ .Cong.isCongruent .IsCong.cong {e} {e'} e≈e' = proj₂ (f≈ .Cong.cong (D.Eq.refl , e≈e'))
+
   module _ (f≤ : (D≤ ×-poset E≤) →mono (D≤ ×-poset E≤)) where
     private
       f≈ = ⟦ f≤ ⟧cong
       f = ⟦ f≤ ⟧
 
-      f∣₁≈ : {!D≈ →cong D≈!}
+      f∣₁≈ : D≈ →cong D≈
       f∣₁≈ = endo-proj₁-cong ⟦ f≤ ⟧cong
+
+      f∣₁ : D → D
+      f∣₁ = ⟦ f∣₁≈ ⟧
+
+      f∣₂≈ : E≈ →cong E≈
+      f∣₂≈ = endo-proj₂-cong ⟦ f≤ ⟧cong
+
+      f∣₂ : E → E
+      f∣₂ = ⟦ f∣₂≈ ⟧
 
       p* : D × E
       p* = ν f≈
 
       d* : D
-      d* = proj₁ p*
+      d* = D.ν f∣₁≈
 
       e* : E
-      e* = proj₂ p*
+      e* = E.ν f∣₂≈
 
-      d** : D
-      d** = D.ν f∣₁≈
+    --
+    proj₁ν≤νproj₁ : proj₁ p* D.≤ d*
+    proj₁ν≤νproj₁ = D.ν-ubfp f∣₁≈ (proj₁ p*) (proj₁ (ν-fp f≤))
 
-    proj₁ν≤νproj₁ : proj₁ (ν f≈) D.≤ D.ν (endo-proj₁-cong f≈)
-    proj₁ν≤νproj₁ = D.ν-ubfp (endo-proj₁-cong f≈) (proj₁ (ν f≈)) (proj₁ (ν-fp f≤))
+{-
+    ≤νproj₁→≤proj₁ν : d* D.≤ proj₁ p*
+    ≤νproj₁→≤proj₁ν = D.⨆-least (D.post≤ f∣₁≈) (proj₁ p*) λ d d≤proj₁[fd[proj₂-p*]] → proj₁ (⨆-ub (post≤ f≈) (d , _) ({!!} , {!!}))
+-}
+{-
+    module _ (d : D) (d D.≤ d*where
+      d D.≤ proj₁ (f (d , proj₂ p*)) → d D.≤ proj₁ p*
 
     ub-post→≤ν↔∈post-proj₁ : (d : D) →
-      {! proj₁ (f (d , proj₂ (ν f≈))) ∈ D.ubs (post≤ f≈ ∣₁)!} → d D.≤ d* ↔ d D.≤ proj₁ (f (d , e*))
-    ub-post→≤ν↔∈post-proj₁ d f'd∈ubs-post-f' =
+       {!!} → d D.≤ (proj₁ p*) ↔ d D.≤ proj₁ (f (d , proj₂ p*))
+    ub-post→≤ν↔∈post-proj₁ d hoge =
       let open SetoidReasoning Prop↔-setoid in
       begin
+      (d D.≤ proj₁ p*) ≡⟨⟩
       (d D.≤ proj₁ (ν f≈)) ≈⟨ D.≤⨆↔≤ubs d (post poset f≈ ∣₁) ⟩
-      (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) ≈⟨ Y , P ⟩
-      (d D.≤ proj₁ (f (d , e*))) ∎
+      (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) ≈⟨ d-is-lb-of-ubs-of-pofstfix-f∣₁→d-is-postfix-f∣₁ , P ⟩
+      (d D.≤ f∣₁ d) ≡⟨⟩
+      (d D.≤ proj₁ (f (d , (proj₂ p*)))) ∎
       where
       Z' : ∀ d' e' → (d' , e') ≤ f (d' , e') → proj₁ (f (d' , e')) D.≤ proj₁ (f (d , proj₂ p*))
-      Z' = {!!}
-      Z : ∀ d' → (Σ e' ∶ E , (d' , e') ≤ f (d' , e')) → d' D.≤ proj₁ (f (d , proj₂ p*))
+      Z' d' e' x = {!!}
+      Z : ∀ d' → (Σ e' ∶ E , (d' , e') ≤ f (d' , e')) → d' D.≤ f∣₁ d
       Z d' (e' , d'e'≤fd'e') = D.Po.trans (proj₁ d'e'≤fd'e') (Z' d' e' d'e'≤fd'e')
-      Y : (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) → d D.≤ proj₁ (f (d , proj₂ (ν f≈)))
-      Y d-lbub = d-lbub (proj₁ (f (d , proj₂ (ν f≈)))) Z
+
+      d-is-lb-of-ubs-of-pofstfix-f∣₁→d-is-postfix-f∣₁ : (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) → d D.≤ f∣₁ d
+      d-is-lb-of-ubs-of-pofstfix-f∣₁→d-is-postfix-f∣₁ d-is-lb-of-ubs-of-pofstfix-f∣₁ = d-is-lb-of-ubs-of-pofstfix-f∣₁ (proj₁ (f (d , proj₂ (ν f≈)))) Z
+
       Q : d D.≤ proj₁ (f (d , proj₂ p*))
       Q = {!l!}
       Q' : proj₂ p* E.≤ proj₂ (f (d , proj₂ p*))
       Q' = {!!}
       P : d D.≤ proj₁ (f (d , proj₂ (ν f≈))) → ∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u
       P d≤ u u-ub = u-ub d (proj₂ p* , Q , Q')
-
+-}
 {-
   ub-post→≤ν↔∈post : ∀ (f≈ : Eq.setoid →cong Eq.setoid) (c : Carrier) → ⟦ f≈ ⟧ c ∈ ubs (post≤ f≈) → c ≤ ν f≈ ↔ c ∈ post≤ f≈
   ub-post→≤ν↔∈post f≈ c fc∈ubpostf = let open SetoidReasoning (Prop↔-setoid) in
