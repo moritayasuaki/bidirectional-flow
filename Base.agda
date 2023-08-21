@@ -56,6 +56,7 @@ Setoid : Set
 Setoid = SetoidPoly lzero lzero
 
 
+
 Poset : Set
 Poset = PosetPoly lzero lzero lzero
 
@@ -961,8 +962,8 @@ record SLat : Set where
   ν : (Eq.setoid →cong Eq.setoid) → Carrier
   ν f = ⨆ (post poset f)
 
-  ν-gfp : (f≤ : poset →mono poset) → ν (⟦ f≤ ⟧cong) ∈ gfp poset (⟦ f≤ ⟧cong)
-  ν-gfp f≤ .proj₁ = -- proof that ν f is a fixed point of f
+  ν-fp : (f≤ : poset →mono poset) → ν ⟦ f≤ ⟧cong ∈ (fix Eq.setoid ⟦ f≤ ⟧cong)
+  ν-fp f≤ =
     Po.antisym R L
     where
     f≈ = ⟦ f≤ ⟧cong
@@ -987,28 +988,27 @@ record SLat : Set where
       f (ν f≈) ≤⟨ ⨆-ub (post≤ f≈) (f (ν f≈)) (f≤ .Mono.mono (⨆-least (post≤ f≈) (f (ν f≈)) ι)) ⟩
       ν f≈     ∎
 
-  ν-gfp f≤ .proj₂ x' x'∈fixf = u -- proof that ν f is the greatest fixed point
-    where
-    f≈ = ⟦ f≤ ⟧cong
-    f = ⟦ f≤ ⟧
-    open PosetReasoning poset
-    u =
-      begin
-      x'   ≤⟨ ⨆-ub (post≤ f≈) x' (Po.reflexive x'∈fixf) ⟩
-      ν f≈ ∎
+  ν-ubfp : (f≈ : Eq.setoid →cong Eq.setoid) → ν f≈ ∈ ubs (fix Eq.setoid f≈)
+  ν-ubfp f≈ x x∈fixf = ⨆-ub (post≤ f≈) x (Po.reflexive x∈fixf)
+
+  ν-gfp : (f≤ : poset →mono poset) → ν (⟦ f≤ ⟧cong) ∈ gfp poset (⟦ f≤ ⟧cong)
+  ν-gfp f≤ = (ν-fp f≤ , ν-ubfp (⟦ f≤ ⟧cong))
 
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
 
-  -- TODO: implement curry-uncurry for ν
-
   ub-post→≤ν↔∈post : ∀ (f≈ : Eq.setoid →cong Eq.setoid) (c : Carrier) → ⟦ f≈ ⟧ c ∈ ubs (post≤ f≈) → c ≤ ν f≈ ↔ c ∈ post≤ f≈
-  ub-post→≤ν↔∈post f≈ c fc∈ubpostf = let open SetoidReasoning (Prop↔-setoid) in
+  ub-post→≤ν↔∈post f≈ c fc∈ubpostf =
+    let open SetoidReasoning (Prop↔-setoid) in
     begin
-    (c ≤ ν f≈) ≈⟨  ≤⨆↔≤ubs c (post≤ f≈)  ⟩
-    (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) ≈⟨ (λ c-lb-of-ubs → c-lb-of-ubs (⟦ f≈ ⟧ c) fc∈ubpostf) , (λ c∈postf u u-ub → u-ub c c∈postf) ⟩
-    (c ≤ ⟦ f≈ ⟧ c) ∎
-
+    (c ≤ ν f≈)                            ≈⟨  ≤⨆↔≤ubs c (post≤ f≈)  ⟩
+    (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) ≈⟨ Y , P ⟩
+    (c ≤ ⟦ f≈ ⟧ c)                       ∎
+    where
+    Y : (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) → c ≤ ⟦ f≈ ⟧ c
+    Y c-lb-of-ubs = c-lb-of-ubs (⟦ f≈ ⟧ c) fc∈ubpostf
+    P : (c ≤ ⟦ f≈ ⟧ c) → ∀ u → u ∈ ubs (post≤ f≈) → c ≤ u
+    P c∈postf u u-ub = u-ub c c∈postf
 
   μ : (Eq.setoid →cong Eq.setoid) → Carrier
   μ f = ⨅ (pre poset f)
@@ -1158,6 +1158,70 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
     ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
     , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
 
+
+  endo-proj₁ : ((D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈)) → D → D
+  endo-proj₁ f≈ d = proj₁ (⟦ f≈ ⟧ (d , proj₂ (ν f≈)))
+
+  endo-proj₁-cong : ((D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈)) → D≈ →cong D≈
+  Cong.⟦ endo-proj₁-cong f≈ ⟧ = endo-proj₁ f≈
+  endo-proj₁-cong f≈ .Cong.isCongruent .IsCong.cong {d} {d'} d≈d' = proj₁ (f≈ .Cong.cong (d≈d' , E.Eq.refl))
+
+  module _ (f≤ : (D≤ ×-poset E≤) →mono (D≤ ×-poset E≤)) where
+    private
+      f≈ = ⟦ f≤ ⟧cong
+      f = ⟦ f≤ ⟧
+
+      f∣₁≈ : {!D≈ →cong D≈!}
+      f∣₁≈ = endo-proj₁-cong ⟦ f≤ ⟧cong
+
+      p* : D × E
+      p* = ν f≈
+
+      d* : D
+      d* = proj₁ p*
+
+      e* : E
+      e* = proj₂ p*
+
+      d** : D
+      d** = D.ν f∣₁≈
+
+    proj₁ν≤νproj₁ : proj₁ (ν f≈) D.≤ D.ν (endo-proj₁-cong f≈)
+    proj₁ν≤νproj₁ = D.ν-ubfp (endo-proj₁-cong f≈) (proj₁ (ν f≈)) (proj₁ (ν-fp f≤))
+
+    ub-post→≤ν↔∈post-proj₁ : (d : D) →
+      {! proj₁ (f (d , proj₂ (ν f≈))) ∈ D.ubs (post≤ f≈ ∣₁)!} → d D.≤ d* ↔ d D.≤ proj₁ (f (d , e*))
+    ub-post→≤ν↔∈post-proj₁ d f'd∈ubs-post-f' =
+      let open SetoidReasoning Prop↔-setoid in
+      begin
+      (d D.≤ proj₁ (ν f≈)) ≈⟨ D.≤⨆↔≤ubs d (post poset f≈ ∣₁) ⟩
+      (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) ≈⟨ Y , P ⟩
+      (d D.≤ proj₁ (f (d , e*))) ∎
+      where
+      Z' : ∀ d' e' → (d' , e') ≤ f (d' , e') → proj₁ (f (d' , e')) D.≤ proj₁ (f (d , proj₂ p*))
+      Z' = {!!}
+      Z : ∀ d' → (Σ e' ∶ E , (d' , e') ≤ f (d' , e')) → d' D.≤ proj₁ (f (d , proj₂ p*))
+      Z d' (e' , d'e'≤fd'e') = D.Po.trans (proj₁ d'e'≤fd'e') (Z' d' e' d'e'≤fd'e')
+      Y : (∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u) → d D.≤ proj₁ (f (d , proj₂ (ν f≈)))
+      Y d-lbub = d-lbub (proj₁ (f (d , proj₂ (ν f≈)))) Z
+      Q : d D.≤ proj₁ (f (d , proj₂ p*))
+      Q = {!l!}
+      Q' : proj₂ p* E.≤ proj₂ (f (d , proj₂ p*))
+      Q' = {!!}
+      P : d D.≤ proj₁ (f (d , proj₂ (ν f≈))) → ∀ u → u ∈ D.ubs (post≤ f≈ ∣₁) → d D.≤ u
+      P d≤ u u-ub = u-ub d (proj₂ p* , Q , Q')
+
+{-
+  ub-post→≤ν↔∈post : ∀ (f≈ : Eq.setoid →cong Eq.setoid) (c : Carrier) → ⟦ f≈ ⟧ c ∈ ubs (post≤ f≈) → c ≤ ν f≈ ↔ c ∈ post≤ f≈
+  ub-post→≤ν↔∈post f≈ c fc∈ubpostf = let open SetoidReasoning (Prop↔-setoid) in
+    begin
+    (c ≤ ν f≈) ≈⟨  ≤⨆↔≤ubs c (post≤ f≈)  ⟩
+    (∀ u → u ∈ ubs (post≤ f≈) → c ≤ u) ≈⟨ (λ c-lb-of-ubs → c-lb-of-ubs (⟦ f≈ ⟧ c) fc∈ubpostf) , (λ c∈postf u u-ub → u-ub c c∈postf) ⟩
+    (c ≤ ⟦ f≈ ⟧ c) ∎
+-}
+
+
+{-
   νproj₁ : (D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈) → (D≈ →cong D≈)
   νproj₁ f = proj₁≈ _ _ ∘-cong (curry-flip-cong f (ν f .proj₂))
 
@@ -1184,7 +1248,7 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
 
     Q : ∀ d → Σ e ∶ E , (d , e) ≤ ⟦ f≤ ⟧ (d , e) → d D.≤ ⟦ νproj₁ ⟦ f≤ ⟧cong ⟧ d
     Q d (e , de≤fde) = D.Po.trans (proj₁ de≤fde) (proj₁-mono D≤ E≤ .IsMono.mono (f≤ .Mono.mono (D.Po.refl , (E.Po.trans (proj₂ de≤fde) (E.⨆-ub (post poset ⟦ f≤ ⟧cong ∣₂) (proj₂ (⟦ f≤ ⟧ (d , e))) (⟦ f≤ ⟧ (d , e) .proj₁ , f≤ .Mono.mono de≤fde))))))
-
+-}
 IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
 IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
   where open PosetPoly D
