@@ -997,6 +997,12 @@ record SLat : Set where
   ν-mono : (f≈ g≈ : Eq.setoid →cong Eq.setoid) → ((x : Carrier) → ⟦ f≈ ⟧ x ≤ ⟦ g≈ ⟧ x) → ν f≈ ≤ ν g≈
   ν-mono f≈ g≈ f≤g = ⨆-mono (post≤ f≈) (post≤ g≈) (λ {d} d≤fd → Po.trans d≤fd (f≤g d))
 
+  ≈→≤↔≤-l : ∀ x y → x ≈ y → ∀ z → x ≤ z ↔ y ≤ z
+  ≈→≤↔≤-l x y x≈y z = (Po.trans (Po.reflexive (Eq.sym x≈y)) , Po.trans (Po.reflexive x≈y))
+
+  ≈→≤↔≤-r : ∀ x y → x ≈ y → ∀ z → z ≤ x ↔ z ≤ y
+  ≈→≤↔≤-r x y x≈y z = (flip Po.trans (Po.reflexive x≈y) , flip Po.trans (Po.reflexive (Eq.sym x≈y)))
+
   μ : (Eq.setoid →cong Eq.setoid) → Carrier
   μ f = ⨅ (pre poset f)
 
@@ -1419,6 +1425,8 @@ module _ where
         where
         d : D
         d = D.⨆ (⃗ ⟦ L ⟧cong S)
+
+
 
         Rd-upper : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
         Rd-upper c c∈S = ψ c d .proj₁ (D.⨆-ub (⃗ ⟦ L ⟧cong S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))

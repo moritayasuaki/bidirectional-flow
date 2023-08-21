@@ -91,6 +91,70 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
     where
     private module M = PosetPoly (C≤ →mono-pw C≤)
 
+  module _ (f≤ : C≤ →mono C≤) where
+    private
+      f≈ = ⟦ f≤ ⟧cong
+      f = ⟦ f≤ ⟧
+
+      [1] : f≤ ∈ GaloisConnection.postLR F⊣G ≡ (∀ c₀ → f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈))
+      [1] = ≡.refl
+
+    private module _ (c₀ : C) where
+      private
+        χ : C → C
+        χ c = c₀ ⊓ f c
+
+        χ≤ : C≤ →mono C≤
+        χ≤ = mkMono C≤ C≤ χ λ c≤c' → ⊓-mono _ _ _ _ Po.refl (f≤ .Mono.mono c≤c')
+
+        χ≈ : C≈ →cong C≈
+        χ≈ = ⟦ χ≤ ⟧cong
+
+        [2] : ⨆ (↓! c₀ ∩ post≤ f≈) ≈ ν χ≈
+        [2] =  ⨆-cong (↓! c₀ ∩ post≤ f≈) (post≤ χ≈) [2-2]
+          where
+          [2-1] : ∀ c → (c ≤ c₀ × (c ≤ f c)) ↔ c ≤ χ c
+          [2-1] c = SetoidPoly.sym Prop↔-setoid (≤⊓↔≤× c₀ (f c) c)
+
+          [2-2] : (↓! c₀ ∩ post≤ f≈) ≐ post≤ χ≈
+          [2-2] = ∀↔→≐ {C≈} {↓! c₀ ∩ post≤ f≈} {post≤ χ≈} [2-1]
+
+        [3] : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ ν χ≈
+        [3] = ≈→≤↔≤-r _ _ [2] (f c₀)
+
+        [4] : ∀ c → c ≤ χ c → c ≤ χ (f c₀)
+        [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , Po.trans (Po.trans c≤fc fc≤ffc) ffc≤ffc₀)
+          where
+          c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
+          c≤c₀ = proj₁ c≤c₀,c≤fc
+          c≤fc = proj₂ c≤c₀,c≤fc
+          fc≤ffc = f≤ .Mono.mono c≤fc
+          ffc≤ffc₀ = f≤ .Mono.mono (f≤ .Mono.mono c≤c₀)
+
+        [5] : (f c₀ ≤ ν χ≈) ↔ (f c₀ ≤ χ (f c₀))
+        [5] = app-ub-of-post→≤ν↔∈post C⨆ ⟦ χ≤ ⟧cong (f c₀) [4]
+
+        [6] : (f c₀ ≤ χ (f c₀)) ≡ (f c₀ ≤ (c₀ ⊓ f (f c₀)))
+        [6] = ≡.refl
+
+        [7] : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+        [7] = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
+
+      P⊣Gχ = χ≤
+      lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+      lemma =
+        let open SetoidReasoning (Prop↔-setoid) in
+        begin
+        (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ [3] ⟩
+        (f c₀ ≤ ν χ≈) ≈⟨ [5] ⟩
+        (f c₀ ≤ χ (f c₀)) ≡⟨ [6] ⟩
+        (f c₀ ≤ (c₀ ⊓ f (f c₀))) ≈⟨ [7] ⟩
+        ((f c₀ ≤ c₀) × (f c₀ ≤ f (f c₀))) ∎
+
+    postFG-characterization' : f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
+    postFG-characterization' = lift↔ _ _ λ c → lemma c
+
+
   postFG-characterization : (f≤ : C≤ →mono C≤)
     → f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
   postFG-characterization f≤ =
