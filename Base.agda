@@ -74,6 +74,7 @@ module _ where
   module Cong = BinRMorph.SetoidHomomorphism renaming (isRelHomomorphism to isCongruent)
   module Mono = BinRMorph.PosetHomomorphism renaming (isOrderHomomorphism to isMonotone)
 
+  infixr 0 _→cong_ _→mono_
   _→cong_ = BinRMorph.SetoidHomomorphism
   _→mono_ = BinRMorph.PosetHomomorphism
 
@@ -274,6 +275,7 @@ instance
   HasBracket.⟦ pred-map ⟧ = Pred.⟦_⟧
 
 
+
 module _ {X≈ : Setoid} where
   open SetoidPoly X≈
   private
@@ -289,13 +291,6 @@ module _ {X≈ : Setoid} where
   Pred.⟦ ∅ ⟧ = UniR.∅
   Pred.isWellDefined ∅ _ ()
 
-  singleton : X → Pred X≈
-  Pred.⟦ singleton x ⟧ y = x ≈ y
-  singleton x .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
-
-  ｛_｝ : X → Pred X≈
-  Pred.⟦  ｛ x ｝ ⟧ y = x ≈ y
-  ｛ x ｝ .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
 
 
   U : Pred X≈
@@ -351,12 +346,6 @@ module _ {X≈ : Setoid} where
   (P ∪ Q) .Pred.isWellDefined {x} {y} x≈y (inj₂ x∈Q) = inj₂ (Q .Pred.isWellDefined x≈y x∈Q)
 
 
-  doubleton : X → X → Pred X≈
-  doubleton x y = singleton x ∩ singleton y
-
-  ｛_،_｝ : X → X → Pred X≈
-  ｛ x ، y ｝ = ｛ x ｝ ∪ ｛ y ｝
-
   ∪-mono-l : (P Q S : Pred X≈) → P ⊆ Q → (P ∪ S) ⊆ (Q ∪ S)
   ∪-mono-l P Q S P⊆Q (inj₁ x∈P) = inj₁ (P⊆Q x∈P)
   ∪-mono-l P Q S P⊆Q (inj₂ x∈S) = inj₂ x∈S
@@ -375,13 +364,27 @@ module _ {X≈ : Setoid} where
   ∪-∅-runit P .proj₁ (inj₁ x∈P) = x∈P
   ∪-∅-runit P .proj₂ x∈P = inj₁ x∈P
 
-  singleton-belongs : ∀ x (S : Pred X≈) → ｛ x ｝ ⊆ S ↔ x ∈ S
+
+module _ (X≈ : Setoid) where
+  open SetoidPoly X≈
+  private
+    X = ∣ X≈ ∣
+
+  singleton : X → Pred X≈
+  Pred.⟦ singleton x ⟧ y = x ≈ y
+  singleton x .Pred.isWellDefined {y} {z} y≈z x≈y = trans x≈y y≈z
+
+  doubleton : X → X → Pred X≈
+  doubleton x y = singleton x ∪ singleton y
+
+
+  singleton-belongs : ∀ x (S : Pred X≈) → singleton x ⊆ S ↔ x ∈ S
   singleton-belongs x S .proj₁ [x]⊆S = [x]⊆S {x} refl
   singleton-belongs x S .proj₂ x∈S x≈y = S .Pred.isWellDefined x≈y x∈S
 
   listToPred : List X → Pred X≈
   listToPred [] = ∅
-  listToPred (x ∷ ls) = ｛ x ｝ ∪ listToPred ls
+  listToPred (x ∷ ls) = singleton x ∪ listToPred ls
 
 module _ where
   open PosetPoly
@@ -437,7 +440,7 @@ record FinSubset (X : Setoid) : Set where
     list : List ∣ X ∣
   open SetoidPoly X
   field
-    list≈ : listToPred list ≐ pred
+    list≈ : listToPred X list ≐ pred
 
 _⋈_ : {X Y Z : Setoid} → Pred (X ×-setoid Y) → Pred (Y ×-setoid Z) → Pred (X ×-setoid Z)
 (R ⋈ S) .Pred.⟦_⟧ = λ(x , z) → Σ y ∶ _ , (x , y) ∈ R × (y , z) ∈ S
@@ -517,12 +520,12 @@ module _ {X≈ Y≈ : Setoid} where
   ⃗-mono : (f : X≈ →cong Y≈) → (S S' : Pred X≈) → S ⊆ S' → ⃗ f S ⊆ ⃗ f S'
   ⃗-mono f = imageR-mono (liftFR f)
 
-  ⃗single : (f : X≈ →cong Y≈) → ∀ x →  ⃗ f ｛ x ｝ ≐ ｛ ⟦ f ⟧ x ｝
+  ⃗single : (f : X≈ →cong Y≈) → ∀ x →  ⃗ f (singleton X≈ x) ≐ singleton Y≈ (⟦ f ⟧ x)
   ⃗single f x =
     ( (λ {y} (x' , fx'≈y , x≈x') → Y.trans (f .Cong.cong x≈x') fx'≈y)
     , (λ {y} fx≈y → (x , fx≈y , X.refl)))
 
-  ⃗pair  : (f : X≈ →cong Y≈) → ∀ x x' →  ⃗ f ｛ x ، x' ｝ ≐ ｛ ⟦ f ⟧ x ، ⟦ f ⟧ x' ｝
+  ⃗pair  : (f : X≈ →cong Y≈) → ∀ x x' →  ⃗ f (doubleton X≈ x x') ≐ doubleton Y≈ (⟦ f ⟧ x) (⟦ f ⟧ x')
   ⃗pair f x x' =
     ( (λ { {y} (x'' , fx''≈y , inj₁ x≈x'') → inj₁ (Y.trans (f .Cong.cong x≈x'') fx''≈y) ; {y} (x'' , fx''≈y , inj₂ x'≈x'') → inj₂ (Y.trans (f .Cong.cong x'≈x'') fx''≈y)})
     , (λ { {y} (inj₁ fx≈y) → (x , fx≈y , inj₁ X.refl) ; {y} (inj₂ fx'≈y) → (x' , fx'≈y , inj₂ X.refl) }))
@@ -644,6 +647,7 @@ module _ {X≈ Y≈ : Setoid} where
 
     X = ∣ X≈ ∣
     Y = ∣ Y≈ ∣
+    open SetoidPoly (X≈ ×-setoid Y≈)
 
   Pred-swap : Pred (X≈ ×-setoid Y≈) → Pred (Y≈ ×-setoid X≈)
   Pred.⟦ Pred-swap R ⟧ (y , x) = Pred.⟦ R ⟧ (x , y)
@@ -656,12 +660,21 @@ module _ {X≈ Y≈ : Setoid} where
   _∣₁ : Pred (X≈ ×-setoid Y≈) → Pred X≈
   _∣₁ = Pred-proj₁
 
+
   Pred-proj₂ : Pred (X≈ ×-setoid Y≈) → Pred Y≈
   Pred.⟦ Pred-proj₂ R ⟧ = λ y → Σ x ∶ X , ((x , y) ∈ R)
   Pred-proj₂ R .Pred.isWellDefined y≈y' (x , xy∈R) = x , R .Pred.isWellDefined (X.refl , y≈y') xy∈R
 
   _∣₂ : Pred (X≈ ×-setoid Y≈) → Pred Y≈
   _∣₂ = Pred-proj₂
+
+  doubleton-proj₁ : ∀ (x x' : X) (y y' : Y) → ((doubleton _ (x , y) (x' , y')) ∣₁) ≐ doubleton _ x x'
+  doubleton-proj₁ x x' y y' = ∀↔→≐ {X≈} {(doubleton _ (x , y) (x' , y')) ∣₁} {doubleton _ x x'}
+    (λ _ → Sum.map proj₁ proj₁ ∘ proj₂ , λ { (inj₁ x≈) → (y , inj₁ (x≈ , Y.refl)) ; (inj₂ x'≈) → (y' , inj₂ (x'≈ , Y.refl))})
+
+  doubleton-proj₂ : ∀ (x x' : X) (y y' : Y) → ((doubleton _ (x , y) (x' , y')) ∣₂) ≐ doubleton _ y y'
+  doubleton-proj₂ x x' y y' = ∀↔→≐ {Y≈} {(doubleton _ (x , y) (x' , y')) ∣₂} {doubleton _ y y'}
+    (λ _ → Sum.map proj₂ proj₂ ∘ proj₂ , λ { (inj₁ y≈) → (x , inj₁ (X.refl , y≈)) ; (inj₂ y'≈) → (x' , inj₂ (X.refl , y'≈))})
 
   Pred-proj₁-∈ : {x : _} {y : _} (R : Pred (X≈ ×-setoid Y≈)) → (x , y) ∈ R → x ∈ Pred-proj₁ R
   Pred-proj₁-∈ R xy∈R = -, xy∈R
@@ -754,6 +767,8 @@ record SLat : Set where
     _≤_ : Rel Carrier
     ≤-po : IsPartialOrder _≈_ _≤_
 
+  infix 3 _≤_ _≈_
+
   poset : Poset
   poset = record {isPartialOrder = ≤-po}
 
@@ -769,6 +784,7 @@ record SLat : Set where
 
   lbs : Pred Eq.setoid → Pred Eq.setoid
   lbs = lowerbounds poset
+
 
   ↓! : Carrier → Pred Eq.setoid
   ↓! = principal-downset poset
@@ -824,6 +840,12 @@ record SLat : Set where
     x-ub : ∀ y → Empty.⊥ → y ≤ x
     x-ub y ()
 
+  ｛_｝ : Carrier → Pred Eq.setoid
+  ｛_｝ = singleton Eq.setoid
+
+  ｛_،_｝ : Carrier → Carrier → Pred (Eq.setoid)
+  ｛_،_｝ = doubleton Eq.setoid
+
   _⊔_ : Op₂ Carrier
   x ⊔ y = ⨆ ｛ x ، y ｝
 
@@ -846,10 +868,19 @@ record SLat : Set where
     z-ub w (inj₁ x≈w) = Po.trans (Po.reflexive (Eq.sym x≈w)) x≤z
     z-ub w (inj₂ y≈w) = Po.trans (Po.reflexive (Eq.sym y≈w)) y≤z
 
+  ⊔-mono-l : ∀ z x y → x ≤ y → x ⊔ z ≤ y ⊔ z
+  ⊔-mono-l z x y x≤y = ⊔-least x z (y ⊔ z) (Po.trans x≤y (⊔-ub-l y z)) (⊔-ub-r y z)
+
+  ⊔-mono-r : ∀ z x y → x ≤ y → z ⊔ x ≤ z ⊔ y
+  ⊔-mono-r z x y x≤y = ⊔-least z x (z ⊔ y) (⊔-ub-l z y) (Po.trans x≤y (⊔-ub-r z y))
+
+  ⊔-mono : ∀ x y z w → x ≤ z → y ≤ w → x ⊔ y ≤ z ⊔ w
+  ⊔-mono x y z w x≤z y≤w = ⊔-least x y (z ⊔ w) (Po.trans x≤z (⊔-ub-l z w)) (Po.trans y≤w (⊔-ub-r z w))
+
   ⨆-⊔-comm : ∀ P Q → (⨆ P ⊔ ⨆ Q) ≈ ⨆ (P ∪ Q)
   ⨆-⊔-comm P Q = Po.antisym (⨆-least ｛ ⨆ P ، ⨆ Q ｝ (⨆ (P ∪ Q)) ⨆P∪Q-ub ) (⨆-least (P ∪ Q) (⨆ ｛ ⨆ P ، ⨆ Q ｝) ⨆P⊔⨆Q-ub)
     where
-    ⨆P∪Q-ub : ∀ x → x ∈ ｛_،_｝{Eq.setoid} (⨆ P) (⨆ Q) → x ≤ ⨆ (P ∪ Q)
+    ⨆P∪Q-ub : ∀ x → x ∈ ｛ ⨆ P ، ⨆ Q ｝ → x ≤ ⨆ (P ∪ Q)
     ⨆P∪Q-ub x (inj₁ ⨆P≈x) = Po.reflexive (Eq.sym ⨆P≈x) ⟨ Po.trans ⟩ ⨆-mono P (P ∪ Q) (∪-⊆-l P Q)
     ⨆P∪Q-ub x (inj₂ ⨆Q≈x) = Po.reflexive (Eq.sym ⨆Q≈x) ⟨ Po.trans ⟩ ⨆-mono Q (P ∪ Q) (∪-⊆-r P Q)
     ⨆P⊔⨆Q-ub : ∀ x → x ∈ (P ∪ Q) → x ≤ (⨆ P ⊔ ⨆ Q)
@@ -889,19 +920,26 @@ record SLat : Set where
   ⨆≤↔∀≤ S x .proj₂ = ⨆≤←∀≤ S x
 
   ⨅ : Pred Eq.setoid → Carrier
-  ⨅ S = ⨆ (lowerbounds poset S)
+  ⨅ S = ⨆ (lbs S)
 
   ⨅-lb : ∀ S x → x ∈ S → ⨅ S ≤ x
-  ⨅-lb S x x∈S = ⨆-least (lowerbounds poset S) x x-ub
+  ⨅-lb S x x∈S = ⨆-least (lbs S) x x-ub
     where
-    x-ub : ∀ y → y ∈ lowerbounds poset S → y ≤ x
+    x-ub : ∀ y → y ∈ lbs S → y ≤ x
     x-ub y y∈lbS = y∈lbS x x∈S
 
   ⨅-greatest : ∀ S y → (∀ x → x ∈ S → y ≤ x) → y ≤ ⨅ S
-  ⨅-greatest S y y-lower = ⨆-ub (lowerbounds poset S) y y-lower
+  ⨅-greatest S y y-lower = ⨆-ub (lbs S) y y-lower
 
   ⨅-inf : ∀ S → (∀ x → x ∈ S → ⨅ S ≤ x) × (∀ y → (∀ x → x ∈ S → y ≤ x) → y ≤ ⨅ S)
   ⨅-inf S = (⨅-lb S ,  ⨅-greatest S)
+
+  ⨅-anti : ∀ S S' → S ⊆ S' → ⨅ S' ≤ ⨅ S
+  ⨅-anti S S' S⊆S' = ⨅-greatest S (⨅ S') (\ x x∈S → ⨅-lb S' x (S⊆S' x∈S))
+
+  ⨅-cong : ∀ S S' → S ≐ S' → ⨅ S ≈ ⨅ S'
+  ⨅-cong S S' S≐S' = Po.antisym (⨅-anti S' S (proj₂ S≐S')) (⨅-anti S S' (proj₁ S≐S'))
+
 
   _⊓_ : Op₂ Carrier
   x ⊓ y = ⨅  (｛ x ｝ ∪ ｛ y ｝)
@@ -1007,7 +1045,7 @@ record SLat : Set where
   μ f = ⨅ (pre poset f)
 
   IsCompact : (x : Carrier)  → Set
-  IsCompact x = ∀ S → x ≤ ⨆ S → Σ xs ∶ List Carrier , All (_∈ S) xs × x ≤ ⨆ (listToPred xs)
+  IsCompact x = ∀ S → x ≤ ⨆ S → Σ xs ∶ List Carrier , All (_∈ S) xs × x ≤ ⨆ (listToPred _ xs)
 
   IsDirected : (S : Pred Eq.setoid) → Set
   IsDirected S = ∀ (xs : List Carrier) → All (λ x → x ∈ S) xs → Σ u ∶ Carrier , (u ∈ S × All (λ x → x ≤ u) xs)
@@ -1017,7 +1055,7 @@ record SLat : Set where
 
   -- Scott open [Taylor, 2010, A lambda calculus for real analysis, Def. 3.1]
   IsScottOpen : (S : Pred Eq.setoid) → Set
-  IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred xs ⊆ T × ⨆ (listToPred xs) ∈ S)
+  IsScottOpen S = IsUpwardClosed poset S × (∀ T → (⨆ T) ∈ S → Σ xs ∶ List Carrier , listToPred _ xs ⊆ T × ⨆ (listToPred _ xs) ∈ S)
 
 instance
   slat-has-carrier : HasCarrier (SLat)
@@ -1112,26 +1150,6 @@ module _ where
   (D ×-slat E) ._≤_ = Componentwise (D ._≤_) (E ._≤_)
   (D ×-slat E) .≤-po = ×-isPartialOrder (D .≤-po) (E .≤-po)
   (D ×-slat E) .⨆ R =  D .⨆ (R ∣₁) , E .⨆ (R ∣₂)
-  {-
-  (D ×-slat E) ._⊓_ (d , e) (d' , e') = (D ._⊓_ d d' , E ._⊓_ e e')
-  (D ×-slat E) .⊓-inf (d , e) (d' , e') = D×E-lower₁ , D×E-lower₂ , D×E-greatest
-    where
-    D-inf = D .⊓-inf d d'
-    E-inf = E .⊓-inf e e'
-    D-lower₁ = D-inf .proj₁
-    D-lower₂ = D-inf .proj₂ .proj₁
-    E-lower₁ = E-inf .proj₁
-    E-lower₂ = E-inf .proj₂ .proj₁
-    D-greatest = D-inf .proj₂ .proj₂
-    E-greatest = E-inf .proj₂ .proj₂
-    D×E-lower₁ = D-lower₁ , E-lower₁
-    D×E-lower₂ = D-lower₂ , E-lower₂
-    D×E-greatest : (de'' : _) →
-                     (D ×-slat E) ._≤_ de'' (d , e) →
-                     (D ×-slat E) ._≤_ de'' (d' , e') →
-                     (D ×-slat E) ._≤_ de'' ((D ×-slat E) ._⊓_ (d , e) (d' , e'))
-    D×E-greatest (d'' , e'') (d''≤d , e''≤e) (d''≤d' , e''≤e') = D-greatest d'' d''≤d d''≤d' , E-greatest e'' e''≤e e''≤e'
-    -}
   (D ×-slat E) .⨆-sup R = upper , least
     where
     upper : (x : ∣ D ∣ × ∣ E ∣) → x ∈ R → (D ×-slat E) ._≤_ x ((D ×-slat E) .⨆ R)
@@ -1164,14 +1182,31 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
 
   open SLat (D⨆ ×-slat E⨆)
 
-  ⊔-componentwise : ∀ d e d' e' → ((d , e) ⊔ (d' , e')) ≈ (d D.⊔ d' , e E.⊔ e')
-  ⊔-componentwise d e d' e' = Po.antisym
-    (⨆-least (｛(d , e)｝ ∪ ｛(d' , e')｝) (d D.⊔ d' , e E.⊔ e')
-       λ { p (inj₁ de≈p) → Po.trans (Po.reflexive (Eq.sym de≈p)) (D.⊔-ub-l d d' , E.⊔-ub-l e e')
-         ; p (inj₂ d'e'≈p) → Po.trans (Po.reflexive (Eq.sym d'e'≈p)) (D.⊔-ub-r d d' , E.⊔-ub-r e e')})
-    ( D.⨆-mono (｛ d ｝ ∪ ｛ d' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₁) (λ{ (inj₁ d≈) → (e , inj₁ (d≈ , E.Eq.refl)) ; (inj₂ d'≈) → (e' , inj₂ (d'≈ , E.Eq.refl))})
-    , E.⨆-mono (｛ e ｝ ∪ ｛ e' ｝) ((｛ (d , e) ｝ ∪ ｛ (d' , e') ｝) ∣₂) (λ{ (inj₁ e≈) → (d , inj₁ (D.Eq.refl , e≈)) ; (inj₂ e'≈) → (d' , inj₂ (D.Eq.refl , e'≈))}))
+  lbs-proj₁ : ∀ S → (lbs S ∣₁) ≐ (D.lbs (S ∣₁))
+  lbs-proj₁ S = ∀↔→≐ {D≈} {lbs S ∣₁} {D.lbs (S ∣₁)}
+    λ d →
+      ( (λ d∈lbsS∣₁@(e , de∈lbsS) d' (e' , d'e'∈S) → proj₁ (de∈lbsS (d' , e') d'e'∈S))
+      , (λ d∈lbsS∣₁ → E.⨅ (S ∣₂) , (λ p'@(d' , e') d'e'∈S → (d∈lbsS∣₁ d' (e' , d'e'∈S) , E.⨅-lb (S ∣₂) e' (d' , d'e'∈S)))))
 
+  lbs-proj₂ : ∀ S → (lbs S ∣₂) ≐ (E.lbs (S ∣₂))
+  lbs-proj₂ S = ∀↔→≐ {E≈} {lbs S ∣₂} {E.lbs (S ∣₂)}
+    λ e →
+      ( (λ e∈lbsS∣₂@(d , de∈lbsS) e' (d' , d'e'∈S) → proj₂ (de∈lbsS (d' , e') d'e'∈S))
+      , (λ e∈lbsS∣₂ → D.⨅ (S ∣₁) , (λ p'@(d' , e') d'e'∈S → (D.⨅-lb (S ∣₁) d' (e' , d'e'∈S) , e∈lbsS∣₂ e' (d' , d'e'∈S)))))
+
+
+  ⊔-componentwise : ∀ d e d' e' → ((d , e) ⊔ (d' , e')) ≈ (d D.⊔ d' , e E.⊔ e')
+  ⊔-componentwise d e d' e' =
+    ( D.⨆-cong (｛ d , e ، d' , e' ｝ ∣₁) D.｛ d ، d' ｝ (doubleton-proj₁ {D≈} {E≈} d d' e e')
+    , E.⨆-cong (｛ d , e ، d' , e' ｝ ∣₂) E.｛ e ، e' ｝ (doubleton-proj₂ {D≈} {E≈} d d' e e'))
+
+  ⨅-componentwise : ∀ (S : Pred (D≈ ×-setoid E≈)) → ⨅ S ≈ (D.⨅ (S ∣₁) , E.⨅ (S ∣₂))
+  ⨅-componentwise S = (D.⨆-cong (lbs S ∣₁) (D.lbs (S ∣₁)) (lbs-proj₁ S)) , E.⨆-cong (lbs S ∣₂) (E.lbs (S ∣₂)) (lbs-proj₂ S)
+
+  ⊓-componentwise : ∀ d e d' e' → ((d , e) ⊓ (d' , e')) ≈ (d D.⊓ d' , e E.⊓ e')
+  ⊓-componentwise d e d' e' = Eq.trans (⨅-componentwise ｛ d , e ، d' , e' ｝)
+    ( D.⨅-cong (｛ d , e ، d' , e' ｝ ∣₁) D.｛ d ، d' ｝ (doubleton-proj₁ {D≈} {E≈} d d' e e')
+    , E.⨅-cong (｛ d , e ، d' , e' ｝ ∣₂) E.｛ e ، e' ｝ (doubleton-proj₂ {D≈} {E≈} d d' e e'))
 
   endo-proj₁ : ((D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈)) → D → D
   endo-proj₁ f≈ d = proj₁ (⟦ f≈ ⟧ (d , proj₂ (ν f≈)))
@@ -1216,6 +1251,7 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
     --
     proj₁ν≤νproj₁ : proj₁ p* D.≤ d*
     proj₁ν≤νproj₁ = D.ν-ubfp f∣₁≈ (proj₁ p*) (proj₁ (ν-fp f≤))
+
 
 {-
     ≤νproj₁→≤proj₁ν : d* D.≤ proj₁ p*
@@ -1300,7 +1336,7 @@ Is⊔Closed : (D : SLat) → Pred (SLat.Eq.setoid D) → Set
 Is⊔Closed D S = ∀ x y → x ∈ S → y ∈ S → (SLat._⊔_ D x y) ∈ S
 
 ⨆closed→⊔closed : (D : SLat) → (S : Pred (SLat.Eq.setoid D)) → Is⨆Closed D S → Is⊔Closed D S
-⨆closed→⊔closed D S ⨆closed x y x∈S y∈S = ⨆closed (｛ x ｝ ∪ ｛ y ｝) λ{ (inj₁ x≈) → S .Pred.isWellDefined x≈ x∈S ; (inj₂ y≈) → S .Pred.isWellDefined y≈ y∈S}
+⨆closed→⊔closed D S ⨆closed x y x∈S y∈S = ⨆closed (doubleton _ x y) λ{ (inj₁ x≈) → S .Pred.isWellDefined x≈ x∈S ; (inj₂ y≈) → S .Pred.isWellDefined y≈ y∈S}
 
 module _ where
   open PosetPoly
@@ -1425,8 +1461,6 @@ module _ where
         where
         d : D
         d = D.⨆ (⃗ ⟦ L ⟧cong S)
-
-
 
         Rd-upper : ∀ c → c ∈ S → c C.≤ ⟦ R ⟧ d
         Rd-upper c c∈S = ψ c d .proj₁ (D.⨆-ub (⃗ ⟦ L ⟧cong S) (⟦ L ⟧ c) (c , (D.Eq.refl , c∈S)))

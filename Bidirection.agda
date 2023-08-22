@@ -61,11 +61,11 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
   F-raw : Pred C≈ → C → C
   F-raw S d = ⨆ (↓! d ∩ S)
 
-  F-mono : Pred C≈ → (C≤ →mono C≤)
-  F-mono S = mkMono C≤ C≤ (F-raw S)
-    (λ {d} {d'} → ⨆-mono (↓! d ∩ S) (↓! d' ∩ S)
-      ∘ ∩-mono-l (↓! d) (↓! d') S
-      ∘ ↓!-mono d d')
+  F-mono : (S : Pred C≈) → ∀ {d d'} → d ≤ d' → ⨆ (↓! d ∩ S) ≤ ⨆ (↓! d' ∩ S)
+  F-mono S {d} {d'} = ⨆-mono (↓! d ∩ S) (↓! d' ∩ S) ∘ ∩-mono-l (↓! d) (↓! d') S ∘ ↓!-mono d d'
+
+  F≤ : Pred C≈ → (C≤ →mono C≤)
+  F≤ S = mkMono C≤ C≤ (F-raw S) (F-mono S)
 
   G-raw : (C → C) → UniR.Pred C lzero
   G-raw f = post-raw C≤ f
@@ -74,7 +74,7 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
   G-pred f = post C≤ ⟦ f ⟧cong
 
   F : Powerset⊆ →mono Endo
-  F = mkMono Powerset⊆ Endo F-mono
+  F = mkMono Powerset⊆ Endo F≤
     (λ {P} {Q} P⊆Q d → ⨆-mono (↓! d ∩ P) (↓! d ∩ Q)
              (∩-mono-r P Q (↓! d) P⊆Q))
 
@@ -123,13 +123,21 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
         [3] = ≈→≤↔≤-r _ _ [2] (f c₀)
 
         [4] : ∀ c → c ≤ χ c → c ≤ χ (f c₀)
-        [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , Po.trans (Po.trans c≤fc fc≤ffc) ffc≤ffc₀)
+        [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , c≤ffc₀)
           where
           c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
+          c≤c₀ : c ≤ c₀
           c≤c₀ = proj₁ c≤c₀,c≤fc
+          c≤fc : c ≤ f c
           c≤fc = proj₂ c≤c₀,c≤fc
-          fc≤ffc = f≤ .Mono.mono c≤fc
-          ffc≤ffc₀ = f≤ .Mono.mono (f≤ .Mono.mono c≤c₀)
+          c≤ffc₀ : c ≤ f (f c₀)
+          c≤ffc₀ =
+            let open PosetReasoning C≤ in
+            begin
+            c ≤⟨ c≤fc ⟩
+            f c ≤⟨ f≤ .Mono.mono c≤fc ⟩
+            f (f c) ≤⟨ f≤ .Mono.mono (f≤ .Mono.mono c≤c₀) ⟩
+            f (f c₀) ∎
 
         [5] : (f c₀ ≤ ν χ≈) ↔ (f c₀ ≤ χ (f c₀))
         [5] = app-ub-of-post→≤ν↔∈post C⨆ ⟦ χ≤ ⟧cong (f c₀) [4]
@@ -140,7 +148,6 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
         [7] : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
         [7] = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
 
-      P⊣Gχ = χ≤
       lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
       lemma =
         let open SetoidReasoning (Prop↔-setoid) in
@@ -152,7 +159,7 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
         ((f c₀ ≤ c₀) × (f c₀ ≤ f (f c₀))) ∎
 
     postFG-characterization' : f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
-    postFG-characterization' = lift↔ _ _ λ c → lemma c
+    postFG-characterization' = lift↔ _ _ lemma
 
 
   postFG-characterization : (f≤ : C≤ →mono C≤)
@@ -216,7 +223,7 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
       let open SetoidReasoning (Prop↔-setoid) in
       begin
       R ∈ preRL F⊣G                      ≡⟨⟩
-      (G-pred ∘ F-mono) R ⊆ R             ≈⟨ λ- , _$- ⟩
+      (G-pred ∘ F≤) R ⊆ R             ≈⟨ λ- , _$- ⟩
       (∀ d → d ≤ ⨆ (↓! d ∩ R) → d ∈ R) ≈⟨ γ , γ⁻¹ ⟩
       (∀ S → S ⊆ R → ⨆ S ∈ R)          ≡⟨⟩
       Is⨆Closed C⨆ R ∎
@@ -323,16 +330,20 @@ module _ (D⨆ E⨆ : SLat) where
   I₀-raw : (D × E → D) × (D → E) → (D × E → D × E)
   I₀-raw (f⃖ , f⃗) (d , e) = (f⃖ (d , e) , f⃗ d)
 
-  I₀-mono : ∣ Lens ∣ → ∣ Endo ∣
-  I₀-mono (f⃖ , f⃗) = mkMono (D≤ ×-poset E≤) (D≤ ×-poset E≤) (I₀-raw (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧))
-    (λ {(d , d')} {(e , e')} (d≤d' , e≤e') → ((f⃖ .Mono.isMonotone .IsMono.mono (d≤d' , e≤e')) , (f⃗ .Mono.isMonotone .IsMono.mono d≤d')))
+  I₀-mono : (f @ (f⃖ , f⃗) : ∣ Lens ∣) → ∀ {p @ (d , e) : D × E} {p' @ (d' , e') : D × E} → (d , e) ≤ (d' , e') → (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d) ≤ (⟦ f⃖ ⟧ (d' , e') , ⟦ f⃗ ⟧ d')
+  I₀-mono (f @ (f⃖ , f⃗)) {(d , d')} {(e , e')} (d≤d' , e≤e') =
+    ( f⃖ .Mono.isMonotone .IsMono.mono (d≤d' , e≤e')
+    , f⃗ .Mono.isMonotone .IsMono.mono d≤d')
+
+  I₀≤ : ∣ Lens ∣ → ∣ Endo ∣
+  I₀≤ (f @ (f⃖ , f⃗)) = mkMono (D≤ ×-poset E≤) (D≤ ×-poset E≤) (I₀-raw (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧)) (I₀-mono f)
 
   H₀ : Endo →mono Lens
   H₀ = mkMono Endo Lens H₀-mono
     (λ f≤g → ((λ p → f≤g p .proj₁) , (λ d → f≤g (d , E.⊤) .proj₂)))
 
   I₀ : Lens →mono Endo
-  I₀ = mkMono Lens Endo I₀-mono
+  I₀ = mkMono Lens Endo I₀≤
     (λ (f⃖≈g⃖ , f⃗≈g⃗) (d , e) → (f⃖≈g⃖ (d , e) , f⃗≈g⃗ d))
 
   H₀⊣I₀ : H₀ ⊣ I₀
@@ -408,9 +419,106 @@ module _ (D⨆ E⨆ : SLat) where
 
     postF₀G₀-explicit : ∀ (f : ∣ Lens ∣) → let (f⃖ , f⃗) = f
       in (f ∈ postLR F₀⊣G₀)
-      ↔ ((∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₁)) × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₂) ))
+      ↔ ((∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁)) × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂) ))
     postF₀G₀-explicit f = (id , id)
 
+    postF₀G₀-characterization : ∀ (f @ (f⃖ , f⃗) : ∣ Lens ∣)
+      → f ∈ postLR F₀⊣G₀
+      ↔ (∀ d₀ e₀ →
+           ⟦ f⃖ ⟧ (d₀ , e₀) D.≤ (d₀ D.⊓ ⟦ f⃖ ⟧ (⟦ f⃖ ⟧ (d₀ , e₀) , ⟦ f⃗ ⟧ d₀))
+         × ⟦ f⃗ ⟧ d₀ E.≤ (e₀ E.⊓ ⟦ f⃗ ⟧ (⟦ f⃖ ⟧ (d₀ , e₀))))
+    postF₀G₀-characterization f = {!!}
+
+    module _ (f≤ @ (f⃖≤ , f⃗≤) : ∣ Lens ∣) where
+      private
+        f⃗≈ = ⟦ f⃗≤ ⟧cong
+        f⃖≈ = ⟦ f⃖≤ ⟧cong
+
+        f⃗ = ⟦ f⃗≤ ⟧
+        f⃖ = ⟦ f⃖≤ ⟧
+
+        [1] : f≤ ∈ GaloisConnection.postLR F₀⊣G₀ ≡
+          ( (∀ (p₀ @ (d₀ , e₀) : D × E) → f⃖ p₀ D.≤ proj₁ (⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong)))
+          × (∀ d₀ → f⃗ d₀ E.≤ proj₂ (⨆ (↓! (d₀ , E.⊤) ∩ post≤ ⟦ I₀≤ f≤ ⟧cong))))
+        [1] = ≡.refl
+
+      private module _ (p₀ @ (d₀ , e₀) : D × E) where
+        private
+          χ : D × E → D × E
+          χ (d , e) = (d₀ , e₀) ⊓ (f⃖ (d , e) , f⃗ d)
+
+          χ-mono : {p : D × E} {p' : D × E} → p ≤ p' → χ p ≤ χ p'
+          χ-mono {p @ (d , e)} {p' @ (d' , e')} (p≤p'@(d≤d' , e≤e')) =
+            ( {! !}
+            , {!!})
+
+          χ≤ : D≤ ×-poset E≤ →mono D≤ ×-poset E≤
+          χ≤ = mkMono _ _ χ χ-mono
+
+          χ≈ : D≈ ×-setoid E≈ →cong D≈ ×-setoid E≈
+          χ≈ = ⟦ χ≤ ⟧cong
+
+
+{-
+      private module _ (c₀ : C) where
+        private
+          χ : C → C
+          χ c = c₀ ⊓ f c
+
+          χ≤ : C≤ →mono C≤
+          χ≤ = mkMono C≤ C≤ χ λ c≤c' → ⊓-mono _ _ _ _ Po.refl (f≤ .Mono.mono c≤c')
+
+          χ≈ : C≈ →cong C≈
+          χ≈ = ⟦ χ≤ ⟧cong
+
+          [2] : ⨆ (↓! c₀ ∩ post≤ f≈) ≈ ν χ≈
+          [2] =  ⨆-cong (↓! c₀ ∩ post≤ f≈) (post≤ χ≈) [2-2]
+            where
+            [2-1] : ∀ c → (c ≤ c₀ × (c ≤ f c)) ↔ c ≤ χ c
+            [2-1] c = SetoidPoly.sym Prop↔-setoid (≤⊓↔≤× c₀ (f c) c)
+
+            [2-2] : (↓! c₀ ∩ post≤ f≈) ≐ post≤ χ≈
+            [2-2] = ∀↔→≐ {C≈} {↓! c₀ ∩ post≤ f≈} {post≤ χ≈} [2-1]
+
+          [3] : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ ν χ≈
+          [3] = ≈→≤↔≤-r _ _ [2] (f c₀)
+
+          [4] : ∀ c → c ≤ χ c → c ≤ χ (f c₀)
+          [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , c≤ffc₀)
+            where
+            c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
+            c≤c₀ : c ≤ c₀
+            c≤c₀ = proj₁ c≤c₀,c≤fc
+            c≤fc : c ≤ f c
+            c≤fc = proj₂ c≤c₀,c≤fc
+            c≤ffc₀ : c ≤ f (f c₀)
+            c≤ffc₀ =
+              let open PosetReasoning C≤ in
+              begin
+              c ≤⟨ c≤fc ⟩
+              f c ≤⟨ f≤ .Mono.mono c≤fc ⟩
+              f (f c) ≤⟨ f≤ .Mono.mono (f≤ .Mono.mono c≤c₀) ⟩
+              f (f c₀) ∎
+
+          [5] : (f c₀ ≤ ν χ≈) ↔ (f c₀ ≤ χ (f c₀))
+          [5] = app-ub-of-post→≤ν↔∈post C⨆ ⟦ χ≤ ⟧cong (f c₀) [4]
+
+          [6] : (f c₀ ≤ χ (f c₀)) ≡ (f c₀ ≤ (c₀ ⊓ f (f c₀)))
+          [6] = ≡.refl
+
+          [7] : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+          [7] = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
+
+        lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+        lemma =
+          let open SetoidReasoning (Prop↔-setoid) in
+          begin
+          (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ [3] ⟩
+          (f c₀ ≤ ν χ≈) ≈⟨ [5] ⟩
+          (f c₀ ≤ χ (f c₀)) ≡⟨ [6] ⟩
+          (f c₀ ≤ (c₀ ⊓ f (f c₀))) ≈⟨ [7] ⟩
+          ((f c₀ ≤ c₀) × (f c₀ ≤ f (f c₀)))
+          -}
     private
       l-law : (p₀ : D × E) → (f : (D × E → D) × (D → E)) → D × E → D × E
       l-law p₀ (f⃖ , f⃗) (d , e) = p₀ ⊓ (f⃖ (d , e) , f⃗ d)
@@ -419,32 +527,32 @@ module _ (D⨆ E⨆ : SLat) where
       l p₀ (f⃖ , f⃗) = mkMono (D≤ ×-poset E≤) (D≤ ×-poset E≤) (l-law p₀ (⟦ f⃖ ⟧ , ⟦ f⃗ ⟧))
         (λ {(d , e)} {(d' , e')} (d≤d' , e≤e') → ⊓-mono-r p₀ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d) (⟦ f⃖ ⟧ (d' , e') , ⟦ f⃗ ⟧ d') ((f⃖ .Mono.mono (d≤d' , e≤e')) , (f⃗ .Mono.mono d≤d')))
 
-      ⨆↓∩toνD : ∀ p₀ f → D.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₁) D.≈ proj₁ (ν (⟦ l p₀ f ⟧cong))
-      ⨆↓∩toνD p₀ f@(f⃖ , f⃗) = D.⨆-cong _ _ (∀↔→≐ {_} {((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₁)} {(post poset ⟦ l p₀ f ⟧cong ∣₁)} β)
+      ⨆↓∩toνD : ∀ p₀ f → D.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁) D.≈ proj₁ (ν (⟦ l p₀ f ⟧cong))
+      ⨆↓∩toνD p₀ f@(f⃖ , f⃗) = D.⨆-cong _ _ (∀↔→≐ {_} {((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₁)} {(post poset ⟦ l p₀ f ⟧cong ∣₁)} β)
         where
         γ : ∀ d e → ((d , e) ≤ p₀ × ((d , e) ≤ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ↔ ((d , e) ≤ (p₀ ⊓ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d)))
         γ d e = Product.swap (≤⊓↔≤× p₀ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d) (d , e))
 
-        β : ∀ d → d ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₁) ↔ d ∈ (post poset ⟦ l p₀ f ⟧cong ∣₁)
+        β : ∀ d → d ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₁) ↔ d ∈ (post poset ⟦ l p₀ f ⟧cong ∣₁)
         β d =
           let open SetoidReasoning Prop↔-setoid in
           begin
-          (d ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₁)) ≡⟨⟩
+          (d ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₁)) ≡⟨⟩
           (Σ e ∶ E , (d , e) ≤ p₀ × ((d , e) ≤ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≈⟨ ∀↔→Σ↔ (γ d) ⟩
           (Σ e ∶ E , (d , e) ≤ (p₀ ⊓ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≡⟨⟩
           (d ∈ (post poset ⟦ l p₀ (f⃖ , f⃗) ⟧cong ∣₁)) ∎
 
-      ⨆↓∩toνE : ∀ p₀ f → E.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₂) E.≈ proj₂ (ν (⟦ l p₀ f ⟧cong))
-      ⨆↓∩toνE p₀ f@(f⃖ , f⃗) = E.⨆-cong _ _ (∀↔→≐ {_} {((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₂)} {(post poset ⟦ l p₀ f ⟧cong ∣₂)} β)
+      ⨆↓∩toνE : ∀ p₀ f → E.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂) E.≈ proj₂ (ν (⟦ l p₀ f ⟧cong))
+      ⨆↓∩toνE p₀ f@(f⃖ , f⃗) = E.⨆-cong _ _ (∀↔→≐ {_} {((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₂)} {(post poset ⟦ l p₀ f ⟧cong ∣₂)} β)
         where
         γ : ∀ e d → ((d , e) ≤ p₀ × ((d , e) ≤ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ↔ ((d , e) ≤ (p₀ ⊓ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d)))
         γ e d = Product.swap (≤⊓↔≤× p₀ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d) (d , e))
 
-        β : ∀ e → e ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₂) ↔ e ∈ (post poset ⟦ l p₀ f ⟧cong ∣₂)
+        β : ∀ e → e ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₂) ↔ e ∈ (post poset ⟦ l p₀ f ⟧cong ∣₂)
         β e =
           let open SetoidReasoning (Prop↔-setoid) in
           begin
-          (e ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono f ⟧cong) ∣₂)) ≡⟨⟩
+          (e ∈ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ f ⟧cong) ∣₂)) ≡⟨⟩
           (Σ d ∶ D , (d , e) ≤ p₀ × ((d , e) ≤ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≈⟨ ∀↔→Σ↔ (γ e) ⟩
           (Σ d ∶ D , (d , e) ≤ (p₀ ⊓ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≡⟨⟩
           (e ∈ (post poset ⟦ l p₀ (f⃖ , f⃗) ⟧cong ∣₂)) ∎
@@ -455,36 +563,36 @@ module _ (D⨆ E⨆ : SLat) where
       let open SetoidReasoning (Prop↔-setoid) in
       begin
       ((f⃖ , f⃗) ∈ postLR F₀⊣G₀)                                                                   ≡⟨⟩
-      ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₁))
-      × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₂)))  ≈⟨ (backward↔ ×-↔ {!forward↔!}) ⟩
+      ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁))
+      × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂)))  ≈⟨ (backward↔ ×-↔ {!forward↔!}) ⟩
       (Π backward × Π forward)                                                                     ∎
       where
       backward : D × E → Set
       backward p = {!⟦ f⃖ ⟧ p D.≤  !}
       forward : D → Set
       forward = λ d → {!!}
-      backward↔' : ∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₁) ↔ backward p
+      backward↔' : ∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁) ↔ backward p
       backward↔' p₀ =
         let open SetoidReasoning Prop↔-setoid in
         begin
-        (⟦ f⃖ ⟧ p₀ D.≤ D.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁)) ≈⟨ D.≤⨆↔≤ubs (⟦ f⃖ ⟧ p₀) ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁) ⟩
-        (∀ du → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ≈⟨ lift↔ _ _ p1 ⟩
+        (⟦ f⃖ ⟧ p₀ D.≤ D.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)) ≈⟨ D.≤⨆↔≤ubs (⟦ f⃖ ⟧ p₀) ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) ⟩
+        (∀ du → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ≈⟨ lift↔ _ _ p1 ⟩
         (∀ du → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du) ≈⟨ p' , p'' ⟩
         (∀ p → ⟦ f⃖ ⟧ p D.≤ ⟦ f⃖ ⟧ (p ⊓ (⟦ f⃖ ⟧ p , ⟦ f⃗ ⟧ (p .proj₁)))) ∎
         where
-        p1 : ∀ du → (du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ↔ ((∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
+        p1 : ∀ du → (du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ↔ ((∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
         p1 du .proj₁ g h = g (u h)
           where
-          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
+          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
           t du-ub d e de≤p₀ d≤f⃖de e≤f⃗d = du-ub d (e , (de≤p₀ , (d≤f⃖de , e≤f⃗d)))
-          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁)
+          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)
           u ξ d (e , de≤p₀ , (d≤fde , e≤fd)) = ξ d e de≤p₀ d≤fde e≤fd
 
         p1 du .proj₂ g h = g (t h)
           where
-          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
+          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
           t du-ub d e de≤p₀ d≤f⃖de e≤f⃗d = du-ub d (e , (de≤p₀ , (d≤f⃖de , e≤f⃗d)))
-          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀-mono (f⃖ , f⃗) ⟧cong) ∣₁)
+          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)
           u ξ d (e , de≤p₀ , (d≤fde , e≤fd)) = ξ d e de≤p₀ d≤fde e≤fd
 
         p' : (∀ du → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
@@ -496,7 +604,7 @@ module _ (D⨆ E⨆ : SLat) where
 
 
       backward↔ :
-        ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀-mono f ⟧cong)) ∣₁))
+        ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁))
         ↔ (∀ p → backward p))
       backward↔ = lift↔ _ _ {!backward↔'!}
 -}
