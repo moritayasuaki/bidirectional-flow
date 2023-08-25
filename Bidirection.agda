@@ -91,79 +91,89 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
     where
     private module M = PosetPoly (C≤ →mono-pw C≤)
 
-  module _ (f≤ : C≤ →mono C≤) where
+  module Characterization-by-ν
+    (f≤ : C≤ →mono C≤)
+    (let f≈ = ⟦ f≤ ⟧cong)
+    (let f = ⟦ f≤ ⟧) where
     private
-      f≈ = ⟦ f≤ ⟧cong
-      f = ⟦ f≤ ⟧
 
-      [1] : f≤ ∈ GaloisConnection.postLR F⊣G ≡ (∀ c₀ → f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈))
-      [1] = ≡.refl
+      _ : f≤ ∈ GaloisConnection.postLR F⊣G ≡ (∀ c₀ → f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈))
+      _ = ≡.refl
 
-    private module _ (c₀ : C) where
-      private
-        χ : C → C
-        χ c = c₀ ⊓ f c
+    module _ (c₀ : C) where
+      χ-raw : C → C
+      χ-raw c = c₀ ⊓ f c
 
-        χ≤ : C≤ →mono C≤
-        χ≤ = mkMono C≤ C≤ χ λ c≤c' → ⊓-mono _ _ _ _ Po.refl (f≤ .Mono.mono c≤c')
+      χ-mono : ∀ {c c'} → c ≤ c' → χ-raw c ≤ χ-raw c'
+      χ-mono c≤c' = ⊓-mono _ _ _ _ Po.refl (f≤ .Mono.mono c≤c')
 
-        χ≈ : C≈ →cong C≈
-        χ≈ = ⟦ χ≤ ⟧cong
+      χ≤ : C≤ →mono C≤
+      χ≤ = mkMono C≤ C≤ χ-raw χ-mono
 
-        [2] : ⨆ (↓! c₀ ∩ post≤ f≈) ≈ ν χ≈
-        [2] =  ⨆-cong (↓! c₀ ∩ post≤ f≈) (post≤ χ≈) [2-2]
-          where
-          [2-1] : ∀ c → (c ≤ c₀ × (c ≤ f c)) ↔ c ≤ χ c
-          [2-1] c = SetoidPoly.sym Prop↔-setoid (≤⊓↔≤× c₀ (f c) c)
+      χ≈ : C≈ →cong C≈
+      χ≈ = ⟦ χ≤ ⟧cong
 
-          [2-2] : (↓! c₀ ∩ post≤ f≈) ≐ post≤ χ≈
-          [2-2] = ∀↔→≐ {C≈} {↓! c₀ ∩ post≤ f≈} {post≤ χ≈} [2-1]
+      ⨆↓!∩post≈νχ : ⨆ (↓! c₀ ∩ post≤ f≈) ≈ ν χ≈
+      ⨆↓!∩post≈νχ = ⨆-cong (↓! c₀ ∩ post≤ f≈) (post≤ χ≈) [2-2]
+        where
+        [2-1] : ∀ c → (c ≤ c₀ × (c ≤ f c)) ↔ c ≤ χ-raw c
+        [2-1] c = SetoidPoly.sym Prop↔-setoid (≤⊓↔≤× c₀ (f c) c)
 
-        [3] : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ ν χ≈
-        [3] = ≈→≤↔≤-r _ _ [2] (f c₀)
+        [2-2] : (↓! c₀ ∩ post≤ f≈) ≐ post≤ χ≈
+        [2-2] = ∀↔→≐ {C≈} {↓! c₀ ∩ post≤ f≈} {post≤ χ≈} [2-1]
 
-        [4] : ∀ c → c ≤ χ c → c ≤ χ (f c₀)
-        [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , c≤ffc₀)
-          where
-          c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
-          c≤c₀ : c ≤ c₀
-          c≤c₀ = proj₁ c≤c₀,c≤fc
-          c≤fc : c ≤ f c
-          c≤fc = proj₂ c≤c₀,c≤fc
-          c≤ffc₀ : c ≤ f (f c₀)
-          c≤ffc₀ =
-            let open PosetReasoning C≤ in
-            begin
-            c ≤⟨ c≤fc ⟩
-            f c ≤⟨ f≤ .Mono.mono c≤fc ⟩
-            f (f c) ≤⟨ f≤ .Mono.mono (f≤ .Mono.mono c≤c₀) ⟩
-            f (f c₀) ∎
+      ≤⨆↔≤νχ : ∀ c → c ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ c ≤ ν χ≈
+      ≤⨆↔≤νχ = ≈→≤↔≤-r _ _ ⨆↓!∩post≈νχ
 
-        [5] : (f c₀ ≤ ν χ≈) ↔ (f c₀ ≤ χ (f c₀))
-        [5] = app-ub-of-post→≤ν↔∈post C⨆ ⟦ χ≤ ⟧cong (f c₀) [4]
+      f≤id⊓ff↔f≤id×f≤ff : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+      f≤id⊓ff↔f≤id×f≤ff = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
 
-        [6] : (f c₀ ≤ χ (f c₀)) ≡ (f c₀ ≤ (c₀ ⊓ f (f c₀)))
-        [6] = ≡.refl
+    Good : C → Set
+    Good c₀ = ∀ c → c ≤ χ-raw c₀ c → c ≤ χ-raw c₀ (f c₀)
 
-        [7] : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
-        [7] = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
+    module _ (c₀ : C) (c₀-good : Good c₀) where
 
-      [2]-pub = [2]
-      lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
-      lemma =
+      fc₀≤νχc₀↔fc₀≤χc₀fc₀ : (f c₀ ≤ ν (χ≈ c₀)) ↔ (f c₀ ≤ (c₀ ⊓ f (f c₀)))
+      fc₀≤νχc₀↔fc₀≤χc₀fc₀ = app-ub-of-post→≤ν↔post C⨆ ⟦ χ≤ c₀ ⟧cong (f c₀) c₀-good
+
+      ⊓-lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ (c₀ ⊓ f (f c₀))
+      ⊓-lemma =
         let open SetoidReasoning (Prop↔-setoid) in
         begin
-        (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ [3] ⟩
-        (f c₀ ≤ ν χ≈) ≈⟨ [5] ⟩
-        (f c₀ ≤ χ (f c₀)) ≡⟨ [6] ⟩
-        (f c₀ ≤ (c₀ ⊓ f (f c₀))) ≈⟨ [7] ⟩
+        (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ ≤⨆↔≤νχ c₀ (f c₀) ⟩
+        (f c₀ ≤ ν (χ≈ c₀)) ≈⟨ fc₀≤νχc₀↔fc₀≤χc₀fc₀ ⟩
+        (f c₀ ≤ (c₀ ⊓ f (f c₀))) ∎
+
+      coclosure-lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
+      coclosure-lemma =
+        let open SetoidReasoning (Prop↔-setoid) in
+        begin
+        (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ ⊓-lemma ⟩
+        (f c₀ ≤ (c₀ ⊓ f (f c₀))) ≈⟨ f≤id⊓ff↔f≤id×f≤ff c₀ ⟩
         ((f c₀ ≤ c₀) × (f c₀ ≤ f (f c₀))) ∎
 
-    endo-lemma = [2]-pub
+    private
+      all-good : ∀ c₀ → Good c₀
+      all-good c₀ c c≤χc = goal
+        where
+        c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
+        c≤c₀ : c ≤ c₀
+        c≤c₀ = proj₁ c≤c₀,c≤fc
+        c≤fc : c ≤ f c
+        c≤fc = proj₂ c≤c₀,c≤fc
+        c≤ffc₀ : c ≤ f (f c₀)
+        c≤ffc₀ =
+          let open PosetReasoning C≤ in
+          begin
+          c ≤⟨ c≤fc ⟩
+          f c ≤⟨ f≤ .Mono.mono c≤fc ⟩
+          f (f c) ≤⟨ f≤ .Mono.mono (f≤ .Mono.mono c≤c₀) ⟩
+          f (f c₀) ∎
+        goal : c ≤ c₀ ⊓ f (f c₀)
+        goal = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , c≤ffc₀)
 
     postFG-characterization' : f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
-    postFG-characterization' = lift↔ _ _ lemma
-
+    postFG-characterization' = lift↔ _ _ λ c₀ → coclosure-lemma c₀ (all-good c₀)
 
   postFG-characterization : (f≤ : C≤ →mono C≤)
     → f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧
@@ -246,11 +256,6 @@ module Powerset⊆-and-Endo (C⨆ : SLat) where
 module _ (D⨆ E⨆ : SLat) where
 
   private
-    D×E⨆ = D⨆ ×-slat E⨆
-
-    D×E≤ = SLat.poset D×E⨆
-    D×E≈ = SLat.Eq.setoid D×E⨆
-
     D≤ = SLat.poset D⨆
     D≈ = SLat.Eq.setoid D⨆
     D = ∣ D⨆ ∣
@@ -263,8 +268,11 @@ module _ (D⨆ E⨆ : SLat) where
     module E = SLat E⨆
 
   Relation = Pred (D≈ ×-setoid E≈)
+
   open SLat (D⨆ ×-slat E⨆)
   open Powerset⊆-and-Endo (D⨆ ×-slat E⨆)
+
+  Relation⊆ = Powerset⊆
 
   module _ where
     open GaloisConnection
@@ -286,6 +294,10 @@ module _ (D⨆ E⨆ : SLat) where
   IsMonotoneRelation : (R : Relation) → Set
   IsMonotoneRelation R = ∀ d₀ d₁ e₀ e₁
     → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d₁ → e₀ E.≤ e₁
+
+  IsBimonotoneRelation  : (R : Relation) → Set
+  IsBimonotoneRelation R = ∀ d₀ d₁ e₀ e₁
+    → (d₀ , e₀) ∈ R → (d₁ , e₁) ∈ R → d₀ D.≤ d₁ ↔ e₀ E.≤ e₁
 
   IsSquareFilling : (R : Relation) → Set
   IsSquareFilling R = ∀ d₀ d₁ e₀ e₁
@@ -355,9 +367,10 @@ module _ (D⨆ E⨆ : SLat) where
   H₀⊣I₀ .GaloisConnection.ψ f f⃡ .proj₂ f≤I₀f⃡
     = ((λ p → f≤I₀f⃡ p .proj₁) , (λ d → f≤I₀f⃡ (d , E.⊤) .proj₂))
 
+
   -- The Galois connection between relations and lenses
 
-  F₀ : Powerset⊆ →mono (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤))
+  F₀ : Relation⊆ →mono (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤))
   F₀ = H₀ ∘-mono F
 
   G₀ : (((D≤ ×-poset E≤) →mono-pw D≤) ×-poset (D≤ →mono-pw E≤)) →mono Powerset⊆
@@ -390,7 +403,7 @@ module _ (D⨆ E⨆ : SLat) where
     preG₀F₀-characterization : (R : Relation) → (R ∈ preRL F₀⊣G₀) ↔ IsTiltedBowTieConnecting R × Is⨆Closed (D⨆ ×-slat E⨆) R
     preG₀F₀-characterization R = (α , α⁻¹)
       where
-      α₁ : (R ∈ preRL F₀⊣G₀) → (∀ d e d₀ e₀ e₁ → IsTiltedBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
+      α₁ : (R ∈ preRL F₀⊣G₀) → (IsTiltedBowTieConnecting R)
       α₁ R∈preG₀F₀ d e d₀ e₀ e₁ tiltedbowtie = R∈preG₀F₀ (tiltedbowtie→≤⨆ R d e (d₀ , e₀ , e₁ , tiltedbowtie))
 
       α₂ : (R ∈ preRL F₀⊣G₀) → Is⨆Closed (D⨆ ×-slat E⨆) R
@@ -399,7 +412,7 @@ module _ (D⨆ E⨆ : SLat) where
       α : R ∈ preRL F₀⊣G₀ → IsTiltedBowTieConnecting R × Is⨆Closed (D⨆ ×-slat E⨆) R
       α x = (α₁ x , α₂ x)
 
-      α⁻¹ : (∀ d e d₀ e₀ e₁ → IsTiltedBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
+      α⁻¹ : (IsTiltedBowTieConnecting R) × Is⨆Closed (D⨆ ×-slat E⨆) R → (R ∈ preRL F₀⊣G₀)
       α⁻¹ (tiltedbowtie→R , ⨆closed) {(d , e)} (d≤⨆↓!de∩R∣₁ , e≤⨆↓!d⊤∩R∣₂) =
          tiltedbowtie→R d e (D.⨆ ((↓! (d , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓! (d , e) ∩ R) ∣₂)) (E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂))
            ( d≥⨆↓!d⊤∩R∣₁
@@ -422,113 +435,9 @@ module _ (D⨆ E⨆ : SLat) where
 
     postF₀G₀-explicit : ∀ (f : ∣ Lens ∣) → let (f⃖ , f⃗) = f
       in (f ∈ postLR F₀⊣G₀)
-      ↔ ((∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁)) × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂) ))
-    postF₀G₀-explicit f = (id , id)
+      ≡ ((∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁)) × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂) ))
+    postF₀G₀-explicit f = ≡.refl
 
-    postF₀G₀-characterization : ∀ (f @ (f⃖ , f⃗) : ∣ Lens ∣)
-      → f ∈ postLR F₀⊣G₀
-      ↔ (∀ d₀ e₀ →
-           ⟦ f⃖ ⟧ (d₀ , e₀) D.≤ (d₀ D.⊓ ⟦ f⃖ ⟧ (⟦ f⃖ ⟧ (d₀ , e₀) , ⟦ f⃗ ⟧ d₀))
-         × ⟦ f⃗ ⟧ d₀ E.≤ (e₀ E.⊓ ⟦ f⃗ ⟧ (⟦ f⃖ ⟧ (d₀ , e₀))))
-    postF₀G₀-characterization f = {!!}
-
-    module _ (f≤ @ (f⃖≤ , f⃗≤) : ∣ Lens ∣) where
-      private
-        f⃗≈ = ⟦ f⃗≤ ⟧cong
-        f⃖≈ = ⟦ f⃖≤ ⟧cong
-
-        f⃗ = ⟦ f⃗≤ ⟧
-        f⃖ = ⟦ f⃖≤ ⟧
-
-        [1] : f≤ ∈ GaloisConnection.postLR F₀⊣G₀ ≡
-          ( (∀ (p₀ @ (d₀ , e₀) : D × E) → f⃖ p₀ D.≤ proj₁ (⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong)))
-          × (∀ d₀ → f⃗ d₀ E.≤ proj₂ (⨆ (↓! (d₀ , E.⊤) ∩ post≤ ⟦ I₀≤ f≤ ⟧cong))))
-        [1] = ≡.refl
-
-        [1]' : ((∀ (p₀ @ (d₀ , e₀) : D × E) → f⃖ p₀ D.≤ proj₁ (⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong))) × (∀ d₀ → f⃗ d₀ E.≤ proj₂ (⨆ (↓! (d₀ , E.⊤) ∩ post≤ ⟦ I₀≤ f≤ ⟧cong))))
-             ↔ (∀ (p₀ @ (d₀ , e₀) : D × E) → (f⃖ p₀ , f⃗ d₀) ≤ (proj₁ (⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong)) , proj₂ (⨆ (↓! (d₀ , E.⊤) ∩ post≤ ⟦ I₀≤ f≤ ⟧cong))))
-        [1]' .proj₁ (α , β) p₀@(d₀ , e₀) = (α p₀ , β d₀)
-        [1]' .proj₂ γ = ((λ p₀ → proj₁ (γ p₀)) , (λ d₀ → proj₂ (γ (d₀ , E.⊤))))
-
-      private module _ (p₀ @ (d₀ , e₀) : D × E) where
-        χ-raw : D × E → D × E
-        χ-raw (d , e) = (d₀ , e₀) ⊓ (f⃖ (d , e) , f⃗ d)
-
-        χ-mono : {p : D × E} {p' : D × E} → p ≤ p' → χ-raw p ≤ χ-raw p'
-        χ-mono {p @ (d , e)} {p' @ (d' , e')} (p≤p'@(d≤d' , e≤e'))
-            = ⊓-mono p₀ (f⃖ (d , e) , f⃗ d) p₀ (f⃖ (d' , e') , f⃗ d') Po.refl (f⃖≤ .Mono.mono p≤p' , f⃗≤ .Mono.mono d≤d')
-
-        χ≤ : D≤ ×-poset E≤ →mono D≤ ×-poset E≤
-        χ≤ = mkMono _ _ χ-raw χ-mono
-
-        χ≈ : D≈ ×-setoid E≈ →cong D≈ ×-setoid E≈
-        χ≈ = ⟦ χ≤ ⟧cong
-
-        [2] : ⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong) ≈ ν χ≈
-        [2] = endo-lemma (I₀≤ f≤) p₀
-
-      private
-        [3]D : ∀ p₀ → f⃖ p₀ D.≤ proj₁ (⨆ (↓! p₀ ∩ post≤ ⟦ I₀≤ f≤ ⟧cong)) ↔ f⃖ p₀ D.≤ proj₁ (ν (χ≈ p₀))
-        [3]D p₀ = {! ≈→≤↔≤-r _ _ ([2] p₀) (⟦ I₀≤ f≤ ⟧ p₀) !}
-
-        [3]E : ∀ d₀ → f⃗ d₀ E.≤ proj₂ (⨆ (↓! (d₀ , E.⊤) ∩ post≤ ⟦ I₀≤ f≤ ⟧cong)) ↔ f⃗ d₀ E.≤ proj₂ (ν (χ≈ (d₀ , E.⊤)))
-        [3]E p₀ = {! ≈→≤↔≤-r _ _ ([2] p₀) (⟦ I₀≤ f≤ ⟧ p₀) !}
-
-      private module _ (p₀ @ (d₀ , e₀) : D × E) where
-        private
-          k = {![2] !}
-
-
-{-
-
-          [2] : ⨆ (↓! c₀ ∩ post≤ f≈) ≈ ν χ≈
-          [2] =  ⨆-cong (↓! c₀ ∩ post≤ f≈) (post≤ χ≈) [2-2]
-            where
-            [2-1] : ∀ c → (c ≤ c₀ × (c ≤ f c)) ↔ c ≤ χ c
-            [2-1] c = SetoidPoly.sym Prop↔-setoid (≤⊓↔≤× c₀ (f c) c)
-
-            [2-2] : (↓! c₀ ∩ post≤ f≈) ≐ post≤ χ≈
-            [2-2] = ∀↔→≐ {C≈} {↓! c₀ ∩ post≤ f≈} {post≤ χ≈} [2-1]
-
-          [3] : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ ν χ≈
-          [3] = ≈→≤↔≤-r _ _ [2] (f c₀)
-
-          [4] : ∀ c → c ≤ χ c → c ≤ χ (f c₀)
-          [4] c c≤χc = ≤⊓←≤× c₀ (f (f c₀)) c (c≤c₀ , c≤ffc₀)
-            where
-            c≤c₀,c≤fc = ≤⊓→≤× c₀ (f c) c c≤χc
-            c≤c₀ : c ≤ c₀
-            c≤c₀ = proj₁ c≤c₀,c≤fc
-            c≤fc : c ≤ f c
-            c≤fc = proj₂ c≤c₀,c≤fc
-            c≤ffc₀ : c ≤ f (f c₀)
-            c≤ffc₀ =
-              let open PosetReasoning C≤ in
-              begin
-              c ≤⟨ c≤fc ⟩
-              f c ≤⟨ f≤ .Mono.mono c≤fc ⟩
-              f (f c) ≤⟨ f≤ .Mono.mono (f≤ .Mono.mono c≤c₀) ⟩
-              f (f c₀) ∎
-
-          [5] : (f c₀ ≤ ν χ≈) ↔ (f c₀ ≤ χ (f c₀))
-          [5] = app-ub-of-post→≤ν↔∈post C⨆ ⟦ χ≤ ⟧cong (f c₀) [4]
-
-          [6] : (f c₀ ≤ χ (f c₀)) ≡ (f c₀ ≤ (c₀ ⊓ f (f c₀)))
-          [6] = ≡.refl
-
-          [7] : (f c₀ ≤ (c₀ ⊓ f (f c₀))) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
-          [7] = ≤⊓↔≤× c₀ (f (f c₀)) (f c₀)
-
-        lemma : f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈) ↔ f c₀ ≤ c₀ × f c₀ ≤ f (f c₀)
-        lemma =
-          let open SetoidReasoning (Prop↔-setoid) in
-          begin
-          (f c₀ ≤ ⨆ (↓! c₀ ∩ post≤ f≈)) ≈⟨ [3] ⟩
-          (f c₀ ≤ ν χ≈) ≈⟨ [5] ⟩
-          (f c₀ ≤ χ (f c₀)) ≡⟨ [6] ⟩
-          (f c₀ ≤ (c₀ ⊓ f (f c₀))) ≈⟨ [7] ⟩
-          ((f c₀ ≤ c₀) × (f c₀ ≤ f (f c₀)))
-          -}
     private
       l-law : (p₀ : D × E) → (f : (D × E → D) × (D → E)) → D × E → D × E
       l-law p₀ (f⃖ , f⃗) (d , e) = p₀ ⊓ (f⃖ (d , e) , f⃗ d)
@@ -566,59 +475,6 @@ module _ (D⨆ E⨆ : SLat) where
           (Σ d ∶ D , (d , e) ≤ p₀ × ((d , e) ≤ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≈⟨ ∀↔→Σ↔ (γ e) ⟩
           (Σ d ∶ D , (d , e) ≤ (p₀ ⊓ (⟦ f⃖ ⟧ (d , e) , ⟦ f⃗ ⟧ d))) ≡⟨⟩
           (e ∈ (post poset ⟦ l p₀ (f⃖ , f⃗) ⟧cong ∣₂)) ∎
-{-
-    postF₀G₀-characterization : ∀ (f : ∣ Lens ∣) → let (f⃖ , f⃗) = f in
-      (f ∈ postLR F₀⊣G₀) ↔ {!!}
-    postF₀G₀-characterization f@(f⃖ , f⃗) =
-      let open SetoidReasoning (Prop↔-setoid) in
-      begin
-      ((f⃖ , f⃗) ∈ postLR F₀⊣G₀)                                                                   ≡⟨⟩
-      ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁))
-      × (∀ d → ⟦ f⃗ ⟧ d E.≤ E.⨆ ((↓! (d , E.⊤) ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₂)))  ≈⟨ (backward↔ ×-↔ {!forward↔!}) ⟩
-      (Π backward × Π forward)                                                                     ∎
-      where
-      backward : D × E → Set
-      backward p = {!⟦ f⃖ ⟧ p D.≤  !}
-      forward : D → Set
-      forward = λ d → {!!}
-      backward↔' : ∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁) ↔ backward p
-      backward↔' p₀ =
-        let open SetoidReasoning Prop↔-setoid in
-        begin
-        (⟦ f⃖ ⟧ p₀ D.≤ D.⨆ ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)) ≈⟨ D.≤⨆↔≤ubs (⟦ f⃖ ⟧ p₀) ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) ⟩
-        (∀ du → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ≈⟨ lift↔ _ _ p1 ⟩
-        (∀ du → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du) ≈⟨ p' , p'' ⟩
-        (∀ p → ⟦ f⃖ ⟧ p D.≤ ⟦ f⃖ ⟧ (p ⊓ (⟦ f⃖ ⟧ p , ⟦ f⃗ ⟧ (p .proj₁)))) ∎
-        where
-        p1 : ∀ du → (du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → ⟦ f⃖ ⟧ p₀ D.≤ du) ↔ ((∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
-        p1 du .proj₁ g h = g (u h)
-          where
-          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
-          t du-ub d e de≤p₀ d≤f⃖de e≤f⃗d = du-ub d (e , (de≤p₀ , (d≤f⃖de , e≤f⃗d)))
-          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)
-          u ξ d (e , de≤p₀ , (d≤fde , e≤fd)) = ξ d e de≤p₀ d≤fde e≤fd
-
-        p1 du .proj₂ g h = g (t h)
-          where
-          t : du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁) → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du)
-          t du-ub d e de≤p₀ d≤f⃖de e≤f⃗d = du-ub d (e , (de≤p₀ , (d≤f⃖de , e≤f⃗d)))
-          u : (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → du ∈ D.ubs ((↓! p₀ ∩ post (D≤ ×-poset E≤) ⟦ I₀≤ (f⃖ , f⃗) ⟧cong) ∣₁)
-          u ξ d (e , de≤p₀ , (d≤fde , e≤fd)) = ξ d e de≤p₀ d≤fde e≤fd
-
-        p' : (∀ du → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
-          → (∀ (p : D × E) → ⟦ f⃖ ⟧ p D.≤ ⟦ f⃖ ⟧ (p ⊓ (⟦ f⃖ ⟧ p , ⟦ f⃗ ⟧ (p .proj₁))))
-        p' τ p = {!τ (⟦ f⃖ ⟧ (p₀ ⊓ (⟦ f⃖ ⟧ p , ⟦ f⃗ ⟧ (p .proj₁)))) ? !}
-        p'' : (∀ p → ⟦ f⃖ ⟧ p D.≤ ⟦ f⃖ ⟧ (p ⊓ (⟦ f⃖ ⟧ p , ⟦ f⃗ ⟧ (p .proj₁))))
-          → (∀ du → (∀ d e → (d , e) ≤ p₀ → d D.≤ ⟦ f⃖ ⟧ (d , e) → e E.≤ ⟦ f⃗ ⟧ d → d D.≤ du) → ⟦ f⃖ ⟧ p₀ D.≤ du)
-        p'' g du g' = g' (⟦ f⃖ ⟧ p₀) (p₀ .proj₂ E.⊓ ⟦ f⃗ ⟧ (⟦ f⃖ ⟧ p₀)) {!g p₀!} {!!} {!!}
-
-
-      backward↔ :
-        ( (∀ p → ⟦ f⃖ ⟧ p D.≤ D.⨆ ((↓! p ∩ post (D≤ ×-poset E≤) (⟦ I₀≤ f ⟧cong)) ∣₁))
-        ↔ (∀ p → backward p))
-      backward↔ = lift↔ _ _ {!backward↔'!}
--}
-
 
   -- We define the following galois connection
   --
@@ -706,7 +562,7 @@ module _ (D⨆ E⨆ : SLat) where
       ↔ (((d , e) : D × E) → (d D.≤ D.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₁)) × (e E.≤ E.⨆ ((↓! (d , E.⊤) ∩ R) ∣₂)) → (d , e) ∈ R)
     preG₁F₁-explicit R = (λ- , _$-)
 
-    preG₁F₁-characterization : (R : Relation) → (R ∈ preRL F₁⊣G₁) ↔ (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
+    preG₁F₁-characterization : (R : Relation) → (R ∈ preRL F₁⊣G₁) ↔ (IsBowTieConnecting R) × (Is⨆Closed (D⨆ ×-slat E⨆) R)
     preG₁F₁-characterization R = (α , α⁻¹)
       where
       α₁ : (R ∈ preRL F₁⊣G₁) → (∀ d e d₀ e₀ d₁ e₁ → IsBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
@@ -855,7 +711,7 @@ module _ (D⨆ E⨆ : SLat) where
       ↔ ((∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × (Is⨆Closed (D⨆ ×-slat E⨆) R))
     preG₂F₂-characterization R = (α , α⁻¹)
      where
-     α₁ : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R)
+     α₁ : (R ∈ preRL F₂⊣G₂) → IsLooseBowTieConnecting R
      α₁ R∈preG₂F₂ d e d₀ e₀ d₁ e₁ fan = R∈preG₂F₂ (loosebowtie→≤⨆ R d e (d₀ , e₀ , d₁ , e₁ , fan))
 
      α₂ : (R ∈ preRL F₂⊣G₂) → Is⨆Closed (D⨆ ×-slat E⨆) R
@@ -864,7 +720,7 @@ module _ (D⨆ E⨆ : SLat) where
      α : (R ∈ preRL F₂⊣G₂) → (∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R
      α = Product.< α₁ , α₂ >
 
-     α⁻¹ : ((∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R) × Is⨆Closed (D⨆ ×-slat E⨆) R) → (R ∈ preRL F₂⊣G₂)
+     α⁻¹ : (IsLooseBowTieConnecting R × Is⨆Closed (D⨆ ×-slat E⨆) R) → (R ∈ preRL F₂⊣G₂)
      α⁻¹ (fan→R , ⨆closed) {(d , e)} (d≤⨆↓!⊤e∩R∣₁ , e≤⨆↓!⊤⊤∩R∣₂) =
        fan→R d e
          (D.⨆ ((↓! (D.⊤ , E.⊤) ∩ R) ∣₁)) (E.⨆ ((↓! (D.⊤ , e) ∩ R) ∣₂))

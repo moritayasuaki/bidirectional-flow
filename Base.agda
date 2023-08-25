@@ -55,11 +55,22 @@ open HasCarrier {{...}} hiding (Carrier) public
 Setoid : Set
 Setoid = SetoidPoly lzero lzero
 
-
+module SetoidProps (setoid : Setoid) where
+  open SetoidPoly setoid public
+  open import Relation.Binary.Properties.Setoid setoid public
 
 Poset : Set
 Poset = PosetPoly lzero lzero lzero
 
+module PosetProps (poset : Poset) where
+  open PosetPoly poset public
+  open import Relation.Binary.Properties.Poset poset public
+
+  ≈→≤ : ∀ {d d'} → d ≈ d' → d ≤ d'
+  ≈→≤ = reflexive 
+
+  ≈→≥ : ∀ {d d'} → d ≈ d' → d' ≤ d
+  ≈→≥ = reflexive ∘ Eq.sym
 
 instance
   setoid-carrier : HasCarrier Setoid
@@ -222,9 +233,9 @@ module FunBinR where
 
 module _ (D : Setoid) (E : Setoid) where
   private
-    module D = SetoidPoly D
-    module E = SetoidPoly E
-    module D×E = SetoidPoly (D ×-setoid E)
+    module D = SetoidProps D
+    module E = SetoidProps E
+    module D×E = SetoidProps (D ×-setoid E)
 
   proj₁-cong : IsCong D×E._≈_ D._≈_ proj₁
   proj₁-cong .IsCong.cong = proj₁
@@ -1073,15 +1084,15 @@ module _ (C⨆ : SLat) where
       f = ⟦ f≈ ⟧
       c* = ν f≈
 
-    ∈post→≤ν : c ∈ post≤ f≈ → c ≤ c*
-    ∈post→≤ν c-post-f = ⨆-ub (post≤ f≈) c c-post-f
+    post→≤ν : c ≤ f c → c ≤ c*
+    post→≤ν c-post-f = ⨆-ub (post≤ f≈) c c-post-f
 
     module _ (fc-ub-of-post-f : ∀ x → x ≤ f x → x ≤ f c) where
-      app-ub-of-post∧≤ν→∈post : c ≤ c* → c ∈ post≤ f≈
-      app-ub-of-post∧≤ν→∈post c≤νf = Po.trans c≤νf (⨆-least (post≤ f≈) (f c) fc-ub-of-post-f)
+      app-ub-of-post∧≤ν→post : c ≤ c* → c ≤ f c
+      app-ub-of-post∧≤ν→post c≤νf = Po.trans c≤νf (⨆-least (post≤ f≈) (f c) fc-ub-of-post-f)
 
-      app-ub-of-post→≤ν↔∈post : c ≤ c* ↔ c ∈ post≤ f≈
-      app-ub-of-post→≤ν↔∈post = ( app-ub-of-post∧≤ν→∈post , ∈post→≤ν)
+      app-ub-of-post→≤ν↔post : c ≤ c* ↔ c ≤ f c
+      app-ub-of-post→≤ν↔post = ( app-ub-of-post∧≤ν→post , post→≤ν)
 
 module _ (D⨆ E⨆ : SLat) where
   private
@@ -1398,19 +1409,46 @@ module _ where
   _⊣_ : {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) → Set _
   L ⊣ R = GaloisConnection L R
 
+  IsOrderReflecting : {D : Poset} {C : Poset} → D →mono C → Set
+  IsOrderReflecting {D} {C} f≤ = ∀ {d d'} → ⟦ f≤ ⟧ d C.≤ ⟦ f≤ ⟧ d' → d D.≤ d'
+    where
+    module C = PosetProps C
+    module D = PosetProps D
+
+  record OrderEmbedding {C : Poset} {D : Poset} (e : D →mono C) : Set where
+    private module C = PosetProps C
+    private module D = PosetProps D
+    field
+      reflecting : ∀ d d' → ⟦ e ⟧ d C.≤ ⟦ e ⟧ d' → d D.≤ d'
+
+    injective : ∀ d d' → ⟦ e ⟧ d C.≈ ⟦ e ⟧ d' → d D.≈ d'
+    injective d d' ed≈ed' = D.antisym (reflecting d d' (C.≈→≤ ed≈ed')) (reflecting d' d (C.≈→≥ ed≈ed'))
+
   module _ {C : Poset} {D : Poset} (L : C →mono D ) (R : D →mono C) where
+    private
+      module C = PosetProps C
+      module D = PosetProps D
+
     module _ (L⊣R : L ⊣ R) where
       open GaloisConnection L⊣R
-      private
-        module C = PosetPoly C
-        module D = PosetPoly D
 
+      private
         -- L ⊣ R → R d = max (L⁻¹ ↓ d)
         R-belongs : ∀ d → ⟦ R ⟧ d ∈ ⃖ ⟦ L ⟧cong (principal-downset D d)
         R-belongs d = ⟦ L ⟧ (⟦ R ⟧ d) , (D.Eq.refl , ε d)
 
         R-greatest : ∀ d c → c ∈ ⃖ ⟦ L ⟧cong (principal-downset D d) → c C.≤ ⟦ R ⟧ d
         R-greatest d c (d' , Lc≈d' , d'≤d) = C.trans (ψ c d' .proj₁ (D.reflexive (Lc≈d'))) (R .Mono.mono d'≤d)
+
+      module _ (R-reflecting : IsOrderReflecting R) where
+        L⊣R∧R-embedding→LR≈Id : ∀ d → ⟦ L ⟧ (⟦ R ⟧ d) D.≈ d
+        L⊣R∧R-embedding→LR≈Id d = D.antisym LRd≤d LRd≥d
+          where
+          LRd≤d : ⟦ L ⟧ (⟦ R ⟧ d) D.≤ d
+          LRd≤d = ε d
+          LRd≥d : d D.≤ ⟦ L ⟧ (⟦ R ⟧ d)
+          LRd≥d = R-reflecting (η (⟦ R ⟧ d))
+
 
   module _ (C⨆ D⨆ : SLat) where
     private

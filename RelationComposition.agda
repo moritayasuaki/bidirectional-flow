@@ -116,6 +116,30 @@ module _ where
       cd∈P : (c , d) ∈ P
       cd∈P = P .Pred.isWellDefined (C.Eq.refl , d'≈d) cd'∈P
 
+    bimono→bt-conn : (P : Pred (C≈ ×-setoid D≈))
+      → IsBimonotoneRelation C⨆ D⨆ P
+      → IsBowTieConnecting C⨆ D⨆ P
+    bimono→bt-conn P P-bimono c d c₀ d₀ c₁ d₁ bowtie@(c₀≤c , d₀≤d , c≤c₁ , d≤d₁ , c₀d₁∈P , c₁d₀∈P)
+      = cd∈P
+      where
+      c₀≤c₁ : c₀ C.≤ c₁
+      c₀≤c₁ = C.Po.trans c₀≤c c≤c₁
+      d₁≤d₀ : d₁ D.≤ d₀
+      d₁≤d₀ = P-bimono c₀ c₁ d₁ d₀ c₀d₁∈P c₁d₀∈P .proj₁ c₀≤c₁
+      d≤d₀ : d D.≤ d₀
+      d≤d₀ = D.Po.trans d≤d₁ d₁≤d₀
+      d₀≈d : d₀ D.≈ d
+      d₀≈d = D.Po.antisym d₀≤d d≤d₀
+      d₀≤d₁ : d₀ D.≤ d₁
+      d₀≤d₁ = D.Po.trans d₀≤d d≤d₁
+      c₁≤c₀ : c₁ C.≤ c₀
+      c₁≤c₀ = P-bimono c₁ c₀ d₀ d₁ c₁d₀∈P c₀d₁∈P .proj₂ d₀≤d₁
+      c₁≤c : c₁ C.≤ c
+      c₁≤c = C.Po.trans c₁≤c₀ c₀≤c
+      c₁≈c : c₁ C.≈ c
+      c₁≈c = C.Po.antisym c₁≤c c≤c₁
+      cd∈P : (c , d) ∈ P
+      cd∈P = P .Pred.isWellDefined (c₁≈c , d₀≈d) c₁d₀∈P
 
 module _ (C⨆ D⨆ : SLat) where
   private
