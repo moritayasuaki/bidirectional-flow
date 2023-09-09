@@ -30,7 +30,15 @@ open import Data.List
 open import Data.List.Relation.Unary.All
 open import Base
 
+-- In traditional montoone dataflow frameworks,
+-- data flow problems are given by
+-- G, flowgraph <N , E , ρ>
+-- L, complete lattice
+-- F, function space ∀ f ∈ F
+--
+--
 -- First abstraction
+--
 module Powerset⊆-and-Endo (C⨆ : SLat) where
 
   private

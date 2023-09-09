@@ -1,6 +1,6 @@
 {-# OPTIONS --type-in-type --postfix-projections #-}
 
-module RelationComposition  where
+module MakeThingsCompositional  where
 
 open import Agda.Primitive hiding (Prop) renaming (lzero to lzero ; _⊔_ to lmax ; Set to Set ; Setω to Setω) public
 open import Algebra as Algebra
@@ -116,6 +116,7 @@ module _ where
       cd∈P : (c , d) ∈ P
       cd∈P = P .Pred.isWellDefined (C.Eq.refl , d'≈d) cd'∈P
 
+    -- bimonotone relation is `partially defined order embedding'
     bimono→bt-conn : (P : Pred (C≈ ×-setoid D≈))
       → IsBimonotoneRelation C⨆ D⨆ P
       → IsBowTieConnecting C⨆ D⨆ P
@@ -165,6 +166,12 @@ module _ (C⨆ D⨆ : SLat) where
     P∩Q-mono c₀ c₁ d₀ d₁ c₀d₀∈P∩Q@(c₀d₀∈P , c₀d₀∈Q) c₁d₁∈P∩Q@(c₁d₁∈P , c₁d₁∈Q) c₀≤c₁
       = P-mono c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁
 
+  bimonotone-∩closed
+    : (P : Pred (C≈ ×-setoid D≈)) → IsBimonotoneRelation C⨆ D⨆ P
+    → (Q : Pred (C≈ ×-setoid D≈)) → IsBimonotoneRelation C⨆ D⨆ Q
+    → IsBimonotoneRelation C⨆ D⨆ (P ∩ Q)
+  bimonotone-∩closed = {!similary!}
+
   squarefillingdown-∩closed
     : (P : Pred (C≈ ×-setoid D≈)) → IsSquareFillingDown C⨆ D⨆ P
     → (Q : Pred (C≈ ×-setoid D≈)) → IsSquareFillingDown C⨆ D⨆ Q
@@ -199,6 +206,8 @@ module _ (C⨆ D⨆ : SLat) where
       in
       (cd₁∈P , cd₁∈Q)
 
+  -- square filling solely is not closed under ∩ !
+
 module _ (C⨆ D⨆ E⨆ : SLat) where
   private
     C≤ = SLat.poset C⨆
@@ -229,6 +238,12 @@ module _ (C⨆ D⨆ E⨆ : SLat) where
       d₀≤d₁ = P-mono c₀ c₁ d₀ d₁ c₀d₀∈P c₁d₁∈P c₀≤c₁
       e₀≤e₁ : e₀ E.≤ e₁
       e₀≤e₁ = Q-mono d₀ d₁ e₀ e₁ d₀e₀∈Q d₁e₁∈Q d₀≤d₁
+
+  bimonotone-⋈closed
+    : (P : Pred (C≈ ×-setoid D≈)) → IsBimonotoneRelation C⨆ D⨆ P
+    → (Q : Pred (D≈ ×-setoid E≈)) → IsBimonotoneRelation D⨆ E⨆ Q
+    → IsBimonotoneRelation C⨆ E⨆ (P ⋈ Q)
+  bimonotone-⋈closed = {!!}
 
   monotone∧squirefilling-⋈closed
     : (P : Pred (C≈ ×-setoid D≈)) → IsMonotoneRelation C⨆ D⨆ P → IsSquareFilling C⨆ D⨆ P
