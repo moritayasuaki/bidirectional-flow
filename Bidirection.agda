@@ -36,9 +36,17 @@ open import Base
 -- L, complete lattice
 -- F, function space ∀ f ∈ F
 --
+-- ⊥ : impossible
+-- ⊤ : anything
 --
--- First abstraction
+-- We are considering the information of piece of program and after
+-- Demnands on post information (e.g not being ⊥) propergates backward maner affects post information
+-- Precise set of solution of analysis is R ∈ 𝒫 (D × E)
+-- We usually want (a , b) ∈ R, such that (⊥, ⊥) ≠ (a , b). But we want to find (a , b) to be small as possible as we can.
 --
+-- a solution can be obtained by a least fixed point of monotone function f : D × E → D × E , f (d0 , e0) = ⨆ { (d , e) | (d , e) ≤ (d0 , e0) , d R e }
+-- This solution sis
+
 module Powerset⊆-and-Endo (C⨆ : SLat) where
 
   private
@@ -398,6 +406,25 @@ module _ (D⨆ E⨆ : SLat) where
   IsTiltedBowTieConnecting : (R : Relation) → Set
   IsTiltedBowTieConnecting R = (∀ d e d₀ e₀ e₁ → IsTiltedBowTie R d e d₀ e₀ e₁ → (d , e) ∈ R)
 
+  IsFanOut : (R : Relation) → (d : D) (e : E) (e₀ : E) (e₁ : E) → Set
+  IsFanOut R d e e₀ e₁ = e₀ E.≤ e × e E.≤ e₁ × (d , e₁) ∈ R × (d , e₀) ∈ R
+
+  IsFanOutConnecting : (R : Relation) → Set
+  IsFanOutConnecting R = ∀ d e e₀ e₁ → IsFanOut R d e e₀ e₁ → (d , e) ∈ R
+
+  Is⨆Closed→IsFanoutConnecting↔IsTiltedBowTieConnecting : (R : Relation) → Is⨆Closed (D⨆ ×-slat E⨆) R → IsFanOutConnecting R ↔ IsTiltedBowTieConnecting R
+  Is⨆Closed→IsFanoutConnecting↔IsTiltedBowTieConnecting R R-⨆closed = α , α⁻¹
+    where
+    R-⊔closed : Is⊔Closed (D⨆ ×-slat E⨆) R
+    R-⊔closed = ⨆closed→⊔closed _ R R-⨆closed
+    α : IsFanOutConnecting R → IsTiltedBowTieConnecting R
+    α R-fanoutconnecting d e d₀ e₀ e₁ (d₀≤d , e₀≤e , e≤e₁ , d₀e₁∈R , de₀∈R) = R-fanoutconnecting d e e₀ e₁ (e₀≤e , (e≤e₁ , (de₁∈R , de₀∈R)))
+      where
+      de₁∈R : (d , e₁) ∈ R
+      de₁∈R = R .Pred.isWellDefined (⊔-componentwise D⨆ E⨆ d e₀ d₀ e₁ ⟨ Eq.trans ⟩ ((D.⊔-comm d d₀ ⟨ D.Eq.trans ⟩ D.≤→⊔-≈ d₀ d d₀≤d) ,  E.≤→⊔-≈ e₀ e₁ (e₀≤e ⟨ E.Po.trans ⟩ e≤e₁))) (R-⊔closed (d , e₀) (d₀ , e₁) de₀∈R d₀e₁∈R)
+    α⁻¹ : IsTiltedBowTieConnecting R → IsFanOutConnecting R
+    α⁻¹ R-tiltedbowtieconnecting d e e₀ e₁ (e₀≤e , e≤e₁ , de₁∈R , de₀∈R) = R-tiltedbowtieconnecting d e d e₀ e₁ (D.Po.refl , (e₀≤e , (e≤e₁ , (de₁∈R , de₀∈R))))
+
   -- the property TiltBowtieConecting is not closed under ⋈ but by adding an extra condition
   -- it becomes closed under ⋈ (TODO: proof)
   Is⋈FriendlyTiltedBowTieConnecting : (R : Relation) → Set
@@ -655,11 +682,6 @@ module _ (D⨆ E⨆ : SLat) where
   IsLooseBowTieConnecting : (R : Relation) → Set
   IsLooseBowTieConnecting R = ∀ d e d₀ e₀ d₁ e₁ → IsLooseBowTie R d e d₀ e₀ d₁ e₁ → (d , e) ∈ R
 
-  IsFanOut : (R : Relation) → (d : D) (e : E) (e₀ : E) (e₁ : E) → Set
-  IsFanOut R d e e₀ e₁ = e₀ E.≤ e × e E.≤ e₁ × (d , e₁) ∈ R × (d , e₀) ∈ R
-
-  IsFanOutConnecting : (R : Relation) → Set
-  IsFanOutConnecting R = ∀ d e e₀ e₁ → IsFanOut R d e e₀ e₁ → (d , e) ∈ R
 
   IsLowerIn : (R : Relation) → (d : D) (e : E) (d₁ : D) → Set
   IsLowerIn R d e d₁ = d D.≤ d₁ × (d₁ , e) ∈ R
@@ -1525,7 +1547,7 @@ module CheckOplaxMonoidalityForComposition where
         C = ∣ C⨆ ∣
         module C = SLat C⨆
         D≤ = SLat.poset D⨆
-        D≈ = SLat.Eq.setoid D⨆
+
         D = ∣ D⨆ ∣
         module D = SLat D⨆
         E≤ = SLat.poset E⨆
