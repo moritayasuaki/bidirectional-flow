@@ -1,0 +1,143 @@
+\documentclass{easychair}
+\usepackage{doc}
+\usepackage{amssymb}
+\usepackage{proof}
+\usepackage[all]{xy}
+\usepackage{tikz-cd}
+\usepackage{amsthm}
+\usepackage{amsmath}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+
+\newcommand{\Pow}{\mathcal{P}}
+\newcommand{\Rel}{\mathrm{Rel}}
+\newcommand{\Endo}{\mathrm{Endo}}
+\newcommand{\Bidir}{\mathrm{Bidir}}
+\newcommand{\Unidir}{\mathrm{Unidir}}
+\newcommand{\BackConst}{\mathrm{BackConst}}
+
+\newcommand{\tomon}{\to_{\mathrm{mon}}}
+
+\newcommand{\ff}{{f^{\rightarrow}}}
+\newcommand{\fb}{{f^{\leftarrow}}}
+\newcommand{\gf}{{g^{\rightarrow}}}
+\newcommand{\gb}{{g^{\leftarrow}}}
+\newcommand{\kf}{{k^{\rightarrow}}}
+\newcommand{\kb}{{k^{\leftarrow}}}
+
+\newcommand{\join}{\sqcup}
+\newcommand{\bigjoin}{\bigsqcup}
+\newcommand{\meet}{\sqcap}
+\newcommand{\bigmeet}{\sqcap}
+
+\newcommand{\comp}{\circ}
+
+\title{Bidirectional static analysis and Sound approximation through Galois connections}
+
+\author{
+  Dylan McDermott \inst{1}
+\and
+  Yasuaki Morita  \inst{1}
+\and
+  Tarmo Uustalu   \inst{1}
+}
+
+\institute{
+  Reykjavik University,
+  Reykjav{\'i}k, Iceland\\
+  \email{dylanm@ru.is}, \email{yasuaki20@ru.is}, \email{tarmo@ru.is}
+}
+
+\authorrunning{Dylan, Yasuaki, Tarmo}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+We investigate program analysis in particular involving bidirectional dataflow and investigate its composability.
+As the traditional data-flow analysis framework does, we consider the domain of dataflow information that captures useful property of programs abstractly and specify how pieces of codes behave on the domain.
+The behavior of a piece of code is described by a relation between input (information comes from the upstream of the control flow) and output (information comes from the downstream of the control flow).
+These relation can be approximated by another form, for example monotone functions.
+Traditional dataflow analysis by lattice and monotone function on CFG is beneficial in terms of these framework can be adapted to wide programs.
+In this case, a monotone function on each basic block is defined by forward or backward but not both.
+Nonetheless, there are some static analyses involving information flow bidirectionally, such as partial-redundancy elimination [], type inference [], load-pop elimination on stack-machine based language [], and path-sensitive alias analysis [].
+
+\section{Static analysis}
+We model static analyses in the style of [Frade 2009]: First we consider
+complete lattices whose elements are dataflow values that represent
+information on a program point, assign a relation between pre and post
+dataflow values for each basic program construct together with reasoning
+rules for program compositions such as sequence, choice and loop. We
+write $C$, $D$, and $E$ to mean complete lattice of dataflow values, and
+represent the type of binary relations on pre and post complete lattices
+by subsets of their binary product, e.g, $\Pow(D \times E)$, an d write $S$,
+$Q$ and $R$ to mean inhabitants of such types. We conventionally refer
+to the first component of binary product (i.e, $D$ in $D \times E$) as a
+lattice of pre dataflow values, and the second component of binary
+product (i.e, $E$ in $D \times E$) as a lattice of post dataflow values.
+
+And then, we approximate such infomation flow presented by a relation to make it computable.
+by a bidirectional transfer function pair: one is a monotone function
+called backward function which takes a post dataflow value and returns a
+pre dataflow value, and another is called forward transfer function
+which takes a pre dataflow value and returns a post data value. A type
+of bidirectional transfer function pairs are represented by a product of
+two spaces of monotone functions, e.g, $((D \tomon E) \times (E \tomon D))$,
+and we write $(\fb, \ff)$, $(\gb , \gf)$ for inhabitants of such types.
+
+\section{Galois connections}
+A Galois connection between two posets $(X , \leq)$ and $(Y , \leq)$ is a pair
+of monotone functions $F : X \tomon Y$ and $G : Y \tomon X$ such that $F(x) \leq y \iff y \leq G(x)$.
+In [Frade 2009], the Galois connection legitimate approximation of a
+relation by a pair of function. In this work, we introduce a sequence of
+Galois connections factor through classes of representation of
+information flow and facilitate comparison of the essential properties
+of unidirectional and bidirectional analysis. Fig \ref{fig:galois-connections} shows four representations of information
+flow and Galois connections between them: $\Rel(D, E)= (\Pow(D \times E), \subseteq)$
+is the poset of binary relations and inclusion order , $\Endo = (D \times E \tomon D \times E, \leq)$
+is the poset of endo monotone functions and pointwise order determined
+by product order on their codomain. $\Bidir = ((E \tomon D) \times (D \tomon E), \leq)$ is the poset of bidirectional transfer functions and product
+order of two pointwise orders. $\Unidir = (E \tomon D , \leq)$ is the poset
+of unidirectional transfer functions and pointwise order. Each Galois
+connection is given by the following monotone functions (TODO).
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzcd}
+    \Rel(D, E) \\
+    \Endo(D, E) \\
+    \Bidir(D, E) \\
+    \Unidir(D, E)
+      \arrow["F"{name=F}, bend right=30, swap, from=1-1, to=2-1]
+      \arrow["G"{name=G}, bend right=30, swap, from=2-1, to=1-1]
+      \arrow["H"{name=H}, bend right=30, swap, from=2-1, to=3-1]
+      \arrow["I"{name=I}, bend right=30, swap, hook, from=3-1, to=2-1]
+      \arrow["J"{name=J}, bend right=30, swap, from=3-1, to=4-1]
+      \arrow["K"{name=K}, bend right=30, swap, hook, from=4-1, to=3-1]
+      \arrow["\dashv", phantom, from=F, to=G]
+      \arrow["\dashv", phantom, from=H, to=I]
+      \arrow["\dashv", phantom, from=J, to=K]
+  \end{tikzcd}
+  \label{fig:galois-connections}
+  \caption{Galois connections factor through information flow representations}
+\end{figure}
+
+By taking an image of a monotone function such that codomain is $\Rel(D, E)$,
+we obtain a class of relations (a sub-poset of $\Rel(D, E)$). For
+example, $\{ R \in \Rel(D, E) \mid \exists f, R = G(f) \}$ can be obtained from $G$
+in the top of Galois connection $F \dashv G$. From a discussion of general
+properties about Galois connections, the obtained image is actually the
+fixed points of $F \comp G$ and it is one to one correspondence between
+the fixed points of $G \comp F$. In terms of information flow, the image
+is actual information flow that can be handled by representation of endo
+monotone functions. This class of relation is characterized by join-closed relations.
+Similarly, by taking an image of $G \comp I$ we obtain a class of relations which is join-closed and butterfly where relation $R$ is buttfly if and only if $(d_{0}, e_{1}) \in R \land (d_{1}, e_{0}) \in R \land d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \implies (d , e) \in R$.
+
+\section{Program composition}
+Furthermore, we use the Galois connection to compose multiple information flows. we find that ordinary relation composition and ... TODO
+
+\end{document}
