@@ -39,7 +39,7 @@
 \newcommand{\rotleq}{\rotatebox[origin=c]{90}{$\leq$}}
 \newcommand{\rotsubseteq}{\rotatebox[origin=c]{90}{$\subseteq$}}
 
-\title{Bidirectional static analysis and Sound approximation through Galois connections}
+\title{Bidirectional analysis and Sound approximation through Galois connections}
 
 \author{
   Dylan McDermott \inst{1}
@@ -48,6 +48,10 @@
 \and
   Tarmo Uustalu   \inst{1}
 }
+
+\authorrunning{McDermott, Morita and Uustalu}
+
+\titlerunning{Bidirectional analysis and Sound approximation through Galois connections}
 
 \institute{
   Reykjavik University,
@@ -61,6 +65,10 @@
 
 \maketitle
 
+\begin{abstract}
+  We studied bidirectional program analyses and its precision and soundness, and how information flows represented by bidirectional transfer functions are combined in the program composition such as sequential execution and non-deterministic choice. To analyze program analyses meta-mathematically, we associated representations of information flow through Galois connections. We found that bidirectional information flow has property called butterfly and the property is not preserved by sequential composition in general. Finally, we propose two approaches to properly handle sequential composition in bidirectional analysis.
+\end{abstract}
+
 \section{Introduction}
 
 We investigate program analysis in particular involving bidirectional dataflow and investigate its composability.
@@ -69,10 +77,10 @@ The behavior of a piece of code is described by a relation between input (inform
 These relation can be approximated by another form, for example monotone functions.
 Traditional dataflow analysis by lattice and monotone function on CFG is beneficial in terms of these framework can be adapted to wide programs.
 In this case, a monotone function on each basic block is defined by forward or backward but not both.
-Nonetheless, there are some static analyses involving information flow bidirectionally, such as partial-redundancy elimination [], type inference [], load-pop elimination on stack-machine based language [], and path-sensitive alias analysis [].
+Nonetheless, there are some static analyses involving information flow bidirectionally, such as partial-redundancy elimination \cite{khedker_bidirectional_1999}, type inference \cite{DBLP:journals/cl/KhedkerDM03}, load-pop elimination on stack-machine based language \cite{frade_bidirectional_2009}, and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
 
 \section{Static analysis}
-We model static analyses in the style of [Frade 2009]: First we consider
+We model static analyses in the style of \cite{frade_bidirectional_2009}: First we consider
 complete lattices whose elements are dataflow values that represent
 information on a program point, assign a relation between pre and post
 dataflow values for each basic program construct together with reasoning
@@ -129,7 +137,7 @@ of unidirectional (backward) transfer functions and pointwise order.
       \arrow["\rotsubseteq", phantom, from=4-2 , to=3-2]
   \end{tikzcd}
   \label{fig:galois-connections}
-  \caption{Galois connections factor through information flow representations and the corresponding classes of relations}
+  \caption{Galois connections factor through information flow representations (left) and the corresponding classes of relations (right)}
 \end{figure}
 Each Galois connection is given by the following monotone functions.
 \begin{align*}
@@ -150,24 +158,29 @@ fixed points of $F \comp G$ and it has one to one correspondence between
 the fixed points of $G \comp F$. In terms of information flow, the image
 is a set of information flow representable in the form of endo
 monotone functions. This class of relations is characterized by join-closed relations.
-Similarly, the image of $G \comp I$ gives a class of relations which are join-closed with \emph{butterfly} property (we give the definition later), and the image of $G \comp I \comp K$ gives a class of relations which are join-closed with \emph{pre-downward/post-upward} property (we give the definition later). We say relation $R$ is \emph{buttfly} if and only if $(d_{0}, e_{1}) \in R \land (d_{1}, e_{0}) \in R \land d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \implies (d , e) \in R$, and relation $R$ is \emph{pre-downward/post-upward} if and only if $(d_{1}, e_{0}) \in R \land d \leq d_{1} \land e_{0} \leq e \implies (d , e)$. Fig. \ref{fig:butterfly} shows diagrammatic presentations of butterfly (TODO pre-downward/post-upward).
+Similarly, the image of $G \comp I$ gives a class of relations which are join-closed with \emph{butterfly} property (we give the definition later), and the image of $G \comp I \comp K$ gives a class of relations which are join-closed with \emph{pre-downward/post-upward} property (we give the definition later). We say relation $R$ is \emph{buttfly} if and only if $(d_{0}, e_{1}) \in R \land (d_{1}, e_{0}) \in R \land d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \implies (d , e) \in R$, and relation $R$ is \emph{pre-downward/post-upward} if and only if $(d_{1}, e_{0}) \in R \land d \leq d_{1} \land e_{0} \leq e \implies (d , e)$. Fig. \ref{fig:butterfly} shows diagrammatic presentations of butterfly and pre-downward/post-upward properties.
 
 \begin{figure}[h]
   \centering
   \begin{tikzcd}
-    d_{1} & e_{1} \\
-    d & e \\
-    d_{0} & e_{0}
+    d_{1} & e_{1} & & d_{1} &   \\
+    d & e         & & d     & e \\
+    d_{0} & e_{0} & &       & e_{0} \\
       \arrow["\rotleq"{name=dd1}, from=2-1, to=1-1]
       \arrow["\rotleq"{name=d0d}, from=3-1, to=2-1]
-      \arrow["\rotleq"{name=ee1}, from=2-2, to=1-2]
-      \arrow["\rotleq"{name=e0e}, from=3-2, to=2-2]
+      \arrow["\rotleq"{name=ee1}, from=2-2, to=1-2, swap]
+      \arrow["\rotleq"{name=e0e}, from=3-2, to=2-2, swap]
       \arrow[""{name=r10}, from=1-1, to=3-2, no head]
       \arrow[""{name=r01}, from=3-1, to=1-2, no head]
       \arrow[""{name=r}, from=2-1, to=2-2, dotted, no head]
+      \arrow[""{name=r10}, from=1-1, to=3-2, no head]
+      \arrow["\rotleq"{name=dd1'}, from=2-4, to=1-4]
+      \arrow["\rotleq"{name=e0e'}, from=3-5, to=2-5, swap]
+      \arrow[""{name=r10'}, from=1-4, to=3-5, no head]
+      \arrow[""{name=r'}, from=2-4, to=2-5, dotted, no head]
   \end{tikzcd}
   \label{fig:butterfly}
-  \caption{Diagrammatic presentation of butterfly relation}
+  \caption{Diagrammatic presentations of butterfly relation (left) and pre-downward/post-upward relation (right)}
 \end{figure}
 
 \section{Program composition}
@@ -178,9 +191,12 @@ into operators in another poset along a Galois connection: for a given Galois co
 From general discussion about Galois connection,
 $G'(f) \bowtie G'(g) \subseteq G' (f \bowtielift g)$ and $G'(f) \cap G'(g)) \subseteq G'(f \caplift g)$ hold for any $f$ and $g$.
 This fact ensures that the lifted composition operators are sufficiently precise relative to the composition of there ideal counterpart in $\Rel(D, E)$, but does not guarantee their soundness.
-By unpacking the individual definitions of the Galois connections leading to $\Rel(D ,E)$ ($F \dashv G$ , $H \comp F \dashv G \comp I$, $J \comp H \comp F \dashv G \comp I \comp K$), we can confirm all the lifted operators are indeed sound, \emph{except for} the lifted sequential composition operator for $\Bidir(D, E)$, namely, $(\fb , \ff) \bowtielift (\gb , \gf) = H(F((G(I(\fb , \ff)) \bowtie G(I(\gb , \gf)))))$. This phenomenon in $\Bidir(D, E)$ occurs because the butterfly property is not closed under relation composition $\bowtie$.
+By expanding the individual definitions of the Galois connections leading to $\Rel(D ,E)$ ($F \dashv G$ , $H \comp F \dashv G \comp I$, and $J \comp H \comp F \dashv G \comp I \comp K$, specifically), we can confirm all the lifted operators are indeed sound, \emph{except for} the lifted sequential composition operator for $\Bidir(D, E)$, namely, $(\fb , \ff) \bowtielift (\gb , \gf) = H(F((G(I(\fb , \ff)) \bowtie G(I(\gb , \gf)))))$. This phenomenon in $\Bidir(D, E)$ occurs because the butterfly property is not closed under relation composition $\bowtie$.
 In terms of static analysis, this means that sequentially composed two information flow, each of them is represented by a bidirectional transfer function pair, may not be safely represented by a single bidirectional transfer function pair. This phenomenon does not occur in unidirectional analysis, but only in bidirectional analysis.
 In this work, we present two different technical approaches to address this phenomenon.
 One approach is that use of fact that soundness of lifted operation still hold in the Galois connection between n-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and multi bidirectional transfer function pairs $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$.
-Another approach is that restricting a class of relations so that the composition remains the same class. We show that the poset of $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ locates between unidirectional ($\Unidir(D , E$) and bidirectional ($Bidir(D, E$) analysis, and the correspondent class of relations is indeed closed under both $\bowtie$ and $\cap$, hence the lifted operations are sound.
+Another approach is that restricting a class of relations so that the composition remains the same class. We show that the poset of $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ locates between $\Unidir(D , E)$ and $\Bidir(D, E)$, and the correspondent class of relations for $\UnidirConst(D, E)$ is indeed closed under both $\bowtie$ and $\cap$, hence the lifted operations are sound.
+
+\bibliographystyle{plain}
+\bibliography{bidirectional-analysis}
 \end{document}
