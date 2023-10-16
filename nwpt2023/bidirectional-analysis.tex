@@ -17,7 +17,7 @@
 \newcommand{\Endo}{\mathrm{Endo}}
 \newcommand{\Bidir}{\mathrm{Bidir}}
 \newcommand{\Unidir}{\mathrm{Unidir}}
-\newcommand{\UnidirConst}{\mathrm{UnidirConst}}
+\newcommand{\UnidirConst}{\mathrm{BidirConst}}
 
 \newcommand{\tomon}{\to_{\mathrm{mon}}}
 
@@ -183,16 +183,16 @@ into operations on another poset along a Galois connection: in particular for th
 From general facts about Galois connections, the inequations
 $G(f) \bowtie G(g) \subseteq G (f \bowtielift g)$ and $G(f) \cap G(g)) \subseteq G(f \caplift g)$ hold for any $f$ and $g$.
 This fact ensures that the lifted composition operations are complete wrt.\ their ideal counterpart in $\Rel(D, E)$ (overapproximate them), but does not guarantee their soundness (underapproximation, which is what we really need).
-By expanding the individual definitions of the Galois connections leading to $\Rel(D ,E)$ ($F \dashv G$ , $H \comp F \dashv G \comp I$, and $J \comp H \comp F \dashv G \comp I \comp K$, specifically), we can confirm that all the lifted operations are indeed sound too, \emph{except for} the lifted sequential composition operator for $\Bidir(D, E)$, namely, $(\fb , \ff) \bowtielift (\gb , \gf) = H(F((G(I(\fb , \ff)) \bowtie G(I(\gb , \gf)))))$. This phenomenon in $\Bidir(D, E)$ occurs because the butterfly property is not closed under relation composition $\bowtie$.
+By expanding out the individual definitions of the Galois connections leading to $\Rel(D ,E)$ ($F \dashv G$ , $H \comp F \dashv G \comp I$, and $J \comp H \comp F \dashv G \comp I \comp K$, specifically) and calculating specifically for each case, we can confirm that all the lifted operations are indeed sound too, except for the lifted sequential composition operator for $\Bidir(D, E)$, namely, $(\fb , \ff) \bowtielift (\gb , \gf) = H(F((G(I(\fb , \ff)) \bowtie G(I(\gb , \gf)))))$. This phenomenon occurs because the butterfly property is not closed under relation composition.
 
-In terms of analyses, this means that the sequential composition of two compatibility relations, each of them described by a bidirectional transfer function pair, cannot be safely represented by a single bidirectional transfer function pair. This phenomenon does not occur in unidirectional analyses, but only in bidirectional analyses. It does not help in general to confine to a narrower class than join-closed butterfly relations since actual analyses from the literature, specifically, the load-pop reduction, involve compatibility relations for single instructions that are butterfly but whose sequential composition is not.
+In terms of analyses, this means that the sequential composition of two compatibility relations, each of them described by a bidirectional transfer function pair, cannot be safely represented by a single bidirectional transfer function pair. This phenomenon does not occur in unidirectional analyses, but only in bidirectional analyses. 
 
 In this work, we present two different technical approaches to address this phenomenon.
 
-One approach is to use the fact that soundness of lifted operations still hold in the Galois connection between $n$-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and $n-1$ pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$.
+One approach is to use the fact that soundness of lifted operations still holds for the Galois connection between $n$-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and $n-1$ pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$. In this approach, compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition. 
 
-Another approach is that restricting the class of relations so that the composition remains the same class. We show that the poset of $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ locates between $\Unidir(D , E)$ and $\Bidir(D, E)$, and the class of relations corresponding to $\UnidirConst(D, E)$ is indeed closed under both $\bowtie$ and $\cap$, hence the lifted operations are sound.
-This approach does not allow one to capture the original bidirectional analysis exactly, but can in some cases provide a reasonable systematic overapproximation. 
+Another approach is to restrict the class of relations to a class narrower than the class of join-closed butterfly relations but closed under relation composition and intersection. We show that the poset $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ (with forward functions constant) locates between $\Unidir(D , E)$ and $\Bidir(D, E)$, the class of relations corresponding to $\UnidirConst(D, E)$ is  closed under both $\bowtie$ and $\cap$, and the lifted operations are sound.
+This approach does not always allow one to capture the original bidirectional analysis exactly. For example, in the load-pop reduction analysis, the compatibility relations for all single instructions are butterfly, but those for some sequences are not. Still, it can provide a reasonable systematic overapproximation in some cases. 
 
 \bibliographystyle{plain}
 \bibliography{bidirectional-analysis}
