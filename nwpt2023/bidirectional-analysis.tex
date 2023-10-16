@@ -80,7 +80,7 @@ We investigate data-flow analyses, specifically bidirectional analyses, and thei
 As is standard in data-flow analysis, we work with a domain of data-flow values decribing some aspect of the state of a program's execution at a program point (or possibly different domains for different program points). 
 The analysis of an instruction is ideally described by a relation between data-flow values, stipulating which data-flow values at the entry and the exit of the instruction (for short, pre-values and post-values) are considered compatible with each other.
 These relations are in practice specified---either specified precisely or approximated soundly---by other means, typically monotone functions in the backward (post-to-pre) or forward (pre-to-post) direction, called transfer functions.
-Unidirectional data-flow analyses describe a wide class of aspects of program behavior. But some data-flow analyses are bidirectional, they involve information flow in both directions and are specified by a pair of transfer functions for each instruction. Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{khedker_bidirectional_1999}, type inference for dynamically typed languages \cite{DBLP:journals/cl/KhedkerDM03}, load-pop reduction for stack-machine based languages \cite{frade_bidirectional_2009} and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
+Unidirectional data-flow analyses describe a wide class of aspects of program behavior. But some data-flow analyses are bidirectional, they involve information flow in both directions and are specified by a pair of transfer functions for each instruction. Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999}, type inference for dynamically typed languages \cite{DBLP:journals/cl/KhedkerDM03,frade_bidirectional_2009}, load-pop reduction for stack-machine based languages \cite{stack,frade_bidirectional_2009} and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
 
 \section{Specifying analyses}
 
@@ -129,7 +129,7 @@ In this work, we introduce a finer sequence of
 Galois connections to facilitate detailed comparison of essential properties
 of unidirectional and bidirectional analyses. Fig.~1 shows four specification formats of analyses 
 and three Galois connections between them: $\Rel(D, E)= (\Pow(D \times E), \subseteq)$
-is the poset of binary relations and the inclusion order, $\Endo(D , E) = (D \times E \tomon D \times E, \leq)$
+is the poset of binary relations and inclusion, $\Endo(D , E) = (D \times E \tomon D \times E, {\leq})$
 is the poset of monotone functions on pairs and pointwise order determined
 by product order on their codomain. $\Bidir(D , E) = ((E \tomon D) \times (D \tomon E), \leq)$ is the poset of pairs of monotone backward and forward functions and product
 order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the poset monotone backward functions and pointwise order.
