@@ -69,7 +69,7 @@
 \begin{abstract}
 Some data-flow analyses are not backward or forward but bidirectional, data-flow information is propagated in both the backward and forward directions along a program's control-flow. Examples include partial redundancy elimination (in the original form of Morel and Renvoise), type inference for dynamic typing, analyses of stack-based languages such as load-pop reduction, path-sensitive alias analysis.
 
-We model ideal analyses with relations on complete lattices; an analysis is specified by a binary relation for every instruction. We ask how adequately relations can be represented by pairs of backward and forward monotone functions. We conduct this study in terms of Galois connections and their fixed-points. We show that fixed-points of the adjunction between relations and backward-forward function pairs are precisely relations closed under arbitrary joins with a certain additional property (that we call ``butterfly''). This class of relations is closed under intersection (corresponding to nondeterministic choice), but not closed under relational composition (corresponding to sequencing). Bidirectional analyses from literature involve relations from this class whose composition is not in the class. Accordingly, backward-forward function pairs act soundly as a representation of bidirectional analyses, but this is not perfectly compositional in that one cannot hide the intermediate program points in composition. This is different from the situation with the classical unidirectional analyses.
+We model ideal analyses with relations on complete lattices; an analysis is specified by a binary relation for every instruction. We ask how adequately relations can be represented by pairs of backward and forward monotone functions. We conduct this study in terms of Galois connections and their fixed-points. We show that fixed-points of the Galois connection between relations and backward-forward function pairs are precisely relations closed under arbitrary joins with a certain additional property (that we call ``butterfly''). This class of relations is closed under intersection (corresponding to nondeterministic choice), but not closed under relational composition (corresponding to sequencing). Bidirectional analyses from literature involve relations from this class whose composition is not in the class. Accordingly, backward-forward function pairs act soundly as a representation of bidirectional analyses, but this is not perfectly compositional in that one cannot hide the intermediate program points in composition. This is different from the situation with the classical unidirectional analyses.
   
   % We studied bidirectional program analyses and its precision and soundness, and how information flows represented by bidirectional transfer functions are combined in the program composition such as sequential execution and non-deterministic choice. To analyze program analyses meta-mathematically, we associated representations of information flow through Galois connections. We found that bidirectional information flow has property called butterfly and the property is not preserved by sequential composition in general. Finally, we propose two approaches to properly handle sequential composition in bidirectional analysis.
 \end{abstract}
@@ -77,9 +77,10 @@ We model ideal analyses with relations on complete lattices; an analysis is spec
 \section{Introduction}
 
 We investigate data-flow analyses, specifically bidirectional analyses, and their compositionality.
-As is standard in data-flow analysis, we work with a domain of data-flow values decribing some aspect of the state of a program's execution at a program point (or possibly different domains for different program points). 
-The analysis of an instruction is ideally described by a relation between data-flow values, stipulating which data-flow values at the entry and the exit of the instruction (for short, pre-values and post-values) are considered compatible with each other.
-These relations are in practice specified---either specified precisely or approximated soundly---by other means, typically monotone functions in the backward (post-to-pre) or forward (pre-to-post) direction, called transfer functions.
+As is standard in data-flow analysis, we work with a domain of data-flow values describing some aspect of the state of a program's execution at a program point (or possibly different domains for different program points).
+The analysis of an instruction is to solve a constraint described by a relation between data-flow values at the entry and the exit of the instruction (for short, pre-values and post-values). We refer to these as \emph{data-flow constraints}.
+% The analysis of an instruction is described by a relation between data-flow values, stipulating which data-flow values at the entry and the exit of the instruction (for short, pre-values and post-values) are considered compatible with each other.
+Data-flow constraints are in practice specified---either specified precisely or approximated soundly---by other means, typically monotone functions in the backward (post-to-pre) or forward (pre-to-post) direction, called transfer functions.
 Unidirectional data-flow analyses describe a wide class of aspects of program behavior. But some data-flow analyses are bidirectional, they involve information flow in both directions and are specified by a pair of transfer functions for each instruction. Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999}, type inference for dynamically typed languages \cite{DBLP:journals/cl/KhedkerDM03,frade_bidirectional_2009}, load-pop reduction for stack-machine based languages \cite{stack,frade_bidirectional_2009} and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
 
 \section{Specifying analyses}
@@ -87,14 +88,14 @@ Unidirectional data-flow analyses describe a wide class of aspects of program be
 We model data-flow analyses in the style of
 \cite{frade_bidirectional_2009}.  The domains of data-flow values will
 be complete lattices $(D, \leq, \bigjoin)$, $(E, \leq, \bigjoin)$ etc.
-The compatibility relation of data-flow values for a single
-instruction or a bigger program is a relation. If the data-flow
-domains for the entry and exit points are $(D, \leq, \bigjoin)$,
-$(E, \leq, \bigjoin)$, the corresponding compatibility relation is a
-subset of their product, i.e., an element of the set
+% The compatibility relation of data-flow values for a single
+% instruction or a bigger program is a relation.
+If the data-flow domains for the entry and exit points are $(D, \leq, \bigjoin)$,
+$(E, \leq, \bigjoin)$, the corresponding data-flow constraint is a
+relation between them, i.e., an element of the set
 $\Pow(D \times E)$, which is also a complete lattice; we typically
 denote relations by $R$, $S$.  And then we aim to specify such a
-compatibility relation by a pair of monotone backward and forward
+data-flow constraint by a pair of monotone backward and forward
 transfer functions. The poset of bidirectional transfer function pairs
 is the product of two posets of monotone functions, viz.,
 $((D \tomon E) \times (E \tomon D))$, and we typically write
@@ -206,14 +207,14 @@ $G(f) \bowtie G(g) \subseteq G (f \bowtielift g)$ and $G(f) \cap G(g)) \subseteq
 This fact ensures that the lifted composition operations are complete wrt.\ their ideal counterpart in $\Rel(D, E)$ (overapproximate them), but does not guarantee their soundness (underapproximation, which is what we really need).
 By expanding out the individual definitions of the Galois connections leading to $\Rel(D ,E)$ (namely, $F \dashv G$, $H \comp F \dashv G \comp I$, and $J \comp H \comp F \dashv G \comp I \comp K$) and calculating specifically for each case, we can confirm that all the lifted operations are indeed sound too, except for the lifted sequential composition operator for $\Bidir(D, E)$, namely, $(\fb , \ff) \bowtielift (\gb , \gf) = H(F((G(I(\fb , \ff)) \bowtie G(I(\gb , \gf)))))$. This phenomenon occurs because the butterfly property is not closed under relation composition.
 
-In terms of analyses, this means that the sequential composition of two compatibility relations, each of them described by a bidirectional transfer function pair, cannot be safely represented by a single bidirectional transfer function pair. This phenomenon does not occur in unidirectional analyses, but only in bidirectional analyses. 
+In terms of analyses, this means that the sequential composition of two data-flow constraints, each of them described by a bidirectional transfer function pair, cannot be safely represented by a single bidirectional transfer function pair. This phenomenon does not occur in unidirectional analyses, but only in bidirectional analyses.
 
 In this work, we present two different technical approaches to address this phenomenon.
 
 One approach is to use the fact that soundness of lifted operations still holds for the Galois connection between $n$-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and $n-1$ pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$. In this approach, compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition. 
 
 Another approach is to restrict the class of relations to a class narrower than the class of join-closed butterfly relations but closed under relation composition and intersection. We show that the poset $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ (with forward functions constant) locates between $\Unidir(D , E)$ and $\Bidir(D, E)$, the class of relations corresponding to $\UnidirConst(D, E)$ is  closed under both $\bowtie$ and $\cap$, and the lifted operations are sound.
-This approach does not always allow one to capture the original bidirectional analysis exactly. For example, in the load-pop reduction analysis, the compatibility relations for all single instructions are butterfly, but those for some sequences (e.g., \textsf{load}; \textsf{dup}) are not. Still, this approach can provide a reasonable systematic overapproximation of the original analysis in some cases. 
+This approach does not always allow one to capture the original bidirectional analysis exactly. For example, in the load-pop reduction analysis, the data-flow constaints for all single instructions are butterfly, but those for some sequences (e.g., \textsf{load}; \textsf{dup}) are not. Still, this approach can provide a reasonable systematic overapproximation of the original analysis in some cases.
 
 \bibliographystyle{plain}
 \bibliography{bidirectional-analysis}
