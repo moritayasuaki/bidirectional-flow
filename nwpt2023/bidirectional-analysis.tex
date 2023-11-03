@@ -133,8 +133,8 @@ and three Galois connections between them: $\Rel(D, E)= (\Pow(D \times E), \subs
 is the poset of binary relations and inclusion, $\Endo(D , E) = (D \times E \tomon D \times E, {\leq})$
 is the poset of monotone functions on pairs and pointwise order determined
 by product order on their codomain. $\Bidir(D , E) = ((E \tomon D) \times (D \tomon E), \leq)$ is the poset of pairs of monotone backward and forward functions and product
-order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the poset monotone backward functions and pointwise order.
-\begin{figure}[htbp]
+order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the poset of monotone backward functions and pointwise order.
+\begin{figure}
   \centering
   \begin{tikzcd}
     \Rel(D, E) & \text{all binary relations} \\
@@ -172,9 +172,9 @@ facts about Galois connections, the obtained image is actually the poset of
 fixed-points of $F \comp G$ and is isomorphic to the poset of
 fixed-points of $G \comp F$. In terms of specification of analyses, the image
 of $G$ consists of those compatibility relations that can be specified by monotone functions on pairs. This class consists of relations that are closed under arbitary joins (for short, join-closed).
-Similarly, the image of $G \comp I$ is the class of relations which are join-closed and also enjoy what we call the butterfly property, and the image of $G \comp I \comp K$ is the class of relations which are join-closed and also pre-down-/post-upclosed. We say that a relation $R$ is \emph{join-closed} if $S \subseteq R \implies \bigjoin S \in R$, \emph{butterfly} if $(d_{0}, e_{1}) \in R \land (d_{1}, e_{0}) \in R \land d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \implies (d , e) \in R$, and \emph{pre-down-/post-upclosed} if $(d_{1}, e_{0}) \in R \land d \leq d_{1} \land e_{0} \leq e \implies (d , e)$. Fig.~2 shows diagrammatic presentations of the butterfly and pre-down-/post-upclosed properties.
+Similarly, the image of $G \comp I$ is the class of relations which are join-closed and also enjoy what we call the butterfly property, and the image of $G \comp I \comp K$ is the class of relations which are join-closed and also pre-down-/post-upclosed. We say that a relation $R$ is \emph{join-closed} if $S \subseteq R \implies \bigjoin S \in R$, \emph{butterfly} if $(d_{0}, e_{1}) \in R \land (d_{1}, e_{0}) \in R \land d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \implies (d , e) \in R$, and \emph{pre-down-/post-upclosed} if $(d_{1}, e_{0}) \in R \land d \leq d_{1} \land e_{0} \leq e \implies (d , e) \in R$. Fig.~2 shows diagrammatic presentations of the butterfly and pre-down-/post-upclosed properties.
 
-\begin{figure}[h]
+\begin{figure}
   \centering
   \begin{tikzcd}
     d_{1} & e_{1} & & d_{1} &   \\
