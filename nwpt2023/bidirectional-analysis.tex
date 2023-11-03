@@ -134,6 +134,7 @@ is the poset of binary relations and inclusion, $\Endo(D , E) = (D \times E \tom
 is the poset of monotone functions on pairs and pointwise order determined
 by product order on their codomain. $\Bidir(D , E) = ((E \tomon D) \times (D \tomon E), \leq)$ is the poset of pairs of monotone backward and forward functions and product
 order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the poset of monotone backward functions and pointwise order.
+
 \begin{figure}
   \centering
   \begin{tikzcd}
@@ -157,9 +158,11 @@ order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the pose
   \label{fig:galois-connections}
   \caption{Galois connections between different specification formats of analyses (left) and the corresponding classes of relations (right)}
 \end{figure}
+
 The Galois connections are given by the following monotone functions.
+
 \begin{align*}
-  F(R) &= \lambda p_{0}. \bigjoin (p \leq p_{0} \land p \in R) &  G(f) &= \{ p \mid p \leq f(p) \} = \nu p.\, f(p)\\
+  F(R) &= \lambda p_{0}. \bigjoin \{p \mid p \leq p_{0} \land p \in R\} &  G(f) &= \{ p \mid p \leq f(p) \} \\
   H(f) &= (\lambda e. \pi_0(f (\top , e)), \lambda d. \pi_1(f (d , \top))) & I(\fb, \ff) &= \lambda (d,e). (\fb (e), \ff (d)) \\
   J(\fb, \ff) &= \fb & K(\fb) &= (\fb , \lambda d. \top)
 \end{align*}
