@@ -211,10 +211,13 @@ In terms of analyses, this means that the sequential composition of two data-flo
 
 In this work, we present two different technical approaches to address this phenomenon.
 
-One approach is to use the fact that soundness of lifted operations still holds for the Galois connection between $n$-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and $n-1$ pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$. In this approach, compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition. 
+One approach is to use the fact that soundness of lifted operations still holds for the Galois connection between $n$-ary relations $\Pow(D_{1}, D_{2}, ... , D_{n})$ and $(n-1)$-tuples of pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times ... \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$. In this approach, compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition. 
 
 Another approach is to restrict the class of relations to a class narrower than the class of join-closed butterfly relations but closed under relation composition and intersection. We show that the poset $\UnidirConst(D, E) = ((E \tomon D) \times E, \leq)$ (with forward functions constant) locates between $\Unidir(D , E)$ and $\Bidir(D, E)$, the class of relations corresponding to $\UnidirConst(D, E)$ is  closed under both $\bowtie$ and $\cap$, and the lifted operations are sound.
 This approach does not always allow one to capture the original bidirectional analysis exactly. For example, in the load-pop reduction analysis, the data-flow constaints for all single instructions are butterfly, but those for some sequences (e.g., \textsf{load}; \textsf{dup}) are not. Still, this approach can provide a reasonable systematic overapproximation of the original analysis in some cases.
+
+\paragraph{Acknowledgements} This research was supported by the
+Icelandic Research Fund grant 228684-052.
 
 \bibliographystyle{plain}
 \bibliography{bidirectional-analysis}
