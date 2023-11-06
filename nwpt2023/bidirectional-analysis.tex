@@ -83,7 +83,7 @@ The analysis of an instruction is to solve a constraint described by a relation 
 Data-flow constraints can be specified---either specified precisely or approximated soundly---by other means, typically monotone functions in the backward (post-to-pre) or forward (pre-to-post) direction, called transfer functions.
 Unidirectional data-flow analyses describe a wide class of aspects of program behavior. But some data-flow analyses are bidirectional, they involve information flow in both directions and are specified by a pair of transfer functions for each instruction.
 For example, type inference in dynamically typed languages has been specified through relational constraints and unification in Henglein's work \cite{henglein_dynamic_1992}, as well as through the propagation information via bidirectional data-flow functions by Khedker et al \cite{DBLP:journals/cl/KhedkerDM03,frade_bidirectional_2009}.
-Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999},load-pop reduction for stack-machine based languages \cite{stack,frade_bidirectional_2009}, path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
+Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999}, load-pop reduction for stack-machine based languages \cite{stack,frade_bidirectional_2009}, and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
 
 \section{Specifying analyses}
 
