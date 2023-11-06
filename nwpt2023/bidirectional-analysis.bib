@@ -26,18 +26,18 @@
 
 
 
-@article{frade_bidirectional_2009,
-	series = {Proceedings of the 2009 {ACM} {SIGPLAN} {Symposium} on {Partial} {Evaluation} and {Program} {Manipulation}, {PEPM}'09},
-	title = {Bidirectional data-flow analyses, type-systematically: 2009 {ACM} {SIGPLAN} {Symposium} on {Partial} {Evaluation} and {Program} {Manipulation}, {PEPM}'09},
+@inproceedings{frade_bidirectional_2009,
+	title = {Bidirectional data-flow analyses, type-systematically},
 	issn = {9781605583273},
 	shorttitle = {Bidirectional data-flow analyses, type-systematically},
 	url = {http://www.scopus.com/inward/record.url?scp=67650691954&partnerID=8YFLogxK},
 	doi = {10.1145/1480945.1480965},
 	abstract = {We show that a wide class of bidirectional data-flow analyses and program optimizations based on them admit declarative descriptions in the form of type systems. The salient feature is a clear separation between what constitutes a valid analysis and how the strongest one can be computed (via the type checking versus principal type inference distinction). The approach also facilitates elegant relational semantic soundness definitions and proofs for analyses and optimizations, with an application to mechanical transformation of program proofs, useful in proof-carrying code. Unidirectional forward and backward analyses are covered as special cases; the technicalities in the general bidirectional case arise from more subtle notions of valid and principal types. To demonstrate the viability of the approach we consider two examples that are inherently bidirectional: type inference (seen as a data-flow problem) for a structured language where the type of a variable may change over a program's run and the analysis underlying a stack usage optimization for a stack-based low-level language.},
 	urldate = {2023-10-14},
-	journal = {Proceedings of the 2009 ACM SIGPLAN Symposium on Partial Evaluation and Program Manipulation, PEPM'09},
+	booktitle = {Proceedings of the 2009 ACM SIGPLAN Symposium on Partial Evaluation and Program Manipulation, PEPM'09},
 	author = {Frade, Maria João and Saabas, Ando and Uustalu, Tarmo},
 	year = {2009},
+	publisher = "ACM",
 	keywords = {Mechanical transformation of program proofs, Program analyses and optimizations, Program logics, Type systems},
 	pages = {141--149},
 }
@@ -85,24 +85,38 @@
 	abstract = {Demand-driven methods for program analysis have primarily been viewed as efficient algorithms for computing the same information as the corresponding exhaustive methods, but for a given set of demands. We explore demand-driven flow-sensitive alias analysis (which we call ADFSA ) and propose its improved version called PDFSA that computes both aliases and pointers for the demands raised by changing the notion of relevance for indirect assignment statements. We formally show that while ADFSA is as precise as the corresponding exhaustive flow-sensitive alias analysis (EFSA ), PDFSA can be more precise than both ADFSA and EFSA. This surprising result is based on the following insight: A demand-driven method computes less information than the corresponding exhaustive method. PDFSA exploits this to reduce the uncertainty caused by aliasing which in turn, reduces the conflation of memory locations thereby increasing precision. We formalize PDFSA using an inherent property of a demand-driven flow-sensitive alias analysis: demands are propagated against the control flow and aliases are propagated along the control flow. Traditionally, this has been seen as a collection of two separate analyses whose interaction is controlled by an algorithm that drives the two analyses. We formalize this algorithmic view as a bidirectional data flow analysis to define PDFSA declaratively. Further, we define Meet Over Paths (MoP) solution for bidirectional flows for reasoning about the soundness of PDFSA. Our definition generalizes the classical definition of MoP which is restricted to unidirectional flows. We have implemented PDFSA, ADFSA, and EFSA for static resolution of virtual function calls in C++ for constructing more precise call graphs. Our measurements show that the call graphs computed using PDFSA are indeed more precise than those that are computed using ADFSA or EFSA.},
 	language = {en},
 	urldate = {2021-07-02},
-	journal = {Science of Computer Programming},
+	journal = {Sci. Comput. Program.},
 	author = {Jaiswal, Swati and Khedker, Uday P. and Chakraborty, Supratik},
 	month = may,
 	year = {2020},
 	keywords = {Bidirectional analysis, Demand-driven analysis, Flow-sensitive alias analysis, Meet-Over-Paths solution},
-	pages = {102391},
+	pages = {art. 102391},
 	file = {Jaiswal et al_2020_Bidirectionality in flow-sensitive demand-driven analysis.pdf:/home/yasuaki/Zotero/storage/V57DXWN2/Jaiswal et al_2020_Bidirectionality in flow-sensitive demand-driven analysis.pdf:application/pdf;ScienceDirect Snapshot:/home/yasuaki/Zotero/storage/6256Z9ZT/S0167642320300022.html:text/html},
 }
 
 @inproceedings{henglein_dynamic_1992,
-	address = {Berlin, Heidelberg},
+	XXXaddress = {Berlin, Heidelberg},
 	title = {Dynamic typing},
 	isbn = {978-3-540-46803-5},
 	abstract = {We present an extension of a statically typed language with a special type dyn and explicit type tagging and checking operations (coercions). Programs in run-time typed languages are viewed as incomplete programs that are to be completed to well-typed programs by explicitly inserting coercions into them.},
-	booktitle = {{ESOP} '92},
-	publisher = {Springer Berlin Heidelberg},
+	booktitle = {{ESOP} '92, 4th Symp. on Programming, Proc.},
+	series = "Lect. Notes in Comput. Sci.",
+	volume = 582,
+	publisher = {Springer},
 	author = {Henglein, Fritz},
 	editor = {Krieg-Brückner, Bernd},
 	year = {1992},
 	pages = {233--253},
 }
+
+
+@article{SU,
+     author = "Ando Saabas and Tarmo Uustalu",
+     title = "Type Systems for Optimizing Stack-Based Code",
+     journal = "Electron. Notes Theor. Comput. Sci.",
+     volume = 190,
+     number = 1,
+     pages = "103--119",
+     year = 2007,
+     doi = "10.1016/j.entcs.2007.02.063"
+}     

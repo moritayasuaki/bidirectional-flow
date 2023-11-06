@@ -82,26 +82,29 @@ The analysis of an instruction is to solve a constraint described by a relation 
 % The analysis of an instruction is described by a relation between data-flow values, stipulating which data-flow values at the entry and the exit of the instruction (for short, pre-values and post-values) are considered compatible with each other.
 Data-flow constraints can be specified---either specified precisely or approximated soundly---by other means, typically monotone functions in the backward (post-to-pre) or forward (pre-to-post) direction, called transfer functions.
 Unidirectional data-flow analyses describe a wide class of aspects of program behavior. But some data-flow analyses are bidirectional, they involve information flow in both directions and are specified by a pair of transfer functions for each instruction.
-For example, type inference in dynamically typed languages has been specified through relational constraints and unification in Henglein's work \cite{henglein_dynamic_1992}, as well as through the propagation information via bidirectional data-flow functions by Khedker et al \cite{DBLP:journals/cl/KhedkerDM03,frade_bidirectional_2009}.
-Bidirectional analyses include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999}, load-pop reduction for stack-machine based languages \cite{stack,frade_bidirectional_2009}, and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
+For example, type inference in dynamically typed languages, treated in Henglein's work \cite{henglein_dynamic_1992} as relational constraint solving problem,
+has been formulated by Khedker et al.~\cite{DBLP:journals/cl/KhedkerDM03} in terms of bidirectional functional propagation of data-flow information.
+Bidirectional analyses also include partial redundancy elimination in the original formulation of Morel and Renvoise \cite{DBLP:journals/cacm/MorelR79,khedker_bidirectional_1999}, load-pop reduction for stack-machine based languages \cite{stack,SU}, and path-sensitive alias analysis \cite{jaiswal_bidirectionality_2020}.
 
 \section{Specifying analyses}
 
 We model data-flow analyses in the style of
 \cite{frade_bidirectional_2009}.  The domains of data-flow values will
-be complete lattices $(D, \leq, \bigjoin)$, $(E, \leq, \bigjoin)$ etc.
+be complete lattices. % $(D, \leq, \bigjoin)$, $(E, \leq, \bigjoin)$ etc.
 % The compatibility relation of data-flow values for a single
 % instruction or a bigger program is a relation.
-If the data-flow domains for the entry and exit points are $(D, \leq, \bigjoin)$,
+If the data-flow domains for the entry and exit points of a piece of code are $(D, \leq, \bigjoin)$,
 $(E, \leq, \bigjoin)$, the corresponding data-flow constraint is a
 relation between them, i.e., an element of the set
-$\Pow(D \times E)$, which is also a complete lattice; we typically
-denote relations by $R$, $S$.  And then we aim to specify such a
+$\Pow(D \times E)$, which is also a complete lattice.
+%; we typically denote relations by $R$, $S$.
+And then we aim to specify such a
 data-flow constraint by a pair of monotone backward and forward
 transfer functions. The poset of bidirectional transfer function pairs
 is the product of two posets of monotone functions, viz.,
-$((D \tomon E) \times (E \tomon D))$, and we typically write
-$(\fb, \ff)$, $(\gb , \gf)$ for inhabitants of this poset.
+$((D \tomon E) \times (E \tomon D))$.
+% , and we typically write
+%$(\fb, \ff)$, $(\gb , \gf)$ for inhabitants of this poset.
 
 
 % complete lattices whose elements are data-flow values.
@@ -162,7 +165,7 @@ order of two pointwise orders; $\Unidir(D , E) = (E \tomon D, \leq)$ is the pose
 \end{figure}
 
 The Galois connections are given by the following monotone functions.
-
+%
 \begin{align*}
   F(R) &= \lambda p_{0}. \bigjoin \{p \mid p \leq p_{0} \land p \in R\} &  G(f) &= \{ p \mid p \leq f(p) \} \\
   H(f) &= (\lambda e. \pi_0(f (\top , e)), \lambda d. \pi_1(f (d , \top))) & I(\fb, \ff) &= \lambda (d,e). (\fb (e), \ff (d)) \\
