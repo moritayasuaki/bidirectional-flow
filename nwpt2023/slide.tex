@@ -1,0 +1,983 @@
+\documentclass{beamer}
+\usepackage{tikz-cd}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{comment}
+\usepackage{stmaryrd}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{listings}
+% \lstset{
+%   basicstyle={\ttfamily},
+%   identifierstyle={\small},
+%   commentstyle={\smallitshape},
+%   keywordstyle={\small\bfseries},
+%   ndkeywordstyle={\small},
+%   stringstyle={\small\ttfamily},
+%   frame={tb},
+%   breaklines=true,
+%   columns=[l]{fullflexible},
+%   numbers=left,
+%   xrightmargin=0zw,
+%   xleftmargin=3zw,
+%   numberstyle={\scriptsize},
+%   stepnumber=1,
+%   numbersep=1zw,
+%   lineskip=-0.5ex
+% }
+
+\newcommand{\Pow}{\mathcal{P}}
+\newcommand{\Rel}{\mathrm{Rel}}
+\newcommand{\Endo}{\mathrm{Endo}}
+\newcommand{\Bidir}{\mathrm{Bidir}}
+\newcommand{\Unidir}{\mathrm{Bwd}}
+\newcommand{\UnidirConst}{\mathrm{BidirConst}}
+\newcommand{\Backward}{\mathrm{Backward}}
+
+\newcommand{\tomon}{\to_{\mathrm{mon}}}
+
+\newcommand{\ff}{{f^{\rightarrow}}}
+\newcommand{\fb}{{f^{\leftarrow}}}
+\newcommand{\gf}{{g^{\rightarrow}}}
+\newcommand{\gb}{{g^{\leftarrow}}}
+\newcommand{\kf}{{k^{\rightarrow}}}
+\newcommand{\kb}{{k^{\leftarrow}}}
+
+\newcommand{\join}{\sqcup}
+\newcommand{\bigjoin}{\bigsqcup}
+\newcommand{\meet}{\sqcap}
+\newcommand{\bigmeet}{\sqcap}
+
+\newcommand{\comp}{\circ}
+\newcommand{\bowtielift}{\mathbin{\overline{\bowtie}}}
+\newcommand{\caplift}{\mathbin{\overline{\cap}}}
+\newcommand{\rotleq}{\rotatebox[origin=c]{90}{$\leq$}}
+\newcommand{\rotsubseteq}{\rotatebox[origin=c]{90}{$\subseteq$}}
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+\newcommand{\gray}[1]{\textcolor{gray}{#1}}
+
+\newcommand{\opt}{\mathbf{o}}
+\newcommand{\mnd}{\mathbf{m}}
+\newcommand{\xs}{\mathit{xs}}
+
+\newcommand{\binop}{\mathtt{binop}}
+\newcommand{\binopbw}{\scalebox{0.7}{$\begin{aligned} x,x,\xs &\mapsfrom x, \xs\end\\
+\star &\mapsfrom \opt\opt, \star\end{aligned}$}}
+\newcommand{\binopfw}{\scalebox{0.7}{$\begin{aligned} \x,x',xs &\mapsto x, \xs\\
+                                        \x,\star&\mapsto \star \\
+                                      \star &\mapsto \opt,\star\end{aligned}$}}
+
+\newcommand{\push}{\mathtt{push}}
+\newcommand{\pushbw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsfrom x, \xs\end{aligned}$}}
+\newcommand{\pushfw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsto x, \xs \end{aligned}$}}
+
+\newcommand{\load}{\mathtt{load}}
+\newcommand{\loadbw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsfrom x, \xs\end{aligned}$}}
+\newcommand{\loadfw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsto x,\xs \end{aligned}$}}
+
+\newcommand{\dup}{\mathtt{dup}}
+\newcommand{\dupbw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsfrom x, \xs\end{aligned}$}}
+\newcommand{\dupfw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsto x,\xs \end{aligned}$}}
+
+\newcommand{\pop}{\mathtt{pop}}
+\newcommand{\popbw}{\scalebox{0.7}{$\begin{aligned} \opt, \xs &\mapsfrom \xs\end{aligned}$}}
+\newcommand{\popfw}{\scalebox{0.7}{$\begin{aligned} x, \xs &\mapsto \xs \end{aligned}$}}
+
+\newcommand{\nop}{\mathtt{nop}}
+\newcommand{\nopbw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsfrom \xs\end{aligned}$}}
+\newcommand{\nopfw}{\scalebox{0.7}{$\begin{aligned} \xs &\mapsto \xs\end{aligned}$}}
+
+\newcommand{\store}{\mathtt{store}}
+\newcommand{\storebw}{\scalebox{0.7}{$\begin{aligned} \mnd, \xs &\mapsfrom \xs\end{aligned}$}}
+\newcommand{\storefw}{\scalebox{0.7}{$\begin{aligned} x, \xs &\mapsto \xs\end{aligned}$}}
+
+\newcommand{\print}{\mathtt{print}}
+\newcommand{\printbw}{\scalebox{0.7}{$\begin{aligned} \mnd, \xs &\mapsfrom \xs\end{aligned}$}}
+\newcommand{\printfw}{\scalebox{0.7}{$\begin{aligned} x, \xs &\mapsto \xs\end{aligned}$}}
+
+\newcommand{\seq}{\mathbin{;}}
+\newcommand{\choice}{\mathbin{|}}
+\setbeamertemplate{footline}[frame number]
+\title{Bidirectional data-flow analyses compared to relational through Galois connections}
+\author{
+  Dylan McDermott
+\and
+  * Yasuaki Morita
+\and
+  Tarmo Uustalu
+}
+\institute{Reykjavik University}
+\date{Wed 22 - Thu 23 November NWPT 2023 V{\"a}ster{\aa}s }
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\usetikzlibrary{shapes,arrows}
+
+\tikzstyle{term}=[
+  rectangle,
+  text width=1.0cm,
+  % draw=black,
+  %fill=white,
+  text centered,
+]
+\tikzstyle{block}=[
+  rectangle,
+  text width=1.2cm,
+  % draw=black,
+  %fill=white,
+  text centered,
+]
+
+\tikzstyle{arrow}=[
+  thick,->,>=stealth
+]
+
+\tikzstyle{trans}=[
+  thick,=>,>=stealth
+]
+
+\tikzstyle{empty}=[
+  thick,->,>=stealth
+]
+
+\newcommand{\agenda}{\frame{
+  \enumerate{
+  \item Galois connection between Data-Flow and Relational Constraints
+  \item Bidirectional Data-Flow Analysis
+  \item Some counter examples
+  \item A solution and applications
+  }}}
+
+\agenda
+\begin{frame}
+  \frametitle {Data-flow vs Relational Constraints}
+  \begin{block}{Data-flow analysis}
+    \begin{itemize}
+    \item Many appilcations in program analysis and compiler optimization.
+    \item Information at each program point is propagated over the program by backward or forward transfer \red{functions}.
+    \end{itemize}
+  \end{block}
+  \begin{block}{Constraint-based analysis}
+    \begin{itemize}
+    \item A powerful tool to test property of programs including type inference.
+    \item Based on logical formula, equations, and \red{relations}.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Functions and Relations}
+  \begin{block}{How are they related?}
+    As a function is a certain kind of a relation,
+    a data-flow analysis can be seen as a certain kind of constraint satisfaction problem, or its sound approximation.
+    The notion of \emph{Galois connection} consolidates this perspective.
+  \end{block}
+  \begin{definition}[Galois connection]
+    Given posets $(X, \leq)$ and $(Y, \leq)$, a Galois connection between $(X, \leq)$ , $(Y, \leq)$ is a pair of monotone functions $F : X \tomon Y$ and $G : Y \tomon X$ such that $F(x) \leq y \iff x \leq G(y)$ for all $x \in X$ and $y \in Y$.
+    We write this $F \dashv G$.
+  \end{definition}
+\end{frame}
+\begin{frame} [fragile] {A Galois connection in program analysis}
+  \begin{block}{}
+    Consider the poset of all relations (as constraints) on complete lattices, and the poset of monotone functions (as backward transfer functions) on complete lattices.
+    The Galois connection $F \dashv G$ is established between them.
+  \begin{center}
+    \begin{tikzcd}
+    (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
+    (E \tomon D, \leq)  & = \Unidir(D, E)
+    \arrow["F"{name=left-adj}, bend right=30, swap, from=1-1, to=2-1]
+    \arrow["G"{name=right-adj}, bend right=30, swap, from=2-1, to=1-1]
+    \arrow["\dashv" rotate=0, phantom, from=left-adj, to=right-adj]
+    \end{tikzcd}
+  \end{center}
+  where $D$ and $E$ are complete lattices of data-flow values corresponding entry and exit point of some program. The left and right adjoint $F$, $G$ are given as follows:
+  \begin{align*}
+    F (R)(e_{0}) &= \bigjoin \{ d \mid \exists e. e \leq e_{0}  \land (d , e) \in R \} \\
+    G (\fb) &= \{ (d , e) \mid d \leq \fb(e) \} \\
+  \end{align*}
+  \end{block}
+\end{frame}
+
+\begin{frame} [fragile] {The class of relations via the Galois connection}
+  The image of $G$, takes a function to a relation, is the class of relations that can be specified by backward transfer functions. We obtain the characterization of the class from general facts about Galois connection:
+  \begin{align*}
+  &R \text{ is in the image of } G \iff G(F(R)) \subseteq R  \\
+                                &\iff
+                                  R \text{ is }\join-{ closed } \land R \text{ is pre-down-/post-upclosed },
+  \end{align*}
+  where $R$ is pre-down-/post-upclosed $:\Leftrightarrow \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R$.
+
+  The following diagram represents pre-down-/post-upclosedness:
+  \begin{center}
+  \begin{tikzcd}
+    d_{1} &       \\
+    d     & e     \\
+          & e_{0}
+    \arrow["\rotleq"{name=dd1'}, from=2-1, to=1-1]
+    \arrow["\rotleq"{name=e0e'}, from=3-2, to=2-2, swap]
+    \arrow[""{name=r10'}, from=1-1, to=3-2, no head]
+    \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
+  \end{tikzcd}
+  \end{center}
+\end{frame}
+\begin{frame} {Composition lifting via Galois connection}
+  \begin{block}{Sequencing of constraints}
+    The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the predecessor and successor constraints.
+  \end{block}
+  \begin{block}{Lifting}
+    Using $F \dashv G$, the composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
+    \begin{align*}
+      \cdot \bowtielift \cdot &: \left| \Unidir(C, D) \right| \times  \left| \Unidir(D, E) \right| \to  \left| \Unidir(C, E) \right| \\
+      (\fb \bowtielift \gb) (e_{0}) &= F(G(\fb) \bowtie G(\gb)) (e_{0}) \\
+                                  &= \bigjoin \{ c \mid \exists d\, e.\,e \leq e_{0} \land c \leq \fb(d) \land d \leq \gb(e) \} \\
+                                  &= \pi_{1} (\bigjoin \{ (c, d , e) \mid e \leq e_{0} \land c \leq \fb(d) \land d \leq \gb(e) \}) \\
+                                  &= (\fb \comp \gb)(e_{0})
+    \end{align*}
+  \end{block}
+\end{frame}
+\begin{frame} [fragile] {Composition lifting via Galois connection}
+  \begin{block}{Non-deterministic choice of constraints}
+    The constraint corresponding to the non-deterministic choice of programs is the intersection $\cap$ of choices.
+  \end{block}
+  \begin{block}{Lifting of composition in poset of backward transfer functions}
+    Similarly to the sequential composition, we get choice operation $\caplift$ on backward transfer functions which is identical to $\meet$ pointwisely.
+    \begin{align*}
+      \cdot \caplift \cdot &: \left| \Unidir(D , E) \right| \times  \left| \Unidir(D, E) \right| \to \left| \Unidir(D, E) \right| \\
+      (\fb \caplift \gb) (e_{0})
+      &= F(G(\fb) \cap G(\gb)) (e_{0}) \\
+      &= (F(G(\fb) \meet F(G(\fb))) (e_{0}) \\
+      &= \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \fb(e) \} \\ &\quad \meet \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \gb(e) \} \\
+      &= \fb(e_{0}) \meet \gb(e_{0})
+    \end{align*}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Soundness and Completeness}
+  The following equalities
+  \begin{itemize}
+    \item $G(\fb) \bowtie G(\gb) = G(\fb \comp \gb)$
+    \item $G(\fb) \cap G(\fb) = G(\fb \meet \gb)$
+  \end{itemize}
+  validate the soundness and completeness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
+  \begin{block}{Example: Live variable analysis}
+   \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[term] at (0, 0.0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.0) (s1) {$\scriptstyle{x := 10}$};
+    \node[block] at (4, 0.5) (s2)   {$\scriptstyle{x := 40}$};
+    \node[block] at (4, -0.5) (s3)   {$\scriptstyle{\mathit{print}(x)}$};
+    \node[term] at (6, 0.0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (s1);
+    \draw [arrow] (s1) -- (s2);
+    \draw [arrow] (s1) -- (s3);
+    \draw [arrow] (s3) -- (exit);
+    \draw [arrow] (s2) -- (exit);
+    \node[block] at (2, -0.3) (load0) {$\scriptscriptstyle{L \setminus \{ x \} \mapsfrom L }$};
+    \node[block] at (3, 0) (entry) {$\scriptscriptstyle{\bigcup}$};
+    \node[block] at (4, 0.2) (pop)   {$\scriptscriptstyle{L \setminus \{ x \} \mapsfrom L }$};
+    \node[block] at (4, -0.8) (store)   {$\scriptscriptstyle{L \cup \{ x \} \mapsfrom L}$};
+  \end{tikzpicture}
+  \end{center}
+  \end{block}
+  where the domain of data-flow values is a set of live variables $\{\emptyset, \{ x \}\}$, and $\meet$ is the set union $\cup$.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Bidirectional Data-Flow Analysis}
+  Sometimes, analyzing data-flow in both backward and forward directions is necessary. This is known as \emph{bidirectional data-flow analysis}.
+  \begin{block}{Examples}
+  \begin{itemize}
+    \item Partial redundancy elimination
+    \item Type inference for dynamically typed language
+    \item Load-pop pair elimination for stack based language
+  \end{itemize}
+  \end{block}
+  Based on our insights from the unidirectional analysis, it make sense to investigate the Galois connection, the associated class of relations, and the behavior of program compositions in the context of bidirectional data-flow analysis.
+\end{frame}
+
+\begin{frame} [fragile]
+  \frametitle{The Galois Connection for Bidirectional Transfer Functions}
+  The Galois connection $H \dashv I$ is established between the relational constraints and the bidirectional transfer functions, which factors $F \dashv G$ by $(\pi_{1} \comp H) \dashv (I \comp \langle \mathrm{id}, \top\rangle)$
+  \begin{center}
+    \begin{tikzcd}
+      (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
+      ((E \tomon D) \times (D \tomon E) , \leq) & = \Bidir(D, E) \\
+      (E \tomon D , \leq) & = \Unidir(D, E)
+        \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
+        \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
+        \arrow["\pi_{1}"{name=J}, bend right=30, swap, from=2-1, to=3-1]
+        \arrow["\langle \mathrm{id}. \top\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["\dashv", phantom, from=H, to=I]
+        \arrow["\dashv", phantom, from=J, to=K]
+    \end{tikzcd}
+  \end{center}
+\end{frame}
+
+\begin{frame} [fragile]
+  \frametitle{The Class of Relations for Bidirectional Flowh -- Butterfly}
+  The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
+
+  \begin{definition}[Butterfly relation]
+  A relation $R$ is \emph{butterfly} if and only if $R$ satisfies the condition represented by the following diagram:
+  \begin{center}
+  \begin{tikzcd}
+    d_{1} & e_{1} \\
+    d     & e     \\
+    d_{0} & e_{0}
+    \arrow["\rotleq"{name=d0d'}, from=3-1, to=2-1]
+    \arrow["\rotleq"{name=dd1'}, from=2-1, to=1-1]
+    \arrow["\rotleq"{name=ee1'}, from=2-2, to=1-2, swap]
+    \arrow["\rotleq"{name=e0e'}, from=3-2, to=2-2, swap]
+    \arrow[""{name=r01'}, from=3-1, to=1-2, no head]
+    \arrow[""{name=r10'}, from=1-1, to=3-2, no head]
+    \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
+  \end{tikzcd}
+  \end{center}
+  \end{definition}
+\end{frame}
+
+\begin{frame} [fragile]
+  \frametitle{Composition and Butterfly property -- A Case of Failure}
+  The \emph{butterfly} property of relations is closed under $\cup$ but \red{not} closed under $\bowtie$.
+  \begin{block}{Counterexample}
+  A pair of butterflies $R$ and $S$ such that the composition $R \bowtie S$ is not a butterfly :
+  \begin{center}
+    \begin{tikzcd}
+          &      \\
+          & d_{1}\\
+    c_{0} & d_{0}
+    \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
+    \arrow["R"{name=r00}, from=3-1, to=3-2, no head, swap]
+    \arrow["R"{name=r01}, from=3-1, to=2-2, no head]
+    \end{tikzcd}
+    $\bowtie$
+    \begin{tikzcd}
+          & e_{2} \\
+    d_{1} & e_{1} \\
+    d_{0} & e_{0}
+    \arrow["\rotleq"{name=d0d1'}, from=3-1, to=2-1]
+    \arrow["S"{name=s00}, from=3-1, to=3-2, no head, swap]
+    \arrow["S"{name=s01}, from=2-1, to=1-2, no head]
+    \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
+    \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
+    \end{tikzcd}
+    $\quad=\quad$
+    \begin{tikzcd}
+          & e_{2} \\
+          & e_{1} \\
+    c_{0} & e_{0}
+    \arrow["R \bowtie S"{name=rs0}, from=3-1, to=3-2, no head, swap]
+    \arrow["/" marking, from=3-1, to=2-2, dashed, no head, gray]
+    \arrow["R \bowtie S"{name=rs1}, from=3-1, to=1-2, no head]
+    \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
+    \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
+    \end{tikzcd}
+
+  \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  The situation tells us, while we can explicitly give a sequencing operation for bidirectional transfer function as
+  \begin{equation*}
+    (\fb,\ff) \bowtielift (\gb,\gf) = I(H((\fb, \ff)) \bowtie H((\gb , \gf))),
+  \end{equation*}
+  The outcome is only guaranteed to be an overapproximation and it may not be sound (underapproximation).
+  $H(\fb, \ff) \bowtie H(\gb, \gf) \subset H((\fb, \ff) \bowtielift (\gb, \gf))$
+\end{frame}
+
+\begin{frame} [fragile]
+  In the context of analysis of load-pop pairs for stack based language,
+  we have found the case: The sequential composition $\binop; pop$ is not butterfly while both $\binop$ and $pop$ are butterfly.
+  \begin{figure}
+  \begin{tikzcd}[column sep=tiny]
+               & \opt,\opt,xs & \quad &          \\
+  \opt,\mnd,xs & \mnd,\opt,xs & & \opt, xs \\
+               & \mnd,\mnd,xs & & \mnd, xs
+  \arrow["\leq", from=3-2, to=2-1, swap, sloped]
+  \arrow["\leq", from=3-2, to=2-2, swap, sloped]
+  \arrow["\leq", from=2-1, to=1-2, sloped]
+  \arrow["\leq", from=2-2, to=1-2, sloped]
+  \arrow["\leq", from=3-4, to=2-4, sloped]
+  \arrow["", from=3-2, to=3-4, no head, swap]
+  \arrow["", from=1-2, to=2-4, no head, swap]
+  \end{tikzcd}
+  \begin{tikzcd}[column sep=tiny]
+           & \quad & \\
+  \opt, xs & & \\
+  \mnd, xs & & xs
+  \arrow["\leq", from=3-1, to=2-1, swap, sloped]
+  \arrow["", from=3-1, to=3-3, no head, swap]
+  \arrow["", from=2-1, to=3-3, no head, swap]
+  \end{tikzcd}
+  \begin{tikzcd}[column sep=tiny]
+               & \opt,\opt,xs & \quad &          \\
+  \opt,\mnd,xs & \mnd,\opt,xs & &          \\
+               & \mnd,\mnd,xs & & xs
+  \arrow["\leq", from=3-2, to=2-1, swap, sloped]
+  \arrow["\leq", from=3-2, to=2-2, swap, sloped]
+  \arrow["\leq", from=2-1, to=1-2, sloped]
+  \arrow["\leq", from=2-2, to=1-2, sloped]
+  \arrow["", from=3-2, to=3-4, no head, swap]
+  \arrow["", from=1-2, to=3-4, no head, swap]
+  \end{tikzcd}
+
+  \caption{Constraints for the instruction $\binop$ (top-left), $\pop$ (top-right), and their composition $\binop;\pop$ (bottom) }
+  \end{figure}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Implications for Bidirectional Flow Analysis}
+  \begin{block}{Basic Blocks in Bidirectional Flow}
+    In data flow analysis, we use basic blocks as building blocks. A basic block is a sequence of instructions with only one entry and one exit. In unidirectional analysis, we can usually put these sequence together into a single node in the flow graph. But, in bidirectional analysis, we cannot do so naively because the composition of two bidirectional function pair would introduce constraints that is not captured by single bidirectional function pair.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solution 1 -- $n$-tupling}
+  A simple solution to this is to stop consolidating basic blocks into a single node and instead treat each instruction as one node.
+
+  In this approach, the constraints arise from a basic block consists of $n-1$ instructions are treated as an element of $n$-ary relations $\Pow(D_{1} \times D_{2} \times  \cdots  \times D_{n})$, and within the basic block, the carriers of data flow values become $(n-1)$-tuples of pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times \cdots \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$.
+
+  The soundness of lifted operations still holds for the Galois connection between those posets but compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition.
+\end{frame}
+
+\begin{frame} [fragile]
+  \frametitle{Solution 2 -- Norrowing the class of relations }
+  The Galois connection $( \langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$ is established between the relational constraints and the poset of backward transfer functions and forward constant.
+  \begin{center}
+    \begin{tikzcd}
+      (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
+      ((E \tomon D) \times (D \tomon E) , \leq) & = \Bidir(D, E) \\
+      ((E \tomon D) \times E, \leq) & = \UnidirConst(D, E) \\
+      (E \tomon D , \leq) & = \Unidir(D, E)
+        \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
+        \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
+        \arrow["\langle {\pi_{1}, \bigjoin } \rangle"{name=J}, bend right=30, swap, from=2-1, to=3-1]
+        \arrow["\langle {\mathrm{id}, \mathrm{const}}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["\pi_{1}"{name=M}, bend right=30, swap, from=3-1, to=4-1]
+        \arrow["\langle {\mathrm{id}, \top} \rangle"{name=N}, bend right=30, swap, hook, from=4-1, to=3-1]
+        \arrow["\dashv", phantom, from=H, to=I]
+        \arrow["\dashv", phantom, from=J, to=K]
+        \arrow["\dashv", phantom, from=M, to=N]
+    \end{tikzcd}
+  \end{center}
+\end{frame}
+\begin{frame} [fragile]
+  \frametitle{Solution 2 -- Norrowing the class of relations }
+  The class of relation corresponding to the Galois connection $(\langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$
+  is characterized by conjunction of the conditions represented by the following two diagrams.
+  \begin{center}
+  \begin{tikzcd}
+    d_{1} &  \\
+    d     & e \\
+    \arrow["\rotleq"{name=dd1'}, from=2-1, to=1-1]
+    \arrow[""{name=r10'}, from=1-1, to=2-2, no head]
+    \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
+  \end{tikzcd}
+  \begin{tikzcd}
+      & e_{1} \\
+    d & e     \\
+      & e_{0}
+    \arrow["\rotleq"{name=ee1'}, from=2-2, to=1-2, swap]
+    \arrow["\rotleq"{name=e0e'}, from=3-2, to=2-2, swap]
+    \arrow[""{name=r01'}, from=2-1, to=1-2, no head]
+    \arrow[""{name=r10'}, from=2-1, to=3-2, no head]
+    \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
+  \end{tikzcd}
+  \end{center}
+  And indeed the class of relations is closed under both $\cup$ and $\bowtie$.
+\end{frame}
+
+\begin{comment}
+  \begin{tikzcd}
+           & \opt, \opt, xs \\
+  \opt, xs & \opt, \mnd, xs \\
+  \mnd, xs & \mnd, \mnd, xs
+  \arrow["\rotleq"{name=d0d1}, from=3-1, to=2-1]
+  \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
+  \arrow["\rotleq"{name=d0d1}, from=2-2, to=1-2, swap]
+  \arrow["\dup"{name=r00}, from=3-1, to=3-2, no head, swap]
+  \arrow["\dup"{name=r00}, from=3-1, to=2-2, no head, swap]
+  \arrow["\dup"{name=r00}, from=2-1, to=1-2, no head, swap]
+  %\arrow["\dup"{name=r01}, from=3-1, to=2-2, no head]
+  \end{tikzcd}
+
+
+  \begin{tikzcd}
+     &          \\
+     & \opt, xs \\
+  xs & \mnd, xs
+  \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
+  \arrow["\load"{name=r00}, from=3-1, to=3-2, no head, swap]
+  \arrow["\load"{name=r01}, from=3-1, to=2-2, no head]
+  \end{tikzcd}
+  \begin{tikzcd}
+           & \opt, \opt, xs \\
+  \opt, xs & \opt, \mnd, xs \\
+  \mnd, xs & \mnd, \mnd, xs
+  \arrow["\rotleq"{name=d0d1}, from=3-1, to=2-1]
+  \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
+  \arrow["\rotleq"{name=d0d1}, from=2-2, to=1-2, swap]
+  \arrow["\dup"{name=r00}, from=3-1, to=3-2, no head, swap]
+  \arrow["\dup"{name=r00}, from=3-1, to=2-2, no head, swap]
+  \arrow["\dup"{name=r00}, from=2-1, to=1-2, no head, swap]
+  %\arrow["\dup"{name=r01}, from=3-1, to=2-2, no head]
+  \end{tikzcd}
+
+\begin{frame} {Data-flow analysis and Directions of flows}
+  A data-flow analysis has a notion of direction, forward (e.g, constant propagation), backward (e.g, live variable analysis).
+  Some analyses require both and they are called \emph{bidirectional data-flow}.
+  Here is examples of bidirectional data-flow analysis:
+  \begin{itemize}
+    \item Partial redundancy elimination
+    \item Type inference for dynamically typed language
+    \item Load-pop pair analysis for stack based language
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{itemize}
+    \item Complete lattice at each program point (as node)
+    \item Transfer function along
+  \end{itemize}
+
+  \begin{itemize}
+    \item Assign a domain of data flow values at each program point.
+          each domain must form a complete lattice
+    \item Propagate data-flow value by transfer functions
+          each transfer function must be monotone
+    \item Take meet at the point flows confluence
+    \item Iterate the propagation until it reaches a fixed point
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame} {Data-flow analysis and Directions of flows}
+  \begin{block}{Live variable analysis (backward flow)}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[term] at (0, 0.0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.0) (s1) {$\scriptstyle{x := 10}$};
+    \node[block] at (4, 0.5) (s2)   {$\scriptstyle{x := 40}$};
+    \node[block] at (4, -0.5) (s3)   {$\scriptstyle{\mathit{print}(x)}$};
+    \node[term] at (6, 0.0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (s1);
+    \draw [arrow] (s1) -- (s2);
+    \draw [arrow] (s1) -- (s3);
+    \draw [arrow] (s3) -- (exit);
+    \draw [arrow] (s2) -- (exit);
+    \node[block] at (2, -0.3) (load0) {$\scriptscriptstyle{L \setminus \{ x \} \mapsfrom L }$};
+    \node[block] at (3, 0) (entry) {$\scriptscriptstyle{\bigcup}$};
+    \node[block] at (4, 0.2) (pop)   {$\scriptscriptstyle{L \setminus \{ x \} \mapsfrom L }$};
+    \node[block] at (4, -0.8) (store)   {$\scriptscriptstyle{L \cup \{ x \} \mapsfrom L}$};
+  \end{tikzpicture}
+  \end{center}
+  where the domain at each program point is the lattice of live variables $(\{ \emptyset , \{ x \}\}, \supseteq, \cup ) $
+  \end{block}
+  We obtain information that the statement ${x:=40}$ is redundant and removed by propagation from a boundary condition $L = \emptyset$ on the \emph{exit} node.
+\end{frame}
+
+\begin{frame} {Data-flow analysis and Directions of flows}
+  A data-flow analysis has a notion of direction, forward (e.g, constant propagation), backward (e.g, live variable analysis).
+  Some analyses require both and they are called \emph{bidirectional data-flow}.
+  Here is examples of bidirectional data-flow analysis:
+  \begin{itemize}
+    \item Partial redundancy elimination
+    \item Type inference for dynamically typed language
+    \item Load-pop pair analysis for stack based language
+  \end{itemize}
+\end{frame}
+
+\begin{frame} {Agenda}
+  \begin{enumerate}
+  \item \gray{Data-flow analysis and directions of flows}
+  \item \textbf{Data-flow vs Constraint (Relational)}
+  \item \gray{Galois connection between transfer functions and relations}
+  \item \gray{Drawback on sequential compositions in bidirectional flows}
+  \item \gray{A solution and applications}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame} {Data-flow vs Realtional Constraint}
+  \begin{block}{Relational constraint}
+    Program analyses can fundamentally be viewed as the resolution of \emph{relational constraints} on program constructs. Unification of contraints is used in e.g, type inference and logic programming.
+  \end{block}
+  There is no concept of flow or direction in this perspective.
+  But we can establish concrete (mathematical) connection between relations on lattice and monotone function on lattice.
+\end{frame}
+
+\begin{frame}
+  \begin{block}{Galois connection}
+    A Galois connection between two posets, $(X, \leq)$ and $(Y, \leq)$ is a pair of monotone functions $F : X \tomon Y$ and $G : Y \tomon X$
+  \end{block}
+\begin{frame}
+
+\begin{frame}
+  \begin{block}{Example: Push-pop elimination}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (start) {\emph{entry}};
+    \node[block] at (2,0.7) (load0) {$\push\, 1$};
+    \node[block] at (2,-0.7) (load1) {$\push\, 10$};
+    \node[block] at (4,0.7) (print2) {$\print$};
+    \node[block] at (4,-0.7) (pop)   {$\pop$};
+    \node[block] at (6,0) (exit)  {\emph{exit}};
+    \draw [arrow] (start) -- (load0);
+    \draw [arrow] (start) -- (load1);
+    \draw [arrow] (load0) -- (pop);
+    \draw [arrow] (load0) -- (print2);
+    \draw [arrow] (load1) -- (pop);
+    \draw [arrow] (pop) -- (exit);
+    \draw [arrow] (print2) -- (exit);
+    \node[block] at (1,0) (join)  {$\meet$};
+    \node[block] at (3,0.3) (join)  {$\meet$};
+    \node[block] at (2, 0.45) (load0) {\loadbw};
+    \node[block] at (4, 0.45) (load1) {\printbw};
+    \node[block] at (2, -0.95) (load1) {\loadbw};
+    \node[block] at (4, -0.95) (pop)   {\popbw};
+  \end{tikzpicture}
+  \end{center}
+  We obtain the fact $push\, 10$ is redundant by backward propagation. But to maintain stack heights corresponding pop should also
+  In this case, adding forward transfer function prevent unsafe elimination
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (start) {\emph{entry}};
+    \node[block] at (2,0.7) (load0) {$\push\, 1$};
+    \node[block] at (2,-0.7) (load1) {$\push\, 10$};
+    \node[block] at (4,0.7) (print2) {$\print$};
+    \node[block] at (4,-0.7) (pop)   {$\pop$};
+    \node[block] at (6,0) (exit)  {\emph{exit}};
+    \draw [arrow] (start) -- (load0);
+    \draw [arrow] (start) -- (load1);
+    \draw [arrow] (load0) -- (pop);
+    \draw [arrow] (load0) -- (print2);
+    \draw [arrow] (load1) -- (pop);
+    \draw [arrow] (pop) -- (exit);
+    \draw [arrow] (print2) -- (exit);
+    \node[block] at (2, 0.45) (load0) {\loadfw};
+    \node[block] at (4, 0.45) (load1) {\printfw};
+    \node[block] at (2, -0.95) (load1) {\loadfw};
+    \node[block] at (4, -0.95) (pop)   {\popfw};
+    \node[block] at (3,-0.3) (join)  {$\meet$};
+    \node[block] at (5,0) (join)  {$\meet$};
+   \end{tikzpicture}
+  \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame} {Analyzing a Program --- Key approaches}
+  program analysis is old study, but we focus:
+  \begin{block}{Data-flow frameworks}
+    \begin{itemize}
+        \item Assigns data-flow values at each program point
+        \item Utilize transfer functions along control flows
+        \item Propagate data-flow value through the program until it reaches a fixed point
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Constraint based approaches}
+    \begin{itemize}
+      \item Specify constraints to be satisfied by program constucts in some form of logic
+      \item Solve these constraints through unification
+      \item Constraints can be a set of equations, more generally, relations
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame} {Analyzing a Program --- Key approaches}
+  program analysis is old study, but we focus:
+  \begin{block}{Data-flow frameworks}
+    \begin{itemize}
+        \item Assigns data-flow values at each program point
+        \item Utilize transfer \red{functions} along control flows
+        \item Propagate information through out the program until it reaches a fixed point
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Constraint based approaches}
+    \begin{itemize}
+      \item Define constraints required to be satisfied by a program constructs
+      \item Solve these constraints through unification
+      \item Constraints can be a set of equations, more generally, \red{relations}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame} {Data-flow analysis vs Constraint based approaches}
+  Data-flow analyses have a notion of direction:
+  \begin{itemize}
+    \item Backward data-flow (e.g, constant propagation)
+    \item Forward data-flow (e.g, liveness analysis)
+  \end{itemize}
+
+  Some analyses require both directions, this kinds of analyses are called
+  \begin{itemize}
+    \item Bidirectional data-flow, for example,
+    \begin{itemize}
+      \item Partial redundancy elimination
+      \item Type inference for dynamically typed language
+      \item Load-pop elimination for stack based language
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame} {Data-flow analysis vs Constraint based approaches}
+  Constraint based approaches does not have direction:
+  Constraints can be expressed in first order logic but
+\end{frame}
+
+\begin{frame}{hoge}
+
+\end{frame}
+\begin{frame}
+  \frametitle{Data-flow analysis}
+  Data-flow analyses have a notion of direction:
+  \begin{itemize}
+    \item Backward (e.g, constant propagation)
+    \item Forward (e.g, liveness analysis)
+  \end{itemize}
+  Some analyses require both,
+  \begin{itemize}
+    \item Bidirectional flow analysis
+    \begin{itemize}
+      \item Partial redundancy elimination
+      \item Type inference for dynamically typed language
+      \item Load-pop elimination for stack based language
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{What are data-flow analyses?}
+  \begin{itemize}
+    \item Assigning data-flow domain for each program point
+    \item Describe data-flow constraint between pre and post data-flow values along with control flow
+    TODO: describe CFG (set of data-flow equation) case
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Contraint solver}
+  \begin{itemize}
+    \item Program analysis can be specified as a constrant solving.
+    \item Unification
+    TODO: describe type inferenece
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Static analysis schemes}
+  \begin{itemize}
+    \item approx by endo monotone functions $D \times E \to D \times E$
+    \item approx by monotone function pairs $(E \to D) \times (D \to E)$
+    \item approx by backward monotone functions $E \to D$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Galois Connections}
+  \[
+    \begin{tikzcd}
+      \Rel(D, E) & \text{all binary relations} \\
+      \Endo(D, E) & \text{all join-closed relations} \\
+      \Bidir(D, E) & \text{all join-closed and butterfly relations} \\
+      \Unidir(D, E) & \text{all join-closed and pre-down-/post-upclosed relations}
+        \arrow["F"{name=F}, bend right=30, swap, from=1-1, to=2-1]
+        \arrow["G"{name=G}, bend right=30, swap, from=2-1, to=1-1]
+        \arrow["H"{name=H}, bend right=30, swap, from=2-1, to=3-1]
+        \arrow["I"{name=I}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["J"{name=J}, bend right=30, swap, from=3-1, to=4-1]
+        \arrow["K"{name=K}, bend right=30, swap, hook, from=4-1, to=3-1]
+        \arrow["\dashv", phantom, from=F, to=G]
+        \arrow["\dashv", phantom, from=H, to=I]
+        \arrow["\dashv", phantom, from=J, to=K]
+        \arrow["\rotsubseteq", phantom, from=2-2 , to=1-2]
+        \arrow["\rotsubseteq", phantom, from=3-2 , to=2-2]
+        \arrow["\rotsubseteq", phantom, from=4-2 , to=3-2]
+    \end{tikzcd}
+  \]
+\end{frame}
+
+\begin{frame}{Backward flow, simple cases}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[term] at (0, 0.0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.0) (load0) {$\load\, a_{0}$};
+    \node[block] at (4, 0.0) (pop)   {$\pop$};
+    \node[term] at (6, 0.0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (load0);
+    \draw [arrow] (load0) -- (pop);
+    \draw [arrow] (pop) -- (exit);
+    \node[block] at (1, -0.3) (entry) {$\scriptstyle{\star}$};
+    \node[block] at (2, -0.3) (load0) {\loadbw};
+    \node[block] at (3, -0.3) (entry) {};
+    \node[block] at (4, -0.3) (pop)   {\popbw};
+    \node[block] at (5, -0.3) (exit)  {$\scriptstyle{\star}$};
+  \end{tikzpicture}
+  \end{center}
+
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[term] at (0, 0.0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.0) (load0) {$\load\, a_{0}$};
+    \node[block] at (4, 0.5) (pop)   {$\pop$};
+    \node[block] at (4, -0.5) (store)   {$\store\, a_{1}$};
+    \node[term] at (6, 0.0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (load0);
+    \draw [arrow] (load0) -- (pop);
+    \draw [arrow] (load0) -- (store);
+    \draw [arrow] (pop) -- (exit);
+    \draw [arrow] (store) -- (exit);
+    \node[block] at (1, -0.3) (entry) {$\scriptstyle{\star}$};
+    \node[block] at (2, -0.3) (load0) {\loadbw};
+    \node[block] at (3, 0) (entry) {$\scriptstyle{\bigmeet}$};
+    \node[block] at (4, 0.2) (pop)   {\popbw};
+    \node[block] at (4, -0.8) (store)   {\storebw};
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Boundary condition prevents elimination pair}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.7) (pop0) {$\pop$};
+    \node[block] at (4, 0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (3, -0.7) (nop)   {$\nop$};
+    \node[block] at (6,0) (pop1)   {$\pop$};
+    \node[block] at (8,0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (pop0);
+    \draw [arrow] (entry) -- (nop);
+    \draw [arrow] (nop) -- (pop1);
+    \draw [arrow] (pop0) -- (load0);
+    \draw [arrow] (load0) -- (pop1);
+    \draw [arrow] (pop1) -- (exit);
+    \node[block] at (1, 0) (entry) {$\scriptstyle{\bigmeet}$};
+    \node[block] at (2, 0.45) (pop0) {\popbw};
+    \node[block] at (4, 0.45) (load0) {\loadbw};
+    \node[block] at (3, -0.95) (nop)   {\nopbw};
+    \node[block] at (6, -0.25) (pop1)   {\popbw};
+  \end{tikzpicture}
+
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.7) (pop0) {$\pop$};
+    \node[block] at (4, 0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (3, -0.7) (nop)   {$\nop$};
+    \node[block] at (6,0) (pop1)   {$\pop$};
+    \node[block] at (8,0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (pop0);
+    \draw [arrow] (entry) -- (nop);
+    \draw [arrow] (nop) -- (pop1);
+    \draw [arrow] (pop0) -- (load0);
+    \draw [arrow] (load0) -- (pop1);
+    \draw [arrow] (pop1) -- (exit);
+    \node[block] at (1, 0) (entry) {$\scriptstyle{\bigmeet}$};
+    \node[block] at (2, 0.45) (pop0) {\popfw};
+    \node[block] at (4, 0.45) (load0) {\loadfw};
+    \node[block] at (3, -0.95) (nop)   {\nopfw};
+    \node[block] at (6, -0.25) (pop1)   {\popfw};
+  \end{tikzpicture}
+
+  \end{center}
+\end{frame}
+\begin{frame}{Structured flow, backward flow}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.7) (pop0) {$\pop$};
+    \node[block] at (5, 0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (4, -0.7) (nop)   {$\nop$};
+    \node[block] at (8,0) (pop1)   {$\pop$};
+    \node[block] at (10,0) (exit)  {\emph{exit}};
+    \draw [arrow] (entry) -- (pop0);
+    \draw [arrow] (entry) -- (nop);
+    \draw [arrow] (nop) -- (pop1);
+    \draw [arrow] (pop0) -- (load0);
+    \draw [arrow] (load0) -- (pop1);
+    \draw [arrow] (pop1) -- (exit);
+  \end{tikzpicture}
+  \end{center}
+
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (entry) {\emph{entry}};
+    \node[block] at (2, 0.7) (pop0) {$\pop$ \\ $\scriptstyle{\opt,\xs \mapsfrom \xs}$};
+    \node[block] at (5, 0.7) (load0){$\load\, a_{0}$ \\ $\scriptstyle{\xs \mapsfrom x, \xs}$ \\ $\scriptstyle{\bot \mapsfrom \epsilon}$ };
+    \node[block] at (4, -0.7) (nop) {$\nop$ \\ $\scriptstyle{\xs \mapsfrom \xs}$};
+    \node[block] at (8,0) (pop1)    {$\pop$ \\ $\scriptstyle{\opt,\xs \mapsfrom \xs}$};
+    \node[block] at (10,0) (exit)   {\emph{exit}};
+    \draw [arrow] (entry) -- (pop0);
+    \draw [arrow] (entry) -- (nop);
+    \draw [arrow] (nop) -- (pop1);
+    \draw [arrow] (pop0) -- (load0);
+    \draw [arrow] (load0) -- (pop1);
+    \draw [arrow] (pop1) -- (exit);
+  \end{tikzpicture}
+  \end{center}
+
+  $((\pop \seq \load\, a_{0}) \choice \nop) \seq \pop \seq $
+\end{frame}
+
+\begin{frame}{Less structured flow, optimization by splitting}
+  \begin{center}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (start) {\emph{entry}};
+    \node[block] at (2,0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (2,-0.7) (load1) {$\load\, a_{1}$};
+    \node[block] at (4,0.7) (store2) {$\store\, a_{2}$};
+    \node[block] at (4,-0.7) (pop)   {$\pop$};
+    \node[block] at (6,0) (exit)  {\emph{exit}};
+    \draw [arrow] (start) -- (load0);
+    \draw [arrow] (start) -- (load1);
+    \draw [arrow] (load0) -- (pop);
+    \draw [arrow] (load0) -- (store2);
+    \draw [arrow] (load1) -- (pop);
+    \draw [arrow] (pop) -- (exit);
+    \draw [arrow] (store2) -- (exit);
+  \end{tikzpicture}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (start) {\emph{entry}};
+    \node[block] at (2,0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (2,-0.7) (load1) {$\load\, a_{1}$};
+    \node[block] at (4,0.7) (store2) {$\store\, a_{2}$};
+    \node[block] at (4,-0.1) (pop-split1) {$\pop$};
+    \node[block] at (4,-0.7) (pop-split2) {$\pop$};
+    \node[block] at (6,0) (exit)  {\emph{exit}};
+    \draw [arrow] (start) -- (load0);
+    \draw [arrow] (start) -- (load1);
+    \draw [arrow] (load0) -- (pop-split1);
+    \draw [arrow] (load0) -- (store2);
+    \draw [arrow] (load1) -- (pop-split2);
+    \draw [arrow] (pop-split1) -- (exit);
+    \draw [arrow] (pop-split2) -- (exit);
+    \draw [arrow] (store2) -- (exit);
+  \end{tikzpicture}
+  \begin{tikzpicture}[auto]
+    \node[block] at (0,0) (start) {\emph{entry}};
+    \node[block] at (2,0.7) (load0) {$\load\, a_{0}$};
+    \node[block] at (3,-0.7) (nop) {$\nop$};
+    \node[block] at (4,0.7) (store2) {$\store\, a_{2}$};
+    \node[block] at (4,-0.1) (pop-split1) {$\pop$};
+    \node[block] at (6,0) (exit)  {\emph{exit}};
+    \draw [arrow] (start) -- (load0);
+    \draw [arrow] (start) -- (nop);
+    \draw [arrow] (load0) -- (pop-split1);
+    \draw [arrow] (load0) -- (store2);
+    \draw [arrow] (pop-split1) -- (exit);
+    \draw [arrow] (nop) -- (exit);
+    \draw [arrow] (store2) -- (exit);
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+\end{comment}
+\end{document}
