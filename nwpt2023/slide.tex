@@ -295,8 +295,8 @@
   \begin{block}{Examples}
   \begin{itemize}
     \item Partial redundancy elimination
-    \item Type inference for dynamically typed language
-    \item Load-pop pair elimination for stack based language
+    \item Type inference for a dynamically typed language
+    \item Load-pop pair elimination for stack-based language
   \end{itemize}
   \end{block}
   Based on our insights from the unidirectional analysis, it make sense to investigate the Galois connection, the associated class of relations, and the behavior of program compositions in the context of bidirectional data-flow analysis.
@@ -313,7 +313,7 @@
         \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
         \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
         \arrow["\pi_{1}"{name=J}, bend right=30, swap, from=2-1, to=3-1]
-        \arrow["\langle \mathrm{id}. \top\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["\langle {\mathrm{id}, \top}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
         \arrow["\dashv", phantom, from=H, to=I]
         \arrow["\dashv", phantom, from=J, to=K]
     \end{tikzcd}
@@ -321,7 +321,7 @@
 \end{frame}
 
 \begin{frame} [fragile]
-  \frametitle{The Class of Relations for Bidirectional Flowh -- Butterfly}
+  \frametitle{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
 
   \begin{definition}[Butterfly relation]
@@ -386,16 +386,17 @@
 \end{frame}
 
 \begin{frame}
+  The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
   The situation tells us, while we can explicitly give a sequencing operation for bidirectional transfer function as
   \begin{equation*}
     (\fb,\ff) \bowtielift (\gb,\gf) = I(H((\fb, \ff)) \bowtie H((\gb , \gf))),
   \end{equation*}
   The outcome is only guaranteed to be an overapproximation and it may not be sound (underapproximation).
-  $H(\fb, \ff) \bowtie H(\gb, \gf) \subset H((\fb, \ff) \bowtielift (\gb, \gf))$
+  $H(\fb, \ff) \bowtie H(\gb, \gf) \subseteq H((\fb, \ff) \bowtielift (\gb, \gf))$
 \end{frame}
 
 \begin{frame} [fragile]
-  In the context of analysis of load-pop pairs for stack based language,
+  In the context of analysis of load-pop pairs for stack-based language,
   we have found the case: The sequential composition $\binop; \pop$ is not butterfly while both $\binop$ and $\pop$ are butterfly.
   \begin{figure}
   \begin{tikzcd}[column sep=tiny]
@@ -443,10 +444,10 @@
   \frametitle{Implications for Bidirectional Flow Analysis}
   A sequence of instructions $i_{1};i_{2}\cdots;i_{n}$ without any branch in/out except for entry/exit is called a \emph{basic block}.
   \begin{block}{In Unidirectional Flow Analysis}
-    Each basic block in a program is treated as a single node in the flow graph.
+    Traditionally, each basic block in a program is treated as a single node in the flow graph.
   \end{block}
   \begin{block}{In Bidirectional Flow Analysis}
-    Cannot put a basic block into a single node naively.
+    \red{Cannot} put a basic block into a single node naively.
   \end{block}
   This is because composition of two bidirectional function pairs would introduce constraint that is not captured by a single bidirectional function pair. Treating each instruction as an individual node is a safe option but has drawbacks in terms of the efficiency of the analysis.
 \end{frame}
@@ -463,7 +464,7 @@
 % \end{frame}
 
 \begin{frame} [fragile]
-  \frametitle{A Remedy -- Norrowing the class of relations }
+  \frametitle{A Remedy -- Narrowing the class of relations }
   The Galois connection $( \langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$ is established between the relational constraints and the poset of backward transfer functions and forward constant.
   \begin{center}
     \begin{tikzcd}
