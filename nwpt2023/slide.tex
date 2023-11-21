@@ -154,12 +154,12 @@
   \item A solution and applications
   }}}
 
-\agenda
+% \agenda
 \begin{frame}
   \frametitle {Data-flow vs Relational Constraints}
   \begin{block}{Data-flow analysis}
     \begin{itemize}
-    \item Many appilcations in program analysis and compiler optimization.
+    \item Many applications in program analysis and compiler optimization.
     \item Information at each program point is propagated over the program by backward or forward transfer \red{functions}.
     \end{itemize}
   \end{block}
@@ -205,13 +205,13 @@
 \end{frame}
 
 \begin{frame} [fragile] {The class of relations via the Galois connection}
-  The image of $G$, takes a function to a relation, is the class of relations that can be specified by backward transfer functions. We obtain the characterization of the class from general facts about Galois connection:
+  The image of $G$ is the class of relations that can be specified by backward transfer functions. We obtain the characterization of the class from general facts about Galois connection:
   \begin{align*}
-  &R \text{ is in the image of } G \iff G(F(R)) \subseteq R  \\
+  &R \text{ is in the image of } G \iff G(F(R)) = R  \\
                                 &\iff
-                                  R \text{ is }\join-{ closed } \land R \text{ is pre-down-/post-upclosed },
+                                  R \text{ is }\join \text{-closed } \land R \text{ is pre-down-/post-upclosed },
   \end{align*}
-  where $R$ is pre-down-/post-upclosed $:\Leftrightarrow \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R$.
+  where $R$ is pre-down-/post-upclosed if and only if $\forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R$.
 
   The following diagram represents pre-down-/post-upclosedness:
   \begin{center}
@@ -228,7 +228,7 @@
 \end{frame}
 \begin{frame} {Composition lifting via Galois connection}
   \begin{block}{Sequencing of constraints}
-    The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the predecessor and successor constraints.
+    The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the constraints of first and second pieces of code.
   \end{block}
   \begin{block}{Lifting}
     Using $F \dashv G$, the composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
@@ -325,8 +325,10 @@
   The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
 
   \begin{definition}[Butterfly relation]
-  A relation $R$ is \emph{butterfly} if and only if $R$ satisfies the condition represented by the following diagram:
-  \begin{center}
+    A relation $R$ is \emph{butterfly} if and only if \begin{align*}
+      &\forall d\, e\, d_{0}\, d_{1 }\, e_{0}\, e_{1} .\\
+      &d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \implies (d, e) \in R,
+    \end{align*}or diagramatically, \quad
   \begin{tikzcd}
     d_{1} & e_{1} \\
     d     & e     \\
@@ -339,15 +341,14 @@
     \arrow[""{name=r10'}, from=1-1, to=3-2, no head]
     \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
   \end{tikzcd}
-  \end{center}
   \end{definition}
 \end{frame}
 
 \begin{frame} [fragile]
   \frametitle{Composition and Butterfly property -- A Case of Failure}
-  The \emph{butterfly} property of relations is closed under $\cup$ but \red{not} closed under $\bowtie$.
+  The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
   \begin{block}{Counterexample}
-  A pair of butterflies $R$ and $S$ such that the composition $R \bowtie S$ is not a butterfly :
+  A pair of butterflies $R$ and $S$ such that the composition $R \bowtie S$ is not a butterfly:
   \begin{center}
     \begin{tikzcd}
           &      \\
@@ -379,8 +380,8 @@
     \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
     \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
     \end{tikzcd}
-
   \end{center}
+  Not having the gray dashed line violates being butterfly.
   \end{block}
 \end{frame}
 
@@ -395,7 +396,7 @@
 
 \begin{frame} [fragile]
   In the context of analysis of load-pop pairs for stack based language,
-  we have found the case: The sequential composition $\binop; pop$ is not butterfly while both $\binop$ and $pop$ are butterfly.
+  we have found the case: The sequential composition $\binop; \pop$ is not butterfly while both $\binop$ and $\pop$ are butterfly.
   \begin{figure}
   \begin{tikzcd}[column sep=tiny]
                & \opt,\opt,xs & \quad &          \\
@@ -409,7 +410,7 @@
   \arrow["", from=3-2, to=3-4, no head, swap]
   \arrow["", from=1-2, to=2-4, no head, swap]
   \end{tikzcd}
-  \begin{tikzcd}[column sep=tiny]
+  \begin{tikzcd}[column sep=tiny, row sep=small]
            & \quad & \\
   \opt, xs & & \\
   \mnd, xs & & xs
@@ -417,7 +418,11 @@
   \arrow["", from=3-1, to=3-3, no head, swap]
   \arrow["", from=2-1, to=3-3, no head, swap]
   \end{tikzcd}
-  \begin{tikzcd}[column sep=tiny]
+  \caption{The constraints for the instructions $\binop$ (left) and $\pop$ (right)}
+  \end{figure}
+
+  \begin{figure}
+  \begin{tikzcd}[column sep=tiny, row sep=small]
                & \opt,\opt,xs & \quad &          \\
   \opt,\mnd,xs & \mnd,\opt,xs & &          \\
                & \mnd,\mnd,xs & & xs
@@ -428,30 +433,37 @@
   \arrow["", from=3-2, to=3-4, no head, swap]
   \arrow["", from=1-2, to=3-4, no head, swap]
   \end{tikzcd}
-
-  \caption{Constraints for the instruction $\binop$ (top-left), $\pop$ (top-right), and their composition $\binop;\pop$ (bottom) }
+  \caption{The constraint for $\binop;\pop$, missing gray lines violates butterfly}
   \end{figure}
+
 \end{frame}
 
 
 \begin{frame}
   \frametitle{Implications for Bidirectional Flow Analysis}
-  \begin{block}{Basic Blocks in Bidirectional Flow}
-    In data flow analysis, we use basic blocks as building blocks. A basic block is a sequence of instructions with only one entry and one exit. In unidirectional analysis, we can usually put these sequence together into a single node in the flow graph. But, in bidirectional analysis, we cannot do so naively because the composition of two bidirectional function pair would introduce constraints that is not captured by single bidirectional function pair.
+  A sequence of instructions $i_{1};i_{2}\cdots;i_{n}$ without any branch in/out except for entry/exit is called a \emph{basic block}.
+  \begin{block}{In Unidirectional Flow Analysis}
+    Each basic block in a program is treated as a single node in the flow graph.
   \end{block}
+  \begin{block}{In Bidirectional Flow Analysis}
+    Cannot put a basic block into a single node naively.
+  \end{block}
+  This is because composition of two bidirectional function pairs would introduce constraint that is not captured by a single bidirectional function pair. Treating each instruction as an individual node is a safe option but has drawbacks in terms of the efficiency of the analysis.
 \end{frame}
 
-\begin{frame}
-  \frametitle{Solution 1 -- $n$-tupling}
-  A simple solution to this is to stop consolidating basic blocks into a single node and instead treat each instruction as one node.
+%    In traditional data-flow analysis, we use basic blocks as building blocks. A basic block is a sequence of instructions with only one entry and one exit. In unidirectional analysis, we can usually put these sequence together into a single node in the flow graph. But, in bidirectional analysis, we cannot do so naively because the composition of two bidirectional function pair would introduce constraints that is not captured by single bidirectional function pair.
 
-  In this approach, the constraints arise from a basic block consists of $n-1$ instructions are treated as an element of $n$-ary relations $\Pow(D_{1} \times D_{2} \times  \cdots  \times D_{n})$, and within the basic block, the carriers of data flow values become $(n-1)$-tuples of pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times \cdots \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$.
+% \begin{frame}
+%  \frametitle{Solution 1 -- $n$-tupling}
+%  A simple solution to this is to stop consolidating basic blocks into a single node and instead treat each instruction as one node.
 
-  The soundness of lifted operations still holds for the Galois connection between those posets but compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition.
-\end{frame}
+%   In this approach, the constraints arise from a basic block consists of $n-1$ instructions are treated as an element of $n$-ary relations $\Pow(D_{1} \times D_{2} \times  \cdots  \times D_{n})$, and within the basic block, the carriers of data flow values become $(n-1)$-tuples of pairs of monotone functions $((D_{1} \tomon D_{2}) \times (D_{2} \tomon D_{1}) \times \cdots \times (D_{n-1} \tomon D_{n}) \times (D_{n} \tomon D_{n-1}))$.
+%
+%   The soundness of lifted operations still holds for the Galois connection between those posets but compositionality is somewhat broken in that intermediate program points cannot be hidden in sequential composition.
+% \end{frame}
 
 \begin{frame} [fragile]
-  \frametitle{Solution 2 -- Norrowing the class of relations }
+  \frametitle{A Remedy -- Norrowing the class of relations }
   The Galois connection $( \langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$ is established between the relational constraints and the poset of backward transfer functions and forward constant.
   \begin{center}
     \begin{tikzcd}
@@ -470,9 +482,33 @@
         \arrow["\dashv", phantom, from=M, to=N]
     \end{tikzcd}
   \end{center}
+  Indeed, the class of relations corresponds to this Galois connection is closed under both $\cap$ and $\bowtie$.
 \end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+  \begin{itemize}
+    \item Galois connection in Program analyses
+    \begin{itemize}
+      \item Bridge between data-flow analysis and its relational aspects
+      \item Gives a nice characterization of the class of relations underlying data-flow analysis
+      \item Provides operations for program compositions ($\bowtielift$, $\caplift$) in $\Unidir(D, E)$, automatically
+    \end{itemize}
+    \item Bidirectional Data-flow analysis
+    \begin{itemize}
+      \item The class of relations is characterized by using butterfly property
+      \item Composing two butterflies may be a non-butterfly!
+      \item Having problem with the traditional `basic blocks as a single node` approach in $\Bidir(D, E)$
+    \end{itemize}
+    \item A Remedy for Compositionality in Bidirectional Flow
+    \begin{itemize}
+      \item By limiting one direction to be constant flow, $\UnidirConst(D, E)$ gains compositionality again.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 \begin{frame} [fragile]
-  \frametitle{Solution 2 -- Norrowing the class of relations }
+  \frametitle{The class of relations for $UnidirConst$}
   The class of relation corresponding to the Galois connection $(\langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$
   is characterized by conjunction of the conditions represented by the following two diagrams.
   \begin{center}
@@ -494,7 +530,6 @@
     \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
   \end{tikzcd}
   \end{center}
-  And indeed the class of relations is closed under both $\cup$ and $\bowtie$.
 \end{frame}
 
 \begin{comment}
