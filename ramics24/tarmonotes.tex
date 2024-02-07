@@ -1,0 +1,924 @@
+\documentclass[9pt]{article}
+
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm,a4paper]{geometry}
+
+\usepackage{amssymb}
+
+\usepackage{proof}
+\usepackage[all]{xy}
+
+
+\newcommand{\Pow}{\mathcal{P}}
+\newcommand{\tomon}{\to_{\mathrm{mon}}}
+
+\newcommand{\ff}{{f^{\rightarrow}}}
+\newcommand{\fb}{{f^{\leftarrow}}}
+\newcommand{\gf}{{g^{\rightarrow}}}
+\newcommand{\gb}{{g^{\leftarrow}}}
+\newcommand{\kf}{{k^{\rightarrow}}}
+\newcommand{\kb}{{k^{\leftarrow}}}
+
+\newcommand{\join}{\sqcup}
+\newcommand{\bigjoin}{\bigsqcup}
+\newcommand{\meet}{\sqcap}
+\newcommand{\bigmeet}{\sqcap}  % there is no \bigsqcap ??
+
+\newcommand{\con}{\wedge}
+\newcommand{\imp}{\to}
+\newcommand{\equ}{\leftrightarrow}
+
+\newcommand{\fst}{\mathsf{fst}}
+\newcommand{\snd}{\mathsf{snd}}
+
+\newcommand{\prC}{\mathsf{pr}_C}
+\newcommand{\prD}{\mathsf{pr}_D}
+\newcommand{\prE}{\mathsf{pr}_E}
+\newcommand{\prCD}{\mathsf{pr}_{C \times D}}
+\newcommand{\prDE}{\mathsf{pr}_{D \times E}}
+\newcommand{\prCE}{\mathsf{pr}_{C \times E}}
+
+\newcommand{\caplift}{\mathbin{\overline{\cap}}}
+
+\newcommand{\bowtielift}{\mathbin{\overline{\bowtie}}}
+
+
+\begin{document}
+
+Assume $D$, $E$ have arbitrary joins, i.e., are complete lattices. 
+
+\[
+\xymatrix@R=5pc@C=0.3pc{  
+  (\Pow(D \times E), \subseteq) \ar@/_1pc/[rrr]_{F} \ar@{}[rrr]|{\top}
+  \ar@/_1pc/[d]_{F_0}  \ar@{}[d]|{\dashv}
+& & & (D \times E \tomon D \times E, \leq) \ar@/_1pc/[rrr]_{H} \ar@{}[rrr]|{\top}
+\ar@/_1pc/[lll]_{G}
+\ar@/_1pc/[dl]_{G_0} \ar@{}[dl]|{\vdash}
+\ar@/_1pc/[dr]_{H_0} \ar@{}[dr]|{\dashv}
+& & & ((E \tomon D) \times (D \tomon E), \leq) \ar@/_1pc/[lll]_{I}
+   \ar@{=}[d] \\
+\textrm{join-closed} \ar@/_1pc/[rr] \ar@{}[rr]|{\cong}
+        \ar@/_1pc/[d]_{H_{00}} \ar@{}[d]|{\dashv} \ar@{(->}@/_1pc/[u]_{U}
+& & \textrm{coclosure ops} \ar@/_1pc/[ll]  \ar@{(->}@/_1pc/[ur]_{U}
+    & & \textrm{bidir} \ar@/_1pc/[rr] \ar@{}[rr]|{\cong}  \ar@{(->}@/_1pc/[ul]_U
+    & &  \ar@/_1pc/[ll] \ar@/_1pc/[d]_{G_{00}}  \ar@{}[d]|{\vdash} \\
+\textrm{join-closed butterflies} \ar@/_1pc/[rrrrrr] \ar@{}[rrrrrr]|{\cong}
+         \ar@{(->}@/_1pc/[u]_{U}
+& & & & & & \textrm{nice} \ar@/_1pc/[llllll]
+  \ar@{(->}@/_1pc/[u]_{U}
+}
+\]  
+
+
+
+\begin{eqnarray*}
+  R \textrm{~join-closed}
+  & \equ & \forall S.\, S \subseteq R \imp \bigjoin S \in R \\
+  R \textrm{~a butterfly}
+  & \equ & \forall d_0,e_0,d,d',e,e'.\, \\
+  & & \qquad
+        d \leq d_0 \leq d' \con e \leq e_0 \leq e'
+           \con (d,e') \in R \con (d',e) \in R \imp (d_0,e_0) \in R \\
+  f \textrm{a coclosure op}
+  & \equ & \forall p.\, f(p) \leq p \con f(p) \leq f(f(p)) \\
+  f \textrm{~bidir}
+  & \equ & \forall d,e.\, (\fst(f(\top,e)),\snd(f(d,\top))) \leq f(d,e) \\
+  (\fb,\ff) \textrm{~nice}
+  & \equ & (\forall e.\, \fb(e) \leq \fb(e \meet \ff(\fb(e))))
+           \con (\forall d.\, \ff(d) \leq \ff(d \meet \fb(\ff(d))))
+\end{eqnarray*}  
+
+\begin{eqnarray*}
+  F(R) & = &
+    \lambda p_0.\, \bigjoin \{p \mid p \leq p_0 \con p \in R\} \\        
+  G(f) & = & \{p \mid p \leq f(p)\} \\
+  H(f) & = &
+    (\lambda e.\, \fst(f(\top,e)), \lambda d.\, \snd(f(d,\top))) \\         
+  I(\fb,\ff) & = & \lambda (d,e).\, (\fb(e),\ff(d)) \\
+  HF(R) & = &
+    (\lambda e_0.\, \bigjoin\{d \mid \exists e.\, e \leq e_0 \con (d,e) \in R\},
+    \lambda d_0.\, \bigjoin \{e \mid \exists d.\, d \leq d_0 \con (d,e) \in R\}) \\
+  GI(\fb,\ff) & = &
+                    \{ (d,e) \mid d \leq \fb(e) \con e \leq \ff(d)\} 
+\end{eqnarray*}
+
+\begin{eqnarray*}
+  F_0(R) & = & \{\bigjoin S \mid S \subseteq R\} \\
+  G_0(f) & = & \lambda p_0.\, \bigjoin \{ p \mid p \leq p_0 \con p \leq f(p) \}
+               = \lambda p_0.\, \nu p.\, p_0 \meet f(p) \\
+  H_{00}(R) & = & \{ (d,e) \mid \exists d_0,d_1,e_0,e_1.\,
+        d_0 \leq d \leq d_1 \con e_0 \leq e \leq e_1
+           \con (d_0,e_1) \in R \con (d_1,e_0) \in R\} \\
+  H_0 (f) & = & \lambda (d,e).\, (\fst(f(\top,e)), \snd(f(d,\top))) \\
+  G_{00} (\fb,\ff) & = & (\lambda e_0.\, \bigjoin \{d \mid \exists e.\, e \leq e_0 \con d \leq \fb(e) \con e \leq \ff(d) \},
+                         \lambda d_0.\, \bigjoin \{e \mid \exists d.\, d \leq d_0 \con d \leq \fb(e) \con e \leq \ff(d) \})
+\end{eqnarray*}
+
+
+The functions $F$, $G$ etc are all order-preserving, i.e. poset maps. 
+
+Proof of $F \dashv G$:
+
+\[
+\infer={R \subseteq G(f)}{
+  \infer=[(i)]{\forall p.\, p \in R \imp p \leq f(p)}{
+    \infer={\forall p_0,p.\, p \leq p_0 \con p \in R \imp p \leq f(p_0)}{
+      \infer={\forall p_0.\, \bigjoin \{p \mid p \leq p_0 \con p \in R\} \leq f(p_0)}{
+        F(R) \leq f
+      }
+    }
+  }
+}  
+\]
+
+(i):$\downarrow$: Instantiate $p_0 := p$.
+
+(i):$\uparrow$: Use monotonicity of $f$ to conclude $f(p) \leq f(p_0)$ from
+$p \leq p_0$.
+
+\bigskip
+
+
+Proof of $H \dashv I$:
+
+\[
+\infer={f \leq I(\fb,\ff)}{
+  \infer={\forall d,e.\, f(d,e) \leq (\fb(e),\ff(d))}{
+    \infer=[(ii)]{(\forall d,e.\, \fst(f(d,e)) \leq \fb(e))
+        \con (\forall d,e.\, \snd(f(d,e)) \leq \ff(d))}{
+      \infer={(\forall e.\, \fst(f(\top,e)) \leq \fb(e))
+        \con (\forall d.\, \snd(f(d,\top)) \leq \ff(d))}{
+       H(f) \leq (\fb,\ff) 
+      }
+    }  
+  }
+}  
+\]  
+
+(ii):$\downarrow$: Use monotonicity of $f$ to conclude
+$f(d,e) \leq f(\top,e)$ and $f(d,e) \leq f(d, \top)$.
+
+(ii):$\uparrow$: Instantiate $d := \top$ and $e := \top$.
+
+\bigskip
+
+Proof of ``$R$ a fixpoint of $GF$ $\equ$ $R$ join-closed'':
+
+\[
+\infer={R \textrm{~join-closed}}{
+  \infer=[(iii)]{\forall S.\, S \subseteq R \imp \bigjoin S \in R}{    
+    \infer={\forall p_0.\, p_0 \leq \bigjoin \{p \mid p \leq p_0 \con p \in R\} \imp p_0 \in R}{
+      \infer={GF(R) \subseteq R}{
+        R \textrm{~a fixpoint of $GF$}
+      }  
+    }
+  }
+}  
+\]
+
+(iii):$\downarrow$: Instantiate $p_0 := \bigjoin S$. From
+$S \subseteq R$, using that $\forall p.\, p \in S \imp p \leq \bigjoin S$,
+we have $S \subseteq \{p \mid p \leq \bigjoin S \con p \in
+R\}$. Hence
+$\bigjoin S \leq \bigjoin \{p \mid p \leq \bigjoin S \con p \in R\}$.
+
+(iii):$\uparrow$: Instantiate
+$S := \{p \mid p \leq p_0 \con p \in R\}$.  From
+$p_0 \leq \bigjoin \{p \mid p \leq p_0 \con p \in R\}$, using that
+$\bigjoin \{p \mid p \leq p_0 \con p \in R\} \leq p_0$,
+we have $p_0 = \bigjoin \{p \mid p \leq p_0 \con p \in R\}$.
+
+\bigskip
+
+Proof of ``$f$ a fixpoint of $FG$ $\equ$ $f$ a coclosure operator'':
+
+\[
+\infer={f \textrm{~a coclosure operator}}{
+  \infer=[(iv)]{\forall p_0.\, f(p_0) \leq p_0 \con f(p_0) \leq f(f(p_0))}{
+    \infer={\forall p_0, p_*.\, (\forall p.\, p \leq p_0 \con p \leq f(p) \imp p \leq p_*) \imp f(p_0) \leq p_*}{
+      \infer={\forall p_0.\, f(p_0) \leq \bigjoin \{p \mid p \leq p_0 \con p \leq f(p)\}}{
+        \infer={f \leq FG(f)}{
+           f \textrm{~a fixpoint of $FG$}
+        }
+      }
+    }
+  }
+}  
+\]
+
+(iv):$\downarrow$: Instantiate $p_* := p_0 \meet f(f(p_0))$. Use
+monotonicity of $f$ several times to conclude $p \leq f(p) \leq f(f(p)) \leq  f(f(p_0))$ from
+$p \leq p_0$ and $p \leq f(p)$ .
+
+(iv):$\uparrow$: Instantiate $p := f(p_0)$.
+
+\bigskip
+
+Proof of ``$f$ a fixpoint of $IH$ $\equ$ $f$ bidir'':
+
+\[
+\infer={f \textrm{~bidir}}{
+  \infer={\forall d,e.\, (\fst(f(\top,e)),\snd(f(d,\top))) \leq f(d,e)}{
+    \infer={IH(f) \leq f}{
+      f \textrm{~a fixpoint of $IH$}}{
+    }
+  }
+}
+\]
+
+
+\bigskip
+
+Proof of ``$(\fb,\ff)$ a fixpoint of $HI$ always'':
+
+\[
+\infer={\textrm{true}}{
+  \infer={(\forall e.\, \fb(e) \leq \fst(\fb(e),\ff(\top))) 
+    \con (\forall d.\, \ff(d) \leq \snd(\fb(\top),\ff(d)))}{
+    \infer={(\fb,\ff) \leq HI(\fb,\ff)}{
+    (\fb,\ff) \textrm{~a fixpoint of $HI$}
+    }
+  }
+}  
+\]  
+
+\bigskip
+
+
+Proof of ``$R$ a fixpoint of $GIHF$ $\equ$ $R$ is a join-closed butterfly'':
+
+\[
+\infer={R \textrm{~join-closed} \con R \textrm{~a butterfly}}{
+  \infer=[(v)]{R \textrm{~join-closed} \con (\forall d_0,e_0,d,d',e,e'.\, 
+        d \leq d_0 \leq d' \con e \leq e_0 \leq e'
+           \con (d,e') \in R \con (d',e) \in R \imp (d_0,e_0) \in R)}{    
+           \infer={R \textrm{~join-closed} \con (\forall d_0,e_0.\, d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e) \in R\} \con e_0 \leq \bigjoin \{e' \mid \exists d.\, d \leq d_0 \con (d,e') \in R\} \imp (d_0,e_0) \in R)}{
+        \infer=[(a)]{GF(R) \subseteq R \con GIFH(R) \subseteq R}{        
+          \infer={GIHF(R) \subseteq R}{
+            R \textrm{~a fixpoint of $GIHF$}
+          }  
+        }
+     }  
+  }
+}  
+\]
+
+(a) Notice that $\forall f.\, f \leq IH(f)$. 
+
+(v):$\downarrow$: Conclude
+$d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e)
+\in R\}$ from $d_0 \leq d'$, $e \leq e_0$ and $(d',e) \in R$.
+Similarly conclude
+$e_0 \leq \bigjoin \{e' \mid \exists d.\, d \leq d_0 \con (d,e')
+\in R\}$ from $e_0 \leq e'$, $d \leq d_0$ and $(d, d') \in R$.
+
+\newcommand{\Sb}{S^\leftarrow}
+\newcommand{\Sf}{S^\rightarrow}
+
+(v):$\uparrow$: Let
+$\Sb(e_0) := \{(d',e) \mid e \leq e_0 \con (d', e) \in R\}$. From
+$d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e)
+\in R\}$, using that
+$\bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e) \in R\}
+= \fst (\bigjoin \{(d',e) \mid e \leq e_0 \con (d', e) \in
+R\})$, conclude $d_0 \leq \fst(\bigjoin \Sb(e_0))$. It is evident that
+$\snd(\bigjoin \Sb(e_0)) \leq e_0$. From join-closedness of $R$, noticing that
+$\Sb(e_0) \subseteq R$, conclude $\bigjoin \Sb(e_0) \in R$.
+
+Let also $\Sf(d_0) := \{(d,e') \mid d \leq d_0 \con (d, e') \in R\}$.
+Conclude that $e_0 \leq \snd(\bigjoin \Sf(d_0))$, $\fst(\bigjoin \Sf(d_0)) \leq d_0$ and
+$\bigjoin \Sf(d_0) \in R$.
+
+Now instantiate $(d',e) := \bigjoin \Sb(e_0)$. We get $d_0 \leq d'$, $e
+\leq e_0$ and $(d',e) \in R$.
+
+Also instantiate $(d, e') := \bigjoin \Sf(d_0)$ and get $e_0 \leq
+e'$, $d \leq d_0$ and $(d, e') \in R$. 
+
+
+\bigskip
+
+
+Proof of ``$(\fb,\ff)$ a fixpoint $HFGI$ $\equ$ $(\fb,\ff)$ nice'':
+
+\[
+\infer={(\fb, \ff) \textrm{~nice}}{
+  \infer={\forall e.\, \fb(e) \leq \fb(e \meet \ff(\fb(e)))) \con \textrm{symm cond}}{
+    \infer=[(vi)]{(\forall d_*.\, (\forall d,e.\, e \leq e_0 \con d \leq \fb(e) \con e \leq \ff(d) \imp d \leq d_*) \imp \fb(e_0) \leq d_*) \con \textrm{symm cond}}{
+      \infer={\fb(e_0) \leq \bigjoin \{d \mid \exists e.\, e \leq e_0 \con d \leq \fb(e) \con e \leq \ff(d)\} \con \textrm{symm cond}}{
+        \infer={(\fb,\ff) \leq HFGI(\fb,\ff)}{
+          (\fb,\ff) \textrm{~a fixpoint of $HFGI$}
+        }
+      }
+    }
+  }
+}  
+\]  
+
+(vi):$\downarrow$: Instantiate $d_* := \fb(e_0 \meet \ff(\fb(e_0)))$.
+Use monotonicity of $\fb$ and $\ff$ to conclude
+$d \leq \fb(e) \leq \fb(e_0 \meet \ff(d)) \leq
+\fb(e_0 \meet \ff(\fb(e)) \leq \fb(e_0 \meet \ff(\fb(e_0)))$ from $e \leq e_0$,
+$d \leq \fb(e)$ and $e \leq \ff(d)$.
+
+(vi):$\uparrow$: Instantiate $d := \fb(e_0)$,
+$e := e_0 \meet \ff(\fb(e_0))$.
+
+
+
+
+\[
+  \scriptsize
+\hspace*{-1.5cm}  
+\xymatrix@R=5pc@C=0.1pc{  
+  (\Pow(D \times E), \subseteq) \ar@/_1pc/[rrr]_{F} \ar@{}[rrr]|{\top}
+  \ar@/_1pc/[d]_{F_0}  \ar@{}[d]|{\dashv}
+& & & (D \times E \tomon D \times E, \leq) \ar@/_1pc/[rrr]_{H} \ar@{}[rrr]|{\top}
+\ar@/_1pc/[lll]_{G}
+\ar@/_1pc/[dl]_{G_0} \ar@{}[dl]|{\vdash}
+\ar@/_1pc/[dr]_{H_0} \ar@{}[dr]|{\dashv}
+      & & & ((E \tomon D) \times (D \tomon E), \leq)
+      \ar@/_1pc/[lll]_{I} \ar@{=}[dl]
+      \ar@/_1pc/[rrr]_{J} \ar@{}[rrr]|{\top}
+       \ar@/_1pc/[dr]_{J_0} \ar@{}[dr]|{\dashv}
+             & & & (E \tomon D, \leq) \ar@{=}[d]
+                \ar@/_1pc/[lll]_{K} \\
+\textrm{join-closed} \ar@/_1pc/[rr] \ar@{}[rr]|{\cong}
+        \ar@/_1pc/[d]_{H_{00}} \ar@{}[d]|{\dashv} \ar@{(->}@/_1pc/[u]_{U}      & & \textrm{coclosure ops} \ar@/_1pc/[ll]  \ar@{(->}@/_1pc/[ur]_{U}   
+    & & \textrm{bidir} \ar@/_1pc/[r] \ar@{}[r]|{\cong}  \ar@{(->}@/_1pc/[ul]_U
+   \ar@/_1pc/[dr]_{J_{00}} \ar@{}[dr]|{\dashv}
+        & \ar@/_1pc/[l] 
+          & & \textrm{unidir} \ar@/_1pc/[rr] \ar@{}[rr]|{\cong}  \ar@{(->}@/_1pc/[ul]_U
+          & & \ar@/_1pc/[ll] \ar@{=}[d]\\
+\textrm{join-closed butterflies} 
+    \ar@/_1pc/[d]_{J_{000}} \ar@{}[d]|{\dashv} \ar@{(->}@/_1pc/[u]_{U}
+& & 
+    & & & \textrm{unidir'} \ar@{(->}@/_1pc/[ul]_{U}
+            \ar@/_1pc/[rrrr] \ar@{}[rrrr]|{\cong}
+          & 
+            & & & \ar@{=}[d] \ar@/_1pc/[llll] \\
+\textrm{join-closed down-up-closed} \ar@{(->}@/_1pc/[u]_{U} \ar@/_1pc/[rrrrrrrrr] \ar@{}[rrrrrrrrr]|{\top}
+& & & & & & & & &  \ar@/_1pc/[lllllllll]            
+}
+\]  
+
+ 
+
+\begin{eqnarray*}
+  R \textrm{~down-up-closed}
+  & \equ & \forall d_0,e_0,d',e.\, \\
+  & & \qquad
+        d_0 \leq d' \con e \leq e_0
+           \con (d',e) \in R \imp (d_0,e_0) \in R \\
+  f \textrm{~unidir'}
+  & \equ & \forall d,e.\, (\fst(f(\top,e)),\top) \leq f(d,e) \\
+  (\fb,\ff) \textrm{~unidir}
+  & \equ & \forall e.\ \top \leq \ff(e)
+\end{eqnarray*}           
+
+\begin{eqnarray*}
+  J(\fb,\ff)
+  & = & \fb \\
+  K(\fb)
+  & = & (\fb, \lambda d.\, \top) \\  
+  J_0(\fb,\ff)
+  & = & (\fb, \lambda d.\, \top) \\
+  J_{00}(f) 
+  & = & \lambda p.\ (\fst(f(p)), \top) \\
+  J_{000}(R)
+  & = & \{ (d_0,e_0) \mid \exists d',e.\
+          d_0 \leq d' \con e \leq e_0 \con (d',e) \in R \}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+ JHF(R) & = &
+    \lambda e_0.\, \bigjoin\{d \mid \exists e.\, e \leq e_0 \con (d,e) \in R\} \\
+ GIK(\fb) & = &
+                    \{ (d,e) \mid d \leq \fb(e) \} 
+\end{eqnarray*}
+
+Proof of ``$R$ a fixpoint of $GIKJHF$ $\equ$ $R$ is join-closed and down-up-closed '':
+
+\[
+\infer={R \textrm{~join-closed} \con R \textrm{~down-up-closed}}{
+  \infer=[(v)]{R \textrm{~join-closed} \con (\forall d_0,e_0,d',e.\, 
+        d_0 \leq d' \con e \leq e_0 
+           \con (d',e) \in R \imp (d_0,e_0) \in R)}{    
+           \infer={R \textrm{~join-closed} \con (\forall d_0,e_0.\, d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e) \in R\}
+                \imp (d_0,e_0) \in R)}{
+        \infer=[(a)]{GF(R) \subseteq R \con GIKJFH(R) \subseteq R}{        
+          \infer={GIKJHF(R) \subseteq R}{
+            R \textrm{~a fixpoint of $GIHF$}
+          }  
+        }
+     }  
+  }
+}  
+\]
+
+(a) Notice that $\forall f.\, f \leq IH(f)$. 
+
+(v):$\downarrow$: Conclude
+$d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e)
+\in R\}$ from $d_0 \leq d'$, $e \leq e_0$ and $(d',e) \in R$.
+
+%\newcommand{\Sb}{S^\leftarrow}
+
+(v):$\uparrow$: Let
+$\Sb(e_0) := \{(d',e) \mid e \leq e_0 \con (d', e) \in R\}$. From
+$d_0 \leq \bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e)
+\in R\}$, using that
+$\bigjoin \{d' \mid \exists e.\, e \leq e_0 \con (d',e) \in R\}
+= \fst (\bigjoin \{(d',e) \mid e \leq e_0 \con (d', e) \in
+R\})$, conclude $d_0 \leq \fst(\bigjoin \Sb(e_0))$. It is evident that
+$\snd(\bigjoin \Sb(e_0)) \leq e_0$. From join-closedness of $R$, noticing that
+$\Sb(e_0) \subseteq R$, conclude $\bigjoin \Sb(e_0) \in R$.
+
+Now instantiate $(d',e) := \bigjoin \Sb(e_0)$. We get $d_0 \leq d'$, $e
+\leq e_0$ and $(d',e) \in R$.
+
+
+
+
+\subsection*{What is analysis about?}
+
+How does analysis work with any of the data $R$, $f$, $(\fb,\ff)$ or $\fb$?
+
+Given $p_0$, we are after $p$ such that $p \leq p_0 \con p \in
+R$. \emph{If} $R$ is \emph{join-closed}, then there is the greatest one
+among them, which is this is
+$F(R)(p_0) = \bigjoin \{ p \mid p \leq p_0 \con p \in R\}$.
+
+Or, given $p_0$, we are after the greatest $p$ such that
+$p \leq p_0 \con p \leq f(p)$. This is
+$FG(f)(p_0) = \bigjoin \{ p \mid p \leq p_0 \con p \leq f(p) \} = \nu p.\, p_0
+\meet f(p)$, \emph{without assumptions}.  If $D \times E$ has no
+infinite descending chains, then this can be computed as
+$\bigmeet f_i$ where $f_0 = \top$ and $f_{i+1} = p_0 \meet
+f(f_i)$. For all $i$, it is the case that $f_{i+1} \leq f_i$. One has
+$\bigmeet f_i = f_{i_0}$ where $i_0$ is the smallest $i$ such that
+$f_i \leq f_{i+1}$.
+
+Or, given $(d_0,e_0)$, we are after the greatest $(d,e)$ such that
+$(d,e) \leq (d_0,e_0) \con d \leq \fb(e) \con e \leq \ff(d)$.  This is
+$HFGI(\fb,\ff)(d_0,e_0) = \bigjoin \{(d,e) \mid (d,e) \leq (d_0,e_0) \con d \leq \fb(e) \con e \leq
+\ff(d)\} = \nu (d,e).\, (d_0 \meet \fb(e),e_0 \meet \ff(d))$.
+
+In the case of a unidirectional analysis, given $(d_0,e_0)$, where
+we typically take $d_0 = \top$, we are after the greatest $(d,e)$ such
+that $(d,e) \leq (d_0,e_0) \con d \leq \fb(e)$.
+Here the answer is simply $(d_0 \meet \fb(e_0), e_0)$.
+
+\subsection*{Nondeterminism}
+
+\paragraph{Relations}
+
+On $(\Pow(D \times E), \subseteq)$ we have a symmetric monoidal and
+idempotent operator $\cap$. This is our reference interpretation
+of nondeterminism on our reference model.
+
+The operator $\cap$ restricts to the poset of join-closed relations:
+If $R$, $R'$ are join-closed, then $R \cap R'$ is also join closed.
+
+Proof: Suppose $S \subseteq R \cap R'$, then $S \subseteq R$ and
+$S \subseteq R'$.  By join-closedness of $R$ and $R'$,
+$\bigjoin S \in R$ and $\bigjoin S \in R'$.  Hence
+$\bigjoin S \in R \cap R'$.
+
+\paragraph{Functions on pairs}
+
+The operator $\cap$ induces an operator $\caplift$ on
+$(D\times E \tomon D \times E, \leq)$ via
+\[
+f \caplift g = F (G (f) \cap G(g))
+\]  
+This construction is general, it only uses that $F$ and $G$ are functors
+from and to $\Pow(D\times E, \subseteq)$.
+
+A general argument (only using $F \dashv G$) shows that $F$ is oplax
+monoidal and $G$ is lax monoidal. Indeed,
+\[
+F (R \cap S) \leq F (GF (R) \cap GF (S) = F (R) \caplift F (S)
+\]  
+using the unit and monotonicity of $F$ and $\cap$, and also
+\[
+G (f) \cap G (g) \leq  GF (G(f) \cap G(g)) =  G (f \caplift g)
+\]  
+using the counit.
+
+But in fact $G$ in our specific adjunction is also oplax monoidal, so
+altogether it is monoidal.  This uses that a relation is in the image
+of $G$ iff it is join-closed and that $\cap$ takes join-closed
+relations to join-closed relations.
+
+Proof:
+\begin{eqnarray*}
+\lefteqn{ G (f \caplift g) } \\
+  & = & GF (G(f) \cap G (g)) \\
+  & & \quad (i) \\
+  & = & GFG (h) \\
+  & & \quad \textrm{~unit and monotonicity of $G$} \\
+& \subseteq & G (h) \\
+& = & G (f) \cap  G (g) 
+\end{eqnarray*}  
+
+(i): $G (f)$ and $G (g)$ are in the image of $G$, therefore
+join-closed.  Therefore $G(f) \cap G(g)$ is also join-closed.  But
+then $G(f) \cap G(g)$ is in the image of $G$, i.e., there must exist
+$h$ such that $G(h) = G(f) \cap G(g)$.
+
+Oplax monoidality of $G$, i.e., the fact that 
+\[
+G (f \caplift g) \subseteq G (f) \cap G (g)  
+\]
+means that $\caplift$ is a sound approximation of $\cap$: using first
+$\caplift$ on the imperfect analyses $f$ and $g$ and then $G$ gives a
+less precise but sound result than using first $G$ and then $\cap$.
+
+Monoidality of $G$ means that $\caplift$ is in fact as precise as
+$\cap$.
+
+Explicitly, $\caplift$ is the operation
+\begin{eqnarray*}
+f \caplift g & = & F (G (f) \cap G(g)) \\
+& = & \lambda p_0.\, \bigjoin \{ p \mid p \leq p_0 \con p \in G (f) \cap G (g) \} \\
+& = & \lambda p_0.\, \bigjoin \{ p \mid p \leq p_0 \con p \leq f (p) \con p \leq g (p) \} \\
+& = & \lambda p_0.\, \nu p.\, p_0 \meet f(p) \meet g(p)
+\end{eqnarray*}
+We notice that this involves a fixpoint computation. 
+
+As an alternative to $\caplift$, we can use some other monoidal
+operation on $(D \times E \tomon D \times E, \leq$ for which $G$ is
+oplax monoidal.
+
+It turns out that we can just use $\meet$ (pointwise meet). $G$ wrt.\
+$\meet$ is oplax monoidal.  Indeed, we have
+$G (f \meet g) \subseteq G (f)$ and $G (f \meet g) \subseteq G (f)$
+from monotonicity of $G$, therefore
+$G (f \meet g) \subseteq G (f) \cap G (g)$.
+
+So $\meet$ gives us a sound approximation of $\cap$.
+
+Moreover $G$ wrt.\ $\meet$ is even lax monoidal, thus monoidal.
+
+Proof: Write $k$ for $f \meet g$. We have
+\begin{eqnarray*}
+  f \caplift g
+& = & \lambda p_0.\, \nu p.\, p_0 \meet k (p) \\
+& = & \lambda p_0.\, p_0 \meet k (\nu p.\, p_0 \meet k (p)) \\
+& \leq & \lambda p_0.\, k (\nu p.\, p_0 \meet k (p)) \\
+& = & \lambda p_0.\, k (p_0 \meet k (\nu p.\, p_0 \meet k (p))) \\
+& \leq & \lambda p_0.\, k (p_0) \\
+& = & f \meet g
+\end{eqnarray*}
+By monotonicity of $G$ and by lax monoidality of $G$ wrt.\ $\caplift$
+(which we proved before), it follows that
+$G (f) \cap G (g) \subseteq G (f \caplift g) \subseteq G (f \meet g)$.
+
+We note that $f \meet g$ is as precise as $f \caplift g$ as an
+approximation, but more efficient. 
+
+% \vspace*{5cm}
+
+\paragraph{Backward and forward functions}
+
+For $((E \tomon D) \times (D \tomon E), \leq$ and the poset maps $HF$
+and $GI$ similar considerations apply.
+
+We can construct
+\begin{eqnarray*}
+\lefteqn{  (\fb, \ff) \caplift (\gb, \gf) } \\
+  & = & HF ( GI (\fb, \ff) \cap GI (\gb, \gf) ) \\
+  & = & (\lambda e_0.\, \bigjoin \{ d \mid \exists e.\, e \leq e_0
+         \con d \leq \fb(e) \con e \leq \ff(d)
+         \con d \leq \gb(e) \con e \leq \gf(d), \\
+  & &   \lambda d_0.\,
+         \bigjoin \{ e \mid \exists d.\, d \leq d_0
+         \con d \leq \fb(e) \con e \leq \ff(d)
+         \con d \leq \gb(e) \con e \leq \gf(d) \\
+  & = & (\lambda e_0.\, \fst (\nu (d,e).\, (\fb(e) \meet \gb(e), e_0 \meet \ff(d) \meet \gf(d))), \\
+  & &     \lambda d_0.\, \snd (\nu (d,e).\, (d_0 \meet \fb(e) \meet \gb(e), \ff(d) \meet \gf(d))))   
+\end{eqnarray*}
+or we can construct
+\[
+  (\fb, \ff) \meet (\gb, \gf)
+    = (\fb \meet \gb, \ff \meet \gf)
+\]  
+
+
+We can prove $GI$ to be monoidal wrt. $\caplift$. $GI$ is lax monoidal
+wrt. $\caplift$ just from being right adjoint to $HF$. To see that
+$GI$ is oplax monoidal wrt. $\caplift$, we need to use that a relation
+in the image of $GI$ iff it is join-closed and butterfly and also that
+the intersection of join-closed closed butterfly relations is
+a join-closed butterfly relation. Then the argument is like above for $G$.
+
+
+We can prove $GI$ to be monoidal wrt.\ $\meet$ as follows.
+
+We have $GI ((\fb,\ff) \meet g) \subseteq GI (f)$ and
+$GI ((\fb,\ff) \meet (\gb,\gf)) \subseteq GI (\fb,\ff)$ from monotonicity of $GI$, therefore
+$GI ((\fb,\ff) \meet (\gb,\gf)) \subseteq GI (\fb,\ff) \cap GI (\gb,\gf)$.
+
+Now write $\kb$ for $\fb \meet \fb$ and $\kf$ for $\ff \meet \gf$. We have
+\begin{eqnarray*}
+  \fst ((\fb,\ff) \caplift (\gb,\gf)) & = & \lambda e_0.\, \fst (\nu (d,e).\, (\kb (e), e_0 \meet \kf (d))) \\
+& = & \lambda e_0.\, \kb (\snd ( (\nu (d,e).\, (\kb(e), e_0 \meet \kf(d))) )) \\
+& = & \lambda e_0.\, \kb (e_0 \meet \kf (\fst (\nu (d,e).\, (\kb (e), e_0 \meet \kf (d))))) \\
+& \leq & \lambda e_0.\, \kb (e_0) \\
+& = & \fb \meet \gb
+\end{eqnarray*}
+and similarly $\snd ((\fb,\ff) \caplift (\gb,\gf)) \leq \ff \meet \gf$, therefore
+$(\fb,\ff) \caplift (\gb,\gf) \leq (\fb,\ff) \meet (\gb,\gf)$.
+
+Applying $GI$, which is monotone, we get
+$GI (\fb,\ff) \cap GI (g) \subseteq GI ((\fb,\ff) \caplift (\gb,\gf))
+\subseteq GI ((\fb,\ff) \meet (\gb,\gf))$.
+
+A more modular argument would prove that $I$ is monoidal wrt.\ $\meet$
+and $\meet$.  Since we already know that $G$ is monoidal wrt.\
+$\meet$, $GI$ is monoidal wrt.\ $\meet$.
+
+
+
+% All posets we've considered have binary meets, so are lower
+% semilattices. %(In fact they are complete lattices, but for now, this
+% %is not important.)
+
+% %Now assume $D$ and $E$ are \emph{frames}, i.e., have finite meets
+% %distribute over arbitrary joins.
+
+% We interpret nondeterministic choice between two programs as a binary
+% meet.
+
+% The poset maps we considered all preserve binary meets, so are lower
+% semilattice maps. %are frame maps.
+
+% \begin{eqnarray*}
+%   F (R \cap R')
+%   & = & \lambda p_0.\, \bigjoin \{ p \mid p \leq p_0 \con p \in R \cap R' \} \\
+%   & = & \lambda p_0.\, \bigjoin (\{ p \mid p \leq p_0 \con p \in R\}
+%         \cap \{ p \mid p \leq p_0 \con p \in R'\}) \\
+%   & = & \lambda p_0.\, (\bigjoin \{ p \mid p \leq p_0 \con p \in R\})
+%         \sqcap (\bigjoin \{ p \mid p \leq p_0 \con p \in R'\}) \\
+%   & = & F(R) \sqcap F (R')
+% \end{eqnarray*}        
+  
+% This uses $\bigjoin (S \cap S') = (\bigjoin S) \sqcap (\bigjoin S')$.
+% $\leq$ is trivial from $T \subseteq U$ implying
+% $\bigjoin T \leq \bigjoin U$.  For $\geq$, we need 
+% $\bigjoin (S \cap S') \leq q$, i.e.,
+% $\forall p.\ p \in S \con p \in S' \imp p \leq q$, to imply
+% $(\bigjoin S) \sqcap (\bigjoin S') \leq q$ for any $q$.
+% We have $(\bigjoin S) \sqcap (\bigjoin S') = \bigjoin \{ p \sqcap p' \mid
+% p \in S \con p' \in S' \} \leq ??? \leq q$. ???
+
+% I don't think this works even if we assume $D$, $E$ to be frames.
+% So we only have $F (R \cap R') \leq F(R) \sqcap F(R')$???
+
+
+\subsection*{Sequential composition}
+
+\paragraph{Relations}
+
+On $(\Pow(D \times D), \subseteq)$ we have a monoidal operation
+$\bowtie$, more generally we can see it as an operation
+$(\Pow(C \times D), \subseteq) \times (\Pow(D \times E), \subseteq)
+\to (\Pow(C \times E), \subseteq)$:
+\[
+R \bowtie R' = \{ (c,e) \mid \exists d.\, (c,d) \in R \con (d, e) \in R' \}
+\]  
+This is our reference interpretation of sequential composition in our
+reference model.
+
+\bigskip
+
+In the following, we will extensively use that
+$\bigjoin R = (\bigjoin R|_0, \bigjoin R|_1)$.
+
+\bigskip
+
+The operator $\bowtie$ restricts to join-closed relations:
+If $R$, $R'$ are join-closed, then $R \bowtie R'$ is also join-closed.
+
+Proof: Given $S \subseteq R \bowtie R'$, we need to prove
+$\bigjoin S \in R \bowtie R'$.
+
+Define relations $S^*$ on $C \times D \times E$,
+$S_0$ on $C \times D$ and $S_1$ on $D \times E$ by
+\begin{eqnarray*}
+  S^* & = & \{ (c, d, e) \mid (c, e) \in S \con (c, d) \in R \con (d, e) \in R' \} \\
+  S_0 & = & \{ (c, d) \mid \exists e.\, (c, e) \in S \con (c, d) \in R \con (d, e) \in R' \} \\
+  S_1 & = & \{ (d, e) \mid \exists c.\, (c, e) \in S \con (c, d) \in R \con (d, e) \in R' \}
+\end{eqnarray*}  
+
+We notice that $S_0 \subseteq R$, therefore $\bigjoin S_0 \in R$ by
+join-closedness of $R$. Likewise $S_1 \subseteq R'$, therefore
+$\bigjoin S_1 \in R'$ by join-closedness of $R'$.
+
+This gives us
+$(\prC (\bigjoin S^*), \prD (\bigjoin S^*)) = \prCD (\bigjoin S^*) =
+\bigjoin S_0 \in R$ and
+$(\prD (\bigjoin S^*), \prE (\bigjoin S^*)) = \prDE (\bigjoin S^*) =
+\bigjoin S_1 \in R'$.
+So $(\prC (\bigjoin S^*), \prE (\bigjoin S^*) \in R \bowtie R'$.
+
+From $S \subseteq R$ we get that
+$\exists d.\, (c, e) \in S \con (c, d) \in R \con (d, e) \in R'$ iff
+$(c, e) \in S$. Therefore
+$\bigjoin S = \prCE (\bigjoin S^*) = (\prC (\bigjoin S^*), \prE
+(\bigjoin S^*)) \in R \bowtie R'$.
+
+
+\paragraph{Functions on pairs}
+
+Like for $\cap$ before, we define
+\[
+f \bowtielift g = F (G f \bowtie G g) 
+\]  
+
+Like before, from the adjunction $F \dashv G$, we get that
+$G$ is lax monoidal wrt.\ $\bowtielift$.
+
+Also like before, from a relation being in the image of $G$ iff it is
+join-closed and from join-closedness being closed under $\bowtie$, we
+also get that $G$ is oplax monoidal, so monoidal.
+
+So $\bowtielift$ is a precise sound abstraction of $\bowtie$.
+
+\bigskip
+
+Explicitly, $\bowtielift$ is
+\begin{eqnarray*}
+f \bowtielift g
+  & = & F (G (f) \bowtie G (g)) \\
+  & = & \lambda p_0.\, \bigjoin \{ p \mid p \leq p_0 \con p \in G (f) \bowtie G (g) \} \\
+  & = & \lambda (c_0,e_0).\,
+        \bigjoin \{ (c,e) \mid (c,e) \leq (c_0,e_0)
+        \con \exists d.\, (c,d) \leq f (c,d) \con (d,e) \leq g(d,e) \} \\
+  & = & \lambda (c_0,e_0).\,
+        \prCE (\bigjoin \{ (c,d,e) \mid (c,e) \leq (c_0,e_0)
+        \con (c,d) \leq f (c,d) \con (d,e) \leq g(d,e) \}) \\
+  & = & \lambda (c_0,e_0).\,
+        \prCE (\nu (c,d,e).\, (c_0 \meet \prC(f(c,d)),
+              \prD(f(c,d)) \meet \prD(g(d,e)), e_0 \meet \prE(g(d,e))))
+\end{eqnarray*}  
+
+\bigskip
+
+Here is an alternative to $\bowtielift$. We define
+\[
+  f \boxtimes g = \lambda (c_0,e_0).
+  \mathsf{let~} d_0 = \nu d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))
+  \mathsf{~in~} (\prC(f(c_0,d_0)), \prE(g(d_0,e_0)))         
+\]  
+
+\bigskip
+
+We show that $\boxtimes$ is oplax monoidal, i.e.,
+\[
+G (f \boxtimes g) \subseteq G(f) \bowtie G(g)
+\]
+
+Proof: It is the case that, for all $c$, $e$, letting
+$d_0 = \nu d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))$, one has
+\[
+(c,e) \leq (\prC(f(c_0,d_0)), \prE(g(d_0,e_0))) 
+\imp 
+\exists d.\, (c,d) \leq f(c,d) \con (d,e) \leq g(d,e)
+\]  
+Indeed, take $d := d_0$ and from
+$(c,e) \leq (\prC(f(c,d_0)), \prE(g(d_0,e)))$ and from $d_0$ being a
+postfixpoint, i.e., $d_0 \leq \prD(f(c,d_0)) \meet \prD(g(d_0,e))$,
+conclude $(c,d) \leq (\prC(f(c,d_0)),\prD(f(c,d_0))) = f(c,d_0)$ 
+and $(d,e) \leq  (\prD(g(d_0,e)),\prE(g(d_0,e))) = g(d_0,e)$.
+
+Consequently,
+\begin{eqnarray*}
+  G (f \boxtimes g)
+  & = & \{ (c,e) \mid (c,e) \leq (f \boxtimes g)(c, e) \} \\
+  & = & \{ (c,e) \mid (c,e) \leq \mathsf{let~} d_0 = \nu d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))
+  \mathsf{~in~} (\prC(f(c_0,d_0)), \prE(g(d_0,e_0))) \} \\
+  & \subseteq & \{ (c,e) \mid
+               \exists d.\, (c,d) \leq f(c,d) \con (d,e) \leq g(d,e) \} \\
+  & = & G(f) \bowtie G(g)              
+\end{eqnarray*}
+
+
+\bigskip
+
+We next show that $G$ is also lax monoidal wrt.\ $\boxtimes$, so
+altogether monoidal. To do so, we first prove
+$f \bowtielift g \leq f \boxtimes g$.
+
+Proof: We need to show that for all $c_0,e_0$
+\begin{eqnarray*}
+\lefteqn{
+        \mathsf{let~} (c^*,d^*,e^*) = \nu (c,d,e).\, (c_0 \meet \prC(f(c,d)),
+  \prD(f(c,d)) \meet \prD(g(d,e)), e_0 \meet \prE(g(d,e)))) \mathsf{~in~} (c^*,e^*) } \\
+& \leq &   
+  \mathsf{let~} d_0 = \nu d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))
+  \mathsf{~in~} (\prC(f(c_0,d_0)), \prE(g(d_0,e_0)))  
+\end{eqnarray*}
+
+We first show that $d^* \leq d_0$ and then, using that, 
+$c^* \leq \prC(f(c_0,d_0))$ and $e^* \leq \prC(f(c_0,d_0))$.
+
+For $d^* \leq d_0$ we reason as follows:
+
+For all $c$, $d$, $e$, we have
+\[
+  (c_0 \meet \prC(f(c,d)),
+  \prD(f(c,d)) \meet \prD(g(d,e)),
+  e_0 \meet \prE(g(d,e)))
+  \leq
+  (c_0, \prD(f(c,d)) \meet \prD(g(d,e)), e_0)
+\]  
+hence by monotonicity of $\nu$
+\[
+  \nu (c,d,e).\,  (c_0 \meet \prC(f(c,d)),
+  \prD(f(c,d)) \meet \prD(g(d,e)),
+  e_0 \meet \prE(g(d,e)))
+  \leq
+  \nu (c,d,e).\, (c_0, \prD(f(c,d)) \meet \prD(g(d,e)), e_0)
+\]
+
+Next we prove that
+\[
+  \nu (c,d,e).\, (c_0, \prD(f(c,d)) \meet \prD(g(d,e)), e_0) = (c_0, d_0, e_0)
+\]
+It is the case that $(c_0, d_0, e_0)$ is a postfixpoint of
+$\lambda (c,d,e).\,  (c_0, \prD(f(c,d)) \meet \prD(g(d,e)), e_0)$: 
+\[
+(c_0, d_0, e_0) \leq (c_0, \prD(f(c_0,d_0)) \meet \prD(g(d_0,e_0)), e_0)
+\]
+since $d_0$ is by definition a postfixpoint of
+$\lambda d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))$.
+
+But also, $(c_0, d_0, e_0)$ is greatest among these
+postfixpoints. Indeed, if $(c',d',e')$ is some other postfixpoint,
+i.e.,
+\[
+  (c',d',e') \leq (c_0, \prD(f(c',d')) \meet \prD(g(d',e')), e_0)
+\]
+then we do get $(c',d',e') \leq (c_0,d_0,e_0)$ since $c' \leq c_0$ and $e \leq e_0$ hold immediately from the assumption and we also have 
+\[
+  d' \leq \prD(f(c',d')) \meet \prD(g(d',e')) \leq \prD(f(c_0,d'))
+  \meet \prD(g(d',e_0))
+\]
+so $d'$ is a postfixpoint of
+$\lambda d.\, \prD(f(c_0,d)) \meet \prD(g(d,e_0))$, and so
+$d' \leq d_0$ because $d_0$ is the greatest among them.
+
+Putting everything together, we have
+\begin{eqnarray*}
+(c^*,d^*,e^*)
+  & = &   \nu (c,d,e).\,  (c_0 \meet \prC(f(c,d)),
+  \prD(f(c,d)) \meet \prD(g(d,e)),
+  e_0 \meet \prE(g(d,e))) \\
+  & \leq & 
+  \nu (c,d,e).\, (c_0, \prD(f(c,d)) \meet \prD(g(d,e)), e_0) \\
+  & = & (c_0,d_0,e_0)         
+\end{eqnarray*}
+so in particular $d^* \leq d_0$.
+
+For $c^* \leq \prC(f(c_0,d_0))$ and $e^* \leq \prC(f(c_0,d_0))$, we
+calculate:
+\begin{eqnarray*}
+c^* & = & c_0 \meet \prC(f(c^*,d^*)) \\
+& \leq & \prC(f(c^*,d^*)) \\
+& = & \prC(f(c_0 \meet f(c^*,d^*), d^*) \\
+& \leq & \prC(f(c_0, d_0))  
+\end{eqnarray*}  
+
+\begin{eqnarray*}
+e^* & = & e_0 \meet \prE(g(d^*,e^*)) \\
+& \leq & \prE(g(d^*,e^*)) \\
+& = & \prE(g(d^*, e_0 \meet g(d^*,e^*)) \\
+& \leq & \prE(g(d_0, e_0))  
+\end{eqnarray*}
+
+This concludes the proof.
+
+\bigskip
+
+Using that $G$ is monoidal wrt.\ to $\bowtielift$ and monotone, we
+conclude
+\[
+G f \bowtie G g = G (f \bowtielift g) \subseteq G (f \boxtimes g)
+\]
+i.e., $G$ is lax monoidal wrt.\ $\boxtimes$.
+
+
+\paragraph{Backward and forward functions}
+
+
+
+\paragraph{Backward functions only}
+
+
+
+
+
+\subsection*{Iteration}
+
+\end{document}
