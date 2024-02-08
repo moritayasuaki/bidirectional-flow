@@ -1,0 +1,149 @@
+@article{DBLP:journals/cacm/MorelR79,
+  author       = {Etienne Morel and
+                  Claude Renvoise},
+  title        = {Global Optimization by Suppression of Partial Redundancies},
+  journal      = {Commun. {ACM}},
+  volume       = {22},
+  number       = {2},
+  pages        = {96--103},
+  year         = {1979},
+  XXXurl          = {https://doi.org/10.1145/359060.359069},
+  doi          = {10.1145/359060.359069},
+  timestamp    = {Tue, 06 Nov 2018 12:51:39 +0100},
+  biburl       = {https://dblp.org/rec/journals/cacm/MorelR79.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+
+@misc{stack,
+  author = "Thomas {Van Drunen} and Anthony L. Hosking and Jens Palsberg",
+  title = "Reducing Loads and Stores in Stack Architectures",
+  howpublished = "Manuscript",
+  year = 2000,
+  url = "http://web.cs.ucla.edu/~palsberg/draft/vandrunen-hosking-palsberg00.pdf"
+}
+
+@article{SU,
+     author = "Ando Saabas and Tarmo Uustalu",
+     title = "Type Systems for Optimizing Stack-Based Code",
+     journal = "Electron. Notes Theor. Comput. Sci.",
+     volume = 190,
+     number = 1,
+     pages = "103--119",
+     year = 2007,
+     doi = "10.1016/j.entcs.2007.02.063"
+}
+
+
+
+
+
+@article{DBLP:journals/cl/KhedkerDM03,
+  author       = {Uday P. Khedker and
+                  Dhananjay M. Dhamdhere and
+                  Alan Mycroft},
+  title        = {Bidirectional data flow analysis for type inferencing},
+  journal      = {Comput. Lang. Syst. Struct.},
+  volume       = {29},
+  number       = {1-2},
+  pages        = {15--44},
+  year         = {2003},
+  XXXurl          = {https://doi.org/10.1016/s1477-8424(03)00012-5},
+  doi          = {10.1016/s1477-8424(03)00012-5},
+  timestamp    = {Tue, 11 Feb 2020 17:00:46 +0100},
+  biburl       = {https://dblp.org/rec/journals/cl/KhedkerDM03.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{khedker_bidirectional_1999,
+	title = {Bidirectional data flow analysis: myths and reality},
+	volume = {34},
+	issn = {0362-1340},
+	shorttitle = {Bidirectional data flow analysis},
+	XXXurl = {https://doi.org/10.1145/606666.606676},
+	doi = {10.1145/606666.606676},
+	abstract = {Research in bidirectional data flow analysis seems to have come to a halt due to an impression that the case for bidirectional data flow analysis has been considerably weakened by a plethora of investigations based on decomposability of known bidirectional placement algorithms into a sequence of purely unidirectional components. This paper shows that the approach of decomposability is not general enough in that it derives its power from the simplifying graph transformation of edge-splitting and the favourable nature of flows in partial redundancy elimination (PRE). This follows from the fact that in the absence of edge-splitting, PRE cannot be performed using a sequence of cascaded unidirectional flows. Further, edge-splitting inherently converts data flows involved in PRE into unidirectional flows. In our opinion, this obviates the need of an alternative formulation. We also show that edge-splitting cannot convert data flows involved in "truly" bidirectional data flow problems into unidirectional flows. Thus not every bidirectional data flow problem can be converted into unidirectional flows. Besides, we argue that the premise that bidirectional analysis is more complex than unidirectional analysis, is invalid. We also mention some issues in bidirectional data flow analysis which need to be investigated.},
+	number = {6},
+	urldate = {2021-06-21},
+	journal = {ACM SIGPLAN Notices},
+	author = {Khedker, Uday P. and Dhamdhere, Dhananjay M.},
+	XXXmonth = jun,
+	year = {1999},
+	pages = {47--57},
+}
+
+@article{jaiswal_bidirectionality_2020,
+	title = {Bidirectionality in flow-sensitive demand-driven analysis},
+	volume = {190},
+	issn = {0167-6423},
+	XXXurl = {https://www.sciencedirect.com/science/article/pii/S0167642320300022},
+	doi = {10.1016/j.scico.2020.102391},
+	abstract = {Demand-driven methods for program analysis have primarily been viewed as efficient algorithms for computing the same information as the corresponding exhaustive methods, but for a given set of demands. We explore demand-driven flow-sensitive alias analysis (which we call ADFSA ) and propose its improved version called PDFSA that computes both aliases and pointers for the demands raised by changing the notion of relevance for indirect assignment statements. We formally show that while ADFSA is as precise as the corresponding exhaustive flow-sensitive alias analysis (EFSA ), PDFSA can be more precise than both ADFSA and EFSA. This surprising result is based on the following insight: A demand-driven method computes less information than the corresponding exhaustive method. PDFSA exploits this to reduce the uncertainty caused by aliasing which in turn, reduces the conflation of memory locations thereby increasing precision. We formalize PDFSA using an inherent property of a demand-driven flow-sensitive alias analysis: demands are propagated against the control flow and aliases are propagated along the control flow. Traditionally, this has been seen as a collection of two separate analyses whose interaction is controlled by an algorithm that drives the two analyses. We formalize this algorithmic view as a bidirectional data flow analysis to define PDFSA declaratively. Further, we define Meet Over Paths (MoP) solution for bidirectional flows for reasoning about the soundness of PDFSA. Our definition generalizes the classical definition of MoP which is restricted to unidirectional flows. We have implemented PDFSA, ADFSA, and EFSA for static resolution of virtual function calls in C++ for constructing more precise call graphs. Our measurements show that the call graphs computed using PDFSA are indeed more precise than those that are computed using ADFSA or EFSA.},
+	language = {en},
+	urldate = {2021-07-02},
+	journal = {Sci. Comput. Program.},
+	author = {Jaiswal, Swati and Khedker, Uday P. and Chakraborty, Supratik},
+	XXXmonth = may,
+	year = {2020},
+	keywords = {Bidirectional analysis, Demand-driven analysis, Flow-sensitive alias analysis, Meet-Over-Paths solution},
+	pages = {art. 102391},
+	file = {Jaiswal et al_2020_Bidirectionality in flow-sensitive demand-driven analysis.pdf:/home/yasuaki/Zotero/storage/V57DXWN2/Jaiswal et al_2020_Bidirectionality in flow-sensitive demand-driven analysis.pdf:application/pdf;ScienceDirect Snapshot:/home/yasuaki/Zotero/storage/6256Z9ZT/S0167642320300022.html:text/html},
+}
+
+@inproceedings{henglein_dynamic_1992,
+	address = {Berlin, Heidelberg},
+	title = {Dynamic Typing},
+	isbn = {978-3-540-46803-5},
+	abstract = {We present an extension of a statically typed language with a special type dyn and explicit type tagging and checking operations (coercions). Programs in run-time typed languages are viewed as incomplete programs that are to be completed to well-typed programs by explicitly inserting coercions into them.},
+        booktitle = "ESOP~'92",
+	XXXbooktitle = {{ESOP} '92, 4th Symp. on Programming, Proc.},
+	series = "LNCS",
+	XXXseries = "Lect. Notes in Comput. Sci.",
+	volume = 582,
+	publisher = {Springer},
+	author = {Henglein, Fritz},
+	editor = {Krieg-Brückner, Bernd},
+	year = {1992},
+	pages = {233--253},
+}
+
+
+
+
+@inproceedings{frade_bidirectional_2009,
+	title = {Bidirectional Data-Flow analyses, Type-Systematically},
+	issn = {9781605583273},
+	XXXurl = {http://www.scopus.com/inward/record.url?scp=67650691954&partnerID=8YFLogxK},
+	doi = {10.1145/1480945.1480965},
+	abstract = {We show that a wide class of bidirectional data-flow analyses and program optimizations based on them admit declarative descriptions in the form of type systems. The salient feature is a clear separation between what constitutes a valid analysis and how the strongest one can be computed (via the type checking versus principal type inference distinction). The approach also facilitates elegant relational semantic soundness definitions and proofs for analyses and optimizations, with an application to mechanical transformation of program proofs, useful in proof-carrying code. Unidirectional forward and backward analyses are covered as special cases; the technicalities in the general bidirectional case arise from more subtle notions of valid and principal types. To demonstrate the viability of the approach we consider two examples that are inherently bidirectional: type inference (seen as a data-flow problem) for a structured language where the type of a variable may change over a program's run and the analysis underlying a stack usage optimization for a stack-based low-level language.},
+	urldate = {2023-10-14},
+	booktitle = {Proc.\ of 2009 ACM SIGPLAN Symp.\ on Partial Evaluation and Program Manipulation, PEPM~'09},
+	author = {Frade, Maria João and Saabas, Ando and Uustalu, Tarmo},
+	year = {2009},
+	publisher = "ACM",
+	address = "New York",
+	keywords = {Mechanical transformation of program proofs, Program analyses and optimizations, Program logics, Type systems},
+	pages = {141--149},
+}
+
+@inproceedings{DBLP:conf/sas/KhedkerMR12,
+  author       = {Uday P. Khedker and
+                  Alan Mycroft and
+                  Prashant Singh Rawat},
+  editor       = {Antoine Min{\'{e}} and
+                  David Schmidt},
+  title        = {Liveness-Based Pointer Analysis},
+  booktitle = "SAS 2012",
+  XXXbooktitle    = {Static Analysis - 19th International Symposium, {SAS} 2012, Deauville, France, September 11-13, 2012. Proceedings},
+  series = "LNCS",		  
+  XXXseries       = {Lecture Notes in Computer Science},
+  volume       = {7460},
+  pages        = {265--282},
+  publisher    = {Springer},
+  year         = {2012},
+  XXXurl          = {https://doi.org/10.1007/978-3-642-33125-1\_19},
+  doi          = {10.1007/978-3-642-33125-1_19},
+  timestamp    = {Sun, 25 Oct 2020 22:47:25 +0100},
+  biburl       = {https://dblp.org/rec/conf/sas/KhedkerMR12.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
