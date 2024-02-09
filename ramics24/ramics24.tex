@@ -51,6 +51,7 @@
 \newcommand{\bigmeet}{\sqcap}
 
 \newcommand{\comp}{\circ}
+\newcommand{\starlift}{\mathbin{\overline{*}}}
 \newcommand{\bowtielift}{\mathbin{\overline{\bowtie}}}
 \newcommand{\caplift}{\mathbin{\overline{\cap}}}
 \newcommand{\rotleq}{\rotatebox[origin=c]{90}{$\leq$}}
@@ -176,13 +177,15 @@ Constraint-based analysis
     We write this $F \dashv G$.
   \end{definition}
 
+  When $F \dashv G$ is established, the following propositions hold:
+
   \begin{align}
     F \comp G \comp F = F \\
     G \comp F \comp G = G \\
     x \leq G(F(x)) \\
     F(G(y)) \leq y \\
-    \exists y, x = G(y) \iff G(F(x)) = x \\
-    \exists x, y = F(x) \iff F(G(y)) = y \\
+    \exists y, x = G(y) \implies G(F(x)) = x \\
+    \exists x, y = F(x) \implies F(G(y)) = y \\
     F (x \meet y) = F(x) \meet F(y) \\
     G (x \join y) = G(x) \join G (y)
   \end{align}
@@ -228,20 +231,23 @@ Constraint-based analysis
   \end{tikzcd}
   \end{center}
 
-  \paragraph{Completeness and Soundness}
-  We say binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if
-  $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
+  We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to operations on relations.
+  \begin{definition}[Completeness]
+   A binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if for every relation $R \in G(\fb) * G(\gb)$, $R$ is also $G (\fb \otimes \gb)$, i.e, $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
+  \end{definition}
 
-  Similarly, we say binary operation $\otimes$ on backward transfer functions is \emph{sound} with regard to $*$ on binary operation on relations if and only if
+  \begin{definition}[Soundness]
+  A binary operation $\otimes$ on backward transfer functions is \emph{sound} with regard to $*$ on binary operation on relations if and only if
   $G (\fb \otimes \gb) \subseteq G(\fb) * G(\gb)$
+  \end{definition}
 
-  For any (partially defined) binary operation $*$ on relations can be lifted to a binary operation on backward transfer function by $F \dashv G$:
+  For a given binary operation $*$ on relations, we define lifted to a binary operation on backward transfer functions by $F \dashv G$:
   \begin{align*}
-  \fb \otimes \gb = F (G(\fb) * G(\gb))
+  \fb \starlift \gb = F (G(\fb) * G(\gb))
   \end{align*}
-  Lifted operation $\otimes$ is always complete:
+  Lifted operation $\starlift$ is always complete with regard to $*$:
   \begin{align*}
-  G(\fb) * G(\gb) \subseteq G(F(G(\fb) * G(\gb))) = G(\fb \otimes \gb)
+  G(\fb) * G(\gb) \subseteq G(F(G(\fb) * G(\gb))) = G(\fb \starlift \gb)
   \end{align*}
 
 
@@ -342,22 +348,21 @@ Constraint-based analysis
         \arrow["\dashv", phantom, from=P, to=M]
     \end{tikzcd}
   \end{center}
-  \begin{definition}[Intermediate Adjoints]
-    \begin{align*}
-    H &: \Rel \to \Endo &
-    I &: \Endo \to \Rel \\
+  The monotone functions consists of the Galois connections are given as follows:
+  \begin{align*}
+    H &: \Rel \tomon \Endo &
+    I &: \Endo \tomon \Rel \\
     H(R) &= \lambda p_{0} . \bigjoin \{ p \mid p \leq p_{0} \land p \in R \} &
     I(f) &= \{p \mid p \leq f(p)\} \\
-    J &: \Endo \to \Bidir &
-    K &: \Bidir \to \Endo \\
+    J &: \Endo \tomon \Bidir &
+    K &: \Bidir \tomon \Endo \\
     J(f) &= (\lambda e . f (\top , e ) , \lambda d . f (d , \top)) &
     K(\fb , \ff) &= \lambda (d , e) . (\fb(e) , \ff(d)) \\
-    P &: \Bidir \to \Unidir &
-    M &: \Unidir \to \Bidir \\
+    P &: \Bidir \tomon \Unidir &
+    M &: \Unidir \tomon \Bidir \\
     P(\fb , \ff) &= \fb &
     M(\fb) &= (\fb , \top)
-    \end{align*}
-  \end{definition}
+  \end{align*}
 
   \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
@@ -503,15 +508,16 @@ Constraint-based analysis
 % 
 
   \paragraph{A Remedy -- Narrowing the class of relations }
-  The Galois connection $( \langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$ is established between the relational constraints and the poset of backward transfer functions and forward constant.
+  The poset of $((E \tomon D) \times E, \leq) = \UnidirConst(D, E)$ locates between $\Bidir(D , E)$ and $\Unidir(D , E)$.
+  The Galois connection $\langle \pi_{1}, \bigjoin \rangle \dashv \langle {\mathrm{id}, \mathrm{const}}\rangle$ and $ \pi_{1} \dashv \langle {\mathrm{id}} , \top \rangle)$ is established and factors $P \dashv M$.
   \begin{center}
     \begin{tikzcd}
       (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
       ((E \tomon D) \times (D \tomon E) , \leq) & = \Bidir(D, E) \\
       ((E \tomon D) \times E, \leq) & = \UnidirConst(D, E) \\
       (E \tomon D , \leq) & = \Unidir(D, E)
-        \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
-        \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
+        \arrow["J \comp H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
+        \arrow["I \comp K"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
         \arrow["\langle {\pi_{1}, \bigjoin } \rangle"{name=J}, bend right=30, swap, from=2-1, to=3-1]
         \arrow["\langle {\mathrm{id}, \mathrm{const}}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
         \arrow["\pi_{1}"{name=M}, bend right=30, swap, from=3-1, to=4-1]
@@ -521,13 +527,14 @@ Constraint-based analysis
         \arrow["\dashv", phantom, from=M, to=N]
     \end{tikzcd}
   \end{center}
-  Indeed, the class of relations corresponds to this Galois connection is closed under both $\cap$ and $\bowtie$.
+  Indeed, the class of relations corresponds to the Galois connection between $\Rel(D, E)$ and $\UnidirConst(D, E)$ is closed under both $\cap$ and $\bowtie$.
 
 
-
-  \paragraph{The class of relations for $UnidirConst$}
+  \paragraph{The class of relations for $\UnidirConst$}
   The class of relation corresponding to the Galois connection $(\langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$
-  is characterized by conjunction of the conditions represented by the following two diagrams.
+  is characterized by conjunction of the conditions
+  ($\forall d\, d_{1}\, e.\, d \leq d_{1} \land (d_{1}, e) \in R \implies (d , e) \in R$ and $\forall d\, e_{0}\, e_{1}\, e.\, e_{0} \leq e \leq e_{1} \land (d, e_{0}) \in R \land (d, e_{1}) \in R \implies (d , e) \in R$)
+  represented by the following two diagrams together with $\join$-closedness.
   \begin{center}
   \begin{tikzcd}
     d_{1} &  \\
@@ -547,11 +554,6 @@ Constraint-based analysis
     \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
   \end{tikzcd}
   \end{center}
-
-
-  
-  
-  
 
 \section{Conclusion}
 
