@@ -176,6 +176,17 @@ Constraint-based analysis
     We write this $F \dashv G$.
   \end{definition}
 
+  \begin{align}
+    F \comp G \comp F = F \\
+    G \comp F \comp G = G \\
+    x \leq G(F(x)) \\
+    F(G(y)) \leq y \\
+    \exists y, x = G(y) \iff G(F(x)) = x \\
+    \exists x, y = F(x) \iff F(G(y)) = y \\
+    F (x \meet y) = F(x) \meet F(y) \\
+    G (x \join y) = G(x) \join G (y)
+  \end{align}
+
  \paragraph{A Galois connection in program analysis}
 
     Consider the poset of all relations (as constraints) on complete lattices, and the poset of monotone functions (as backward transfer functions) on complete lattices.
@@ -194,8 +205,6 @@ Constraint-based analysis
     F (R)(e_{0}) &= \bigjoin \{ d \mid \exists e. e \leq e_{0}  \land (d , e) \in R \} \\
     G (\fb) &= \{ (d , e) \mid d \leq \fb(e) \} \\
   \end{align*}
-
-
 
 \paragraph{The class of relations via the Galois connection}
   The image of $G$ is the class of relations that can be specified by backward transfer functions. We obtain the characterization of the class from general facts about Galois connection:
@@ -219,7 +228,26 @@ Constraint-based analysis
   \end{tikzcd}
   \end{center}
 
+  \paragraph{Completeness and Soundness}
+  We say binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if
+  $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
+
+  Similarly, we say binary operation $\otimes$ on backward transfer functions is \emph{sound} with regard to $*$ on binary operation on relations if and only if
+  $G (\fb \otimes \gb) \subseteq G(\fb) * G(\gb)$
+
+  For any (partially defined) binary operation $*$ on relations can be lifted to a binary operation on backward transfer function by $F \dashv G$:
+  \begin{align*}
+  \fb \otimes \gb = F (G(\fb) * G(\gb))
+  \end{align*}
+  Lifted operation $\otimes$ is always complete:
+  \begin{align*}
+  G(\fb) * G(\gb) \subseteq G(F(G(\fb) * G(\gb))) = G(\fb \otimes \gb)
+  \end{align*}
+
+
 \paragraph{Composition lifting via Galois connection}
+
+
   Sequencing of constraints
     The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the constraints of first and second pieces of code.
 
@@ -248,8 +276,6 @@ Constraint-based analysis
       &= \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \fb(e) \} \\ &\quad \meet \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \gb(e) \} \\
       &= \fb(e_{0}) \meet \gb(e_{0})
     \end{align*}
-
-
 
 
   \paragraph{Soundness and Completeness}
@@ -283,8 +309,6 @@ Constraint-based analysis
 
   where the domain of data-flow values is a set of live variables $\{\emptyset, \{ x \}\}$, and $\meet$ is the set union $\cup$.
 
-
-
 \section{Bidirectional data-flow analyses}  
 
   \paragraph{Bidirectional Data-Flow Analysis}
@@ -300,22 +324,40 @@ Constraint-based analysis
   Based on our insights from the unidirectional analysis, it make sense to investigate the Galois connection, the associated class of relations, and the behavior of program compositions in the context of bidirectional data-flow analysis.
 
   \paragraph{The Galois Connection for Bidirectional Transfer Functions}
-  The Galois connection $H \dashv I$ is established between the relational constraints and the bidirectional transfer functions, which factors $F \dashv G$ by $(\pi_{1} \comp H) \dashv (I \comp \langle \mathrm{id}, \top\rangle)$
+  The Galois connections $H \dashv I$ , $J \dashv K$ and $P \dashv M$ are established among the relational constraints, endo monotone functions on product lattice, the bidirectional transfer functions, and the backward unidirectional functions. These factor through $F \dashv G$ by $(P \comp J \comp H) \dashv (I \comp K \comp M)$.
   \begin{center}
     \begin{tikzcd}
       (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
+      ((D \times E) \tomon (D \times E) , \leq) & = \Endo(D, E) \\
       ((E \tomon D) \times (D \tomon E) , \leq) & = \Bidir(D, E) \\
       (E \tomon D , \leq) & = \Unidir(D, E)
         \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
         \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
-        \arrow["\pi_{1}"{name=J}, bend right=30, swap, from=2-1, to=3-1]
-        \arrow["\langle {\mathrm{id}, \top}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["J"{name=J}, bend right=30, swap, from=2-1, to=3-1]
+        \arrow["K"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["P"{name=P}, bend right=30, swap, from=3-1, to=4-1]
+        \arrow["M"{name=M}, bend right=30, swap, hook, from=4-1, to=3-1]
         \arrow["\dashv", phantom, from=H, to=I]
         \arrow["\dashv", phantom, from=J, to=K]
+        \arrow["\dashv", phantom, from=P, to=M]
     \end{tikzcd}
   \end{center}
-
-
+  \begin{definition}[Intermediate Adjoints]
+    \begin{align*}
+    H &: \Rel \to \Endo &
+    I &: \Endo \to \Rel \\
+    H(R) &= \lambda p_{0} . \bigjoin \{ p \mid p \leq p_{0} \land p \in R \} &
+    I(f) &= \{p \mid p \leq f(p)\} \\
+    J &: \Endo \to \Bidir &
+    K &: \Bidir \to \Endo \\
+    J(f) &= (\lambda e . f (\top , e ) , \lambda d . f (d , \top)) &
+    K(\fb , \ff) &= \lambda (d , e) . (\fb(e) , \ff(d)) \\
+    P &: \Bidir \to \Unidir &
+    M &: \Unidir \to \Bidir \\
+    P(\fb , \ff) &= \fb &
+    M(\fb) &= (\fb , \top)
+    \end{align*}
+  \end{definition}
 
   \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
@@ -338,8 +380,6 @@ Constraint-based analysis
     \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
   \end{tikzcd}
   \end{definition}
-
-
 
   \paragraph{Composition and Butterfly property -- A Case of Failure}
   The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
