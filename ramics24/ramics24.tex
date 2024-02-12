@@ -375,26 +375,28 @@ Constraint-based analysis
     M(\fb) &= (\fb , \top)
   \end{align*}
 
-  The class of relation corresponding to $H \vdash I$ is
+  The image of $I$, i.e, the prefixed-points of $I \comp H$, is characterized by:
   \begin{align}
      R \text{ is in the image of } I &\iff \\
      I(H(R)) \subseteq R &\iff \\
-     \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \label{to-be-proven}\\
+     \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \label{eq:characterization}\\
     \forall S \subseteq R, \bigjoin S \in R &\iff \\
     R \text{ is }\join \text{-closed }
   \end{align}
 
   \begin{proof} \hfill
     \begin{itemize}
-    \item{$\implies$ (12)}:
+    \item{$\implies$ of (\ref{eq:characterization})}:
     Let $S$ be a subset of $R$. Since $S \leq \bigjoin S$, $S \subseteq (\downarrow (\bigjoin S) \cap R)$ hold. By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \bigjoin (\downarrow (\bigjoin S) \cap R) \subseteq R$.
-    \item{$\impliedby$ (12)}:
+    \item{$\impliedby$ of (\ref{eq:characterization})}:
     Let $p_0$ be an arbitrary point such that $p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \}$.
     Applying the monotone function $\bigjoin$ on the subset relation $\downarrow p_{0} \cap R \subseteq \downarrow p_{0}$, we get $\bigjoin (\downarrow p_{0} \cap R) \leq \bigjoin (\downarrow p_{0}) = p_{0}$. From anti-symmetry of $\leq$, we get $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$.
     Giving $\downarrow p_{0} \cap R$ for $S$ in the premise results $\bigjoin (\downarrow p_{0} \cap R) \in R$. Since $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$, we get $p_{0} \in R$.
     \end{itemize}
     \qed
   \end{proof}
+  Note that all relations in the image of $I \comp K$ (and $I \comp K \comp M (= G)$) also enjoy $\join$-closed property because the image of $I \comp K$ (and $I \comp K \comp M)$ is included in the image of $I$.
+
   % we need to add Endo condition
   % expansion of lifting
   % expansion of composition of H I. etc
