@@ -209,12 +209,22 @@ Constraint-based analysis
     G (\fb) &= \{ (d , e) \mid d \leq \fb(e) \} \\
   \end{align*}
 
-\paragraph{The class of relations via the Galois connection}
-  The image of $G$ is the class of relations that can be specified by backward transfer functions. We obtain the characterization of the class from general facts about Galois connection:
+  The composition $F \comp G$ and $G \comp F$ are obtained explicitly:
   \begin{align*}
-  &R \text{ is in the image of } G \iff G(F(R)) = R  \\
+    G(F(R)) &= \{ (d_{0},e_{0}) \mid d_{0} \leq \bigjoin \{ d \mid \exists e.e \leq e_{0} \land (d,e) \in R \}\} \\
+            &= \{ (d_{0},e_{0}) \mid (d_{0}, e_{0}) \leq \bigjoin \{ (d , e) \mid (d , e) \leq (\top , e_{0}) \land (d,e) \in R \}\} \\
+            &= \{ (d_{0},e_{0}) \mid (d_{0}, e_{0}) \leq \bigjoin (\downarrow (\top , e_{0}) \cap R) \} \\
+  \end{align*}
+
+
+\paragraph{The class of relations via the Galois connection}
+  The image of $G$ is the class of relations that can be specified by backward transfer functions.
+  The class coinsides and fixpoint of the Galois connection i.e, $R$ in the class of relations $R$ such that $G(F(R)) = R$. Since any relation $R$ is a postfixed point ($R \subseteq G(F(R))$), the class also coinsides $R \supseteq G(F(R))$.
+  We obtain the characterization of the class from general facts about Galois connection:
+  \begin{align*}
+  R \text{ is in the image of } G &\iff G(F(R)) = R  \\
                                 &\iff
-                                  R \text{ is }\join \text{-closed } \land R \text{ is pre-down-/post-upclosed },
+                                  R \text{ is }\join \text{-closed } \land R \text{ is pre-down-/post-upclosed }
   \end{align*}
   where $R$ is pre-down-/post-upclosed if and only if $\forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R$.
 
@@ -231,7 +241,7 @@ Constraint-based analysis
   \end{tikzcd}
   \end{center}
 
-  We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to operations on relations.
+  We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to some operation on relations.
   \begin{definition}[Completeness]
    A binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if for every relation $R \in G(\fb) * G(\gb)$, $R$ is also $G (\fb \otimes \gb)$, i.e, $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
   \end{definition}
@@ -241,11 +251,13 @@ Constraint-based analysis
   $G (\fb \otimes \gb) \subseteq G(\fb) * G(\gb)$
   \end{definition}
 
-  For a given binary operation $*$ on relations, we define lifted to a binary operation on backward transfer functions by $F \dashv G$:
+  We chose these terminology solution
+  \paragraph{Operation Lifting}
+  For a given binary operation $*$ on relations, a lifted binary operation $\starlift$ on backward transfer functions can be obtained by $F \dashv G$ as follows:
   \begin{align*}
   \fb \starlift \gb = F (G(\fb) * G(\gb))
   \end{align*}
-  Lifted operation $\starlift$ is always complete with regard to $*$:
+  Any lifted operation $\starlift$ is complete with regard to $*$:
   \begin{align*}
   G(\fb) * G(\gb) \subseteq G(F(G(\fb) * G(\gb))) = G(\fb \starlift \gb)
   \end{align*}
@@ -257,8 +269,7 @@ Constraint-based analysis
   Sequencing of constraints
     The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the constraints of first and second pieces of code.
 
-      Lifting
-    Using $F \dashv G$, the composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
+    By Using $F \dashv G$, the lifted composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
     \begin{align*}
       \cdot \bowtielift \cdot &: \left| \Unidir(C, D) \right| \times  \left| \Unidir(D, E) \right| \to  \left| \Unidir(C, E) \right| \\
       (\fb \bowtielift \gb) (e_{0}) &= F(G(\fb) \bowtie G(\gb)) (e_{0}) \\
@@ -338,7 +349,7 @@ Constraint-based analysis
       ((E \tomon D) \times (D \tomon E) , \leq) & = \Bidir(D, E) \\
       (E \tomon D , \leq) & = \Unidir(D, E)
         \arrow["H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
-        \arrow["I"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
+        \arrow["I"{name=I}, bend right=30, swap, from=2-1, to=1-1]
         \arrow["J"{name=J}, bend right=30, swap, from=2-1, to=3-1]
         \arrow["K"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
         \arrow["P"{name=P}, bend right=30, swap, from=3-1, to=4-1]
@@ -352,7 +363,7 @@ Constraint-based analysis
   \begin{align*}
     H &: \Rel \tomon \Endo &
     I &: \Endo \tomon \Rel \\
-    H(R) &= \lambda p_{0} . \bigjoin \{ p \mid p \leq p_{0} \land p \in R \} &
+    H(R) &= \lambda p_{0} . \bigjoin (\downarrow p_{0} \cap R) &
     I(f) &= \{p \mid p \leq f(p)\} \\
     J &: \Endo \tomon \Bidir &
     K &: \Bidir \tomon \Endo \\
@@ -364,6 +375,29 @@ Constraint-based analysis
     M(\fb) &= (\fb , \top)
   \end{align*}
 
+  The class of relation corresponding to $H \vdash I$ is
+  \begin{align}
+     R \text{ is in the image of } I &\iff \\
+     I(H(R)) \subseteq R &\iff \\
+     \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \label{to-be-proven}\\
+    \forall S \subseteq R, \bigjoin S \in R &\iff \\
+    R \text{ is }\join \text{-closed }
+  \end{align}
+
+  \begin{proof} \hfill
+    \begin{itemize}
+    \item{$\implies$ (12)}:
+    Let $S$ be a subset of $R$. Since $S \leq \bigjoin S$, $S \subseteq (\downarrow (\bigjoin S) \cap R)$ hold. By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \bigjoin (\downarrow (\bigjoin S) \cap R) \subseteq R$.
+    \item{$\impliedby$ (12)}:
+    Let $p_0$ be an arbitrary point such that $p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \}$.
+    Applying the monotone function $\bigjoin$ on the subset relation $\downarrow p_{0} \cap R \subseteq \downarrow p_{0}$, we get $\bigjoin (\downarrow p_{0} \cap R) \leq \bigjoin (\downarrow p_{0}) = p_{0}$. From anti-symmetry of $\leq$, we get $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$.
+    Giving $\downarrow p_{0} \cap R$ for $S$ in the premise results $\bigjoin (\downarrow p_{0} \cap R) \in R$. Since $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$, we get $p_{0} \in R$.
+    \end{itemize}
+    \qed
+  \end{proof}
+  % we need to add Endo condition
+  % expansion of lifting
+  % expansion of composition of H I. etc
   \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
 
@@ -424,8 +458,6 @@ Constraint-based analysis
     \end{tikzcd}
   \end{center}
   Not having the gray dashed line violates being butterfly.
-
-
 
 
   The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
@@ -517,7 +549,7 @@ Constraint-based analysis
       ((E \tomon D) \times E, \leq) & = \UnidirConst(D, E) \\
       (E \tomon D , \leq) & = \Unidir(D, E)
         \arrow["J \comp H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
-        \arrow["I \comp K"{name=I}, bend right=30, swap, hook, from=2-1, to=1-1]
+        \arrow["I \comp K"{name=I}, bend right=30, swap, from=2-1, to=1-1]
         \arrow["\langle {\pi_{1}, \bigjoin } \rangle"{name=J}, bend right=30, swap, from=2-1, to=3-1]
         \arrow["\langle {\mathrm{id}, \mathrm{const}}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
         \arrow["\pi_{1}"{name=M}, bend right=30, swap, from=3-1, to=4-1]
