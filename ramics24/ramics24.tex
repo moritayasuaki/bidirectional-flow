@@ -112,6 +112,12 @@
 
 \newcommand{\sqleq}{\sqsubseteq}
 
+\newenvironment{subproof}[1][\proofname]{%
+  \renewcommand{\qedsymbol}{$\blacksquare$}%
+  \begin{proof}[#1]%
+}{%
+  \end{proof}%
+}
 
 \title{Bidirectional data-flow analyses compared to relational through Galois connections}
 \author{
@@ -425,8 +431,8 @@ potential transfer function.
   \end{center}
   where $D$ and $E$ are complete lattices of data-flow values corresponding entry and exit point of some program. The left and right adjoint $F$, $G$ are given as follows:
   \begin{align*}
-    F (R) &= \lambda e_{0} . \bigjoin \{ d \mid \exists e. e \leq e_{0}  \land (d , e) \in R \} \\
-    G (\fb) &= \{ (d , e) \mid d \leq \fb(e) \} \\
+    F(R) &= \lambda e_{0} . \bigjoin \{ d \mid \exists e. e \leq e_{0}  \land (d , e) \in R \} \\
+    G(\fb) &= \{ (d , e) \mid d \leq \fb(e) \} \\
   \end{align*}
 
   Explicitly, $F \comp G$ and $G \comp F$ are presented as follows:
@@ -437,7 +443,7 @@ potential transfer function.
 
 \paragraph{The class of relations via the Galois connection}
   The image of $G$ is the class of relations that can be specified by backward transfer functions.
-  This class of relations is equivalent to the condition being a fixed point of the Galois connection i.e, a relation $R$ satisfies $G(F(R)) = R$. Since any relation is a postfixed point ($R \subseteq G(F(R))$) by nature of Galois connections, the class of relations also equivalent to the condition of relation $R$ being a prefixed point $R \supseteq G(F(R))$.
+  This class of relations is equivalent to the condition being a fixed point of the Galois connection i.e, a relation $R$ satisfies $G(F(R)) = R$. Since any relation is a postfixed point ($R \subseteq G(F(R))$) by nature of Galois connections, the class of relations also equivalent to the condition of relation $R$ being a prefixed point $G(F(R)) \subseteq R$.
   We obtain the characterization of the class from general facts about Galois connection:
   \begin{proposition}\label{prop:predown-postup}
   $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed,
@@ -462,11 +468,19 @@ potential transfer function.
 
 
   \begin{example}
-    The pre-down-/post-upclosed condition fits in pre-condition weakning and post-condition strengthening in Hoare logic: $L$ is for a set of live variables and the order $\leq$ is the set inclusion $\supseteq$.
+    The pre-down-/post-upclosed condition fits in pre-condition weakening and post-condition strengthening in Hoare logic: $L$ is for a set of live variables and the order $\leq$ is the set inclusion $\supseteq$.
     For example, a triple $\{ L \backslash \{ x \} \} x = 10 \{ L \}$ is valid (relation is functional but the logic is still valid when replacing precondition with any $L' \supseteq L \{ x \}$ and postcondition with any $L'' \subseteq L$.
   \end{example}
 
-  Note that the image of $F$, which is fixpoint of $F \comp G$ and necessarily isomorphic to the image of $G$, coinsides the class of all monotone functions.
+  Note that the image of $F$, equivalently the fixedpoint of $F \comp G$, coinsides $\Unidir(D , E)$ itself. This follows from $F (G (\fb))) = \fb$.
+
+  \begin{proposition}\label{prop:interior-op}
+  $\fb$ is in the image of $F$ if and only if $\fb$ is an interior operation,
+  where $\fb$ is interior operation if and only if $\fb$ satisfies the following condition
+  \begin{align*}
+    \fb(e) \leq  e \sqcap \fb (\fb e)).
+  \end{align*}
+  \end{proposition}
 
   We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to some operation on relations.
   \begin{definition}[Completeness]
@@ -612,7 +626,7 @@ potential transfer function.
     Given any monotone function $I'$ whose codomain is $\Endo(D, E)$, the image of $I \comp I'$ is included by the image of $I$.
     Hence, if a relation $R$ is in the image of $I \comp I'$ then $R$ is $\join$-closed.
   \end{proposition}
-  Specifically, all relations in the image of $I \comp K$ and of $I \comp K \comp M (= G)$ are $\join$-closed.
+  Specifically, all relations in the image of $I \comp K$ and of $I \comp K \comp M$ are $\join$-closed.
 
   % we need to add Endo condition
   % expansion of lifting
@@ -622,8 +636,8 @@ potential transfer function.
 
   \begin{definition}[Butterfly relation]
     A relation $R$ is \emph{butterfly} if and only if \begin{align*}
-      &\forall d\, e\, d_{0}\, d_{1 }\, e_{0}\, e_{1} .\\
-      &d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \implies (d, e) \in R,
+      &\forall d\, e\, d_{0}\, d_{1 }\, e_{0}\, e_{1} .
+      d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \implies (d, e) \in R,
     \end{align*}or diagramatically, \quad
   \begin{tikzcd}
     d_{1} & e_{1} \\
@@ -729,10 +743,6 @@ potential transfer function.
   \caption{The constraint for $\binop;\pop$, missing gray lines violates butterfly}
   \end{figure}
 
-
-
-
-
   \paragraph{Implications for Bidirectional Flow Analysis}
   A sequence of instructions $i_{1};i_{2}\cdots;i_{n}$ without any branch in/out except for entry/exit is called a \emph{basic block}.
 
@@ -835,63 +845,88 @@ potential transfer function.
 
 \appendix
 \section{Proofs}
-\begin{proof}[Proof of Proposition \ref{prop:predown-postup}]
-  We aim to prove that $R$ is in the image of $G$ if and only if $R$ is $\join$closed and $R$ is pre-down-/post-upclosed by decomposing this into the folloing propositions:
-  \begin{proposition}
-     If $R$ is in the image of $G$ then $R$ is pre-down-/post-upclosed
-     \begin{proof}
-    \begin{align*}
-      R \text{ is in the image of } G \iff \\
-      G(F(R)) \subseteq R \iff \\
-      (\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R) \implies \tag{\theequation}\label{eqv:proof-pre-down-post-upclosed} \\
-      \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R \iff \\
-      R \text{ is pre-down-/post-upclosed }.
-    \end{align*}
-    Proof of (\ref{eqv:proof-pre-down-post-upclosed}):
-    Suppose $d \leq d_{1}$, $e_{0} \leq e$, and $(d_{1} , e_{0}) \in R$.
-    The point $(d_{1} , e_{0})$ is in the set $\downarrow (\top , e) \cap R$, and we get
-    $d \leq d_{1}  \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$
-    by using transitivity and properties of $\bigjoin$.
-    From the condition $d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$ and the premise $(\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R)$, we conclude $(d , e) \in R$.
-     \end{proof}
-  \end{proposition}
-  \begin{proposition}
-    If $R$ is in the image of $G$ then $R$ is $\join$ closed
-    \begin{proof}
-    This is proven as a corollary of the Proposition (\ref{pr:restriction-subset})
-    \end{proof}
-  \end{proposition}
-  \begin{proposition}
-    If $R$ is $\join$-closed and pre-down/post-upclosed then $R$ is in the image of $G$
-    \begin{proof}
-    Assume we have $d$ and $e$ such that $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \}$.
-    Use pre-down-/post-upclosedness of $R$ by assigning $(d_{1}, e_{0}) = \bigjoin (\downarrow (\top , e) \cap R)$.
-    From the assumption, we have $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = d_{1} $.
-    It is obvious that for every $p \in \downarrow (\top , e) \cap R$, $p \leq (\top , e)$, and we conclude $e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq e$ from property of $\bigjoin$.  By using $\join$-closedness of $R$ for the subset $(\downarrow (\top , e) \cap R) \subseteq R$, we have $(d_0 , e_0) = \bigjoin (\downarrow (\top , e) \cap R) \in R$.
-    Given the conjunction of $d \leq d_{1}$, $e_{0} \leq e$ and $(d_{1} , e_{0}) \in R$, the premise results $(d, e) \in R$
-    \end{proof}
-  \end{proposition}
-\end{proof}
-
-\begin{proof}[Proof of Theorem \ref{thm:join-closed}]
-   \begin{align*}
-   R \text{ is in the image of } I &\iff \\
-   I(H(R)) \subseteq R &\iff \\
-   \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \tag{\theequation}\label{eq:IH-characterization}\\
-  \forall S \subseteq R, \bigjoin S \in R &\iff \\
-  R \text{ is }\join \text{-closed }
+\subsection{Proof of Proposition \ref{prop:predown-postup}}
+The proof is formed by establishing the following three facts:
+\begin{enumerate}[i.]
+\item{$R$ is in the image of $G$ $\implies$ $R$ is pre-down-/post-upclosed:}\\
+  The proposition is proved in the following steps:
+  \begin{align*}
+    R \text{ is in the image of } G \iff \\
+    G(F(R)) \subseteq R \iff \\
+    (\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R) \implies \tag{*}\label{eqv:proof-pre-down-post-upclosed} \\
+    \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R \iff \\
+    R \text{ is pre-down-/post-upclosed }.
   \end{align*}
+  We prove the nontrivial implication on the step (\ref{eqv:proof-pre-down-post-upclosed}).
+  Suppose $d \leq d_{1}$, $e_{0} \leq e$, and $(d_{1} , e_{0}) \in R$.
+  The point $(d_{1} , e_{0})$ is in the set $\downarrow (\top , e) \cap R$, and we get
+  $d \leq d_{1}  \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$
+  by using transitivity and properties of $\bigjoin$.
+  From the condition $d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$ and the premise $(\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R)$, we conclude $(d , e) \in R$.
+\item{$R$ is in the image of $G$ $\implies$ $R$ is $\join$-closed:}\\
+  Recall $G = I \comp K \comp M$. It follows immediately from Proposition \ref{pr:restriction-subset}.
+\item{$R$ is $\join$-closed $\land$ $R$ is pre-down/post-upclosed $\implies$ $R$ is in the image of $G$:}\\
+  Let $(d, e)$ be a point in $D \times E$ such that $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \}$.
+  Use pre-down-/post-upclosedness of $R$ by assigning $(d_{1}, e_{0}) = \bigjoin (\downarrow (\top , e) \cap R)$.
+  From the assumption, we have $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = d_{1} $.
+  It is obvious that for every $p \in \downarrow (\top , e) \cap R$, $p \leq (\top , e)$, and we conclude $e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq e$ from property of $\bigjoin$.  By using $\join$-closedness of $R$ for the subset $(\downarrow (\top , e) \cap R) \subseteq R$, we have $(d_0 , e_0) = \bigjoin (\downarrow (\top , e) \cap R) \in R$.
+  Given the conjunction of $d \leq d_{1}$, $e_{0} \leq e$ and $(d_{1} , e_{0}) \in R$, the premise results $(d, e) \in R$
+\end{enumerate}
+Therefore, by proving the above propositions, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
 
-  \begin{itemize}
-  \item{$\implies$ of (\ref{eq:IH-characterization})}:
-  Let $S$ be a subset of $R$. Combining the facts $\forall p \in S. p \leq \bigjoin S (\iff S \subseteq \downarrow (\bigjoin S)$ and $S \subseteq R$, we obtain $S \subseteq (\bigjoin S) \cap R)$ . By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \bigjoin (\downarrow (\bigjoin S) \cap R) \subseteq R$.
-  \item{$\impliedby$ of (\ref{eq:IH-characterization})}:
-  Let $p_0$ be an arbitrary point such that $p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \}$.
-  From the subset relation $\downarrow p_{0} \cap R \subseteq \downarrow p_{0}$ and monotonicity of $\bigjoin$, we get $\bigjoin (\downarrow p_{0} \cap R) \leq \bigjoin (\downarrow p_{0}) = p_{0}$. From anti-symmetry of $\leq$, we get $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$.
-  Giving $\downarrow p_{0} \cap R$ for $S$ in the premise results $\bigjoin (\downarrow p_{0} \cap R) \in R$. Since $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$, we get $p_{0} \in R$.
-  \end{itemize}
-  \qed
-\end{proof}
+
+\subsection{Proof of Theorem \ref{thm:join-closed}}
+The proof is carried out in the following steps:
+\begin{align*}
+ R \text{ is in the image of } I &\iff \\
+ I(H(R)) \subseteq R &\iff \\
+  \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \tag{*}\label{eq:IH-characterization}\\
+\forall S \subseteq R, \bigjoin S \in R &\iff \\
+R \text{ is }\join \text{-closed }
+\end{align*}
+The nontrivial logical equivalence on the step (\ref{eq:IH-characterization}) is proved as follows:
+\begin{enumerate}[i.]
+\item{$ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \implies \forall S \subseteq R, \bigjoin S \in R$}:\\
+Let $S$ be a subset of $R$. Combining the facts $\forall p \in S. p \leq \bigjoin S (\iff S \subseteq \downarrow (\bigjoin S)$ and $S \subseteq R$, we obtain $S \subseteq (\bigjoin S) \cap R)$ . By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \bigjoin (\downarrow (\bigjoin S) \cap R) \subseteq R$.
+
+\item{$ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \impliedby \forall S \subseteq R, \bigjoin S \in R$:}\\
+Let $p_0$ be an arbitrary point such that $p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \}$.
+From the subset relation $\downarrow p_{0} \cap R \subseteq \downarrow p_{0}$ and monotonicity of $\bigjoin$, we get $\bigjoin (\downarrow p_{0} \cap R) \leq \bigjoin (\downarrow p_{0}) = p_{0}$. From anti-symmetry of $\leq$, we get $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$.
+Giving $\downarrow p_{0} \cap R$ for $S$ in the premise results $\bigjoin (\downarrow p_{0} \cap R) \in R$. Since $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$, we get $p_{0} \in R$.
+\end{enumerate}
+
+The other steps are proved by definition or by using a general property of the Galois connection $H \dashv I$.
+There fore we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
+\qed
+
+\subsection{Proof of Proposition \ref{prop:interior-op}}
+The proof is carried out into the following steps:
+\begin{align*}
+ f \text{ is in the image of } H &\iff \\
+ f \leq H(I(\fb)) &\iff \\
+ \forall p. f(p) \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) &\iff \\
+ \forall p. f(p) \leq \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) &\iff \\
+ \forall p. f(p) \leq \nu p' . p \sqcap f(p') &\iff \tag{*}\label{eq:interior-iso}\\
+ \forall p. f(p) \leq p \sqcap f(f(p)) &\iff \\
+ \fb \text{ is an interior operator}
+\end{align*}
+
+We prove $\forall p.\nu p' . p \sqcap f(p') = p \sqcap f(f(p))$ to validate the step (\ref{eq:interior-iso}).
+
+\begin{enumerate}[i.]
+\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \implies (\forall p. f(p) \leq p \sqcap f(f(p)))$:}\\
+Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \sqcap f(p')$.
+Then it is enough to show that $p_{*} \leq p \sqcap f(f(p))$ holds. This is done by unfolding $\nu$ in the definition of $p_{*}$ several times, and tne using monotonicity to forget the effects of some subterms.
+\begin{align*}
+p_{*} & = p \meet f(p_{*}) = p \meet f(p \meet f(p_{*})) = p \meet (f (p \meet f(p \meet f(p_{*})))) \\
+     & \leq p \meet (f (\top \meet f(p \meet \top))) = p \meet (f (f (p)))
+\end{align*}
+\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \impliedby (\forall p. f(p) \leq p \sqcap f(f(p)))$:}\\
+Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \sqcap f(p')$.
+\end{enumerate}
+
+
+
 
 \end{document}
 
