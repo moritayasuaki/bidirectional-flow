@@ -906,27 +906,26 @@ The proof is carried out into the following steps:
  f \leq H(I(\fb)) &\iff \\
  \forall p. f(p) \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) &\iff \\
  \forall p. f(p) \leq \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) &\iff \\
- \forall p. f(p) \leq \nu p' . p \sqcap f(p') &\iff \tag{*}\label{eq:interior-iso}\\
- \forall p. f(p) \leq p \sqcap f(f(p)) &\iff \\
+  \forall p. f(p) \leq \nu p' . p \meet f(p') &\iff \tag{*}\label{eq:interior-iso}\\
+ \forall p. f(p) \leq p \meet f(f(p)) &\iff \\
  \fb \text{ is an interior operator}
 \end{align*}
 
 We prove $\forall p.\nu p' . p \sqcap f(p') = p \sqcap f(f(p))$ to validate the step (\ref{eq:interior-iso}).
 
 \begin{enumerate}[i.]
-\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \implies (\forall p. f(p) \leq p \sqcap f(f(p)))$:}\\
-Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \sqcap f(p')$.
-Then it is enough to show that $p_{*} \leq p \sqcap f(f(p))$ holds. This is done by unfolding $\nu$ in the definition of $p_{*}$ several times, and tne using monotonicity to forget the effects of some subterms.
+\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \implies (\forall p. f(p) \leq p \meet f(f(p)))$:}\\
+Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \meet f(p')$.
+Then it is enough to show that $p_{*} \leq p \meet f(f(p))$ holds. This is done by unfolding $\nu$ in the definition of $p_{*}$ several times, and tne using monotonicity to forget the effects of some subterms.
 \begin{align*}
 p_{*} & = p \meet f(p_{*}) = p \meet f(p \meet f(p_{*})) = p \meet (f (p \meet f(p \meet f(p_{*})))) \\
      & \leq p \meet (f (\top \meet f(p \meet \top))) = p \meet (f (f (p)))
 \end{align*}
-\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \impliedby (\forall p. f(p) \leq p \sqcap f(f(p)))$:}\\
-Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \sqcap f(p')$.
+\item{Proof of $(\forall p. f(p) \leq \nu p' . p \meet f(p')) \impliedby (\forall p. f(p) \leq p \meet f(f(p)))$:}\\
+
+Let $p$ be an arbitrary point of $D \times E$ and define a function $\chi(p') = p \meet f(p')$.
+From the premise, we have $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ which means that $f(p)$ is a postfixed point of $\chi$ (i.e, $f(p) \in \{ p' \mid p' \leq \chi(p') \}$). Since the greatest fixed point is the greatest postfixed point, we conclude $f(p) \leq \bigjoin \{ p' \mid p' \leq \chi(p') \} = \nu p' . p \meet f(p') $.
 \end{enumerate}
-
-
-
 
 \end{document}
 
