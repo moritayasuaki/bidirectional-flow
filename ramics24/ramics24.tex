@@ -474,14 +474,6 @@ potential transfer function.
 
   Note that the image of $F$, equivalently the fixedpoint of $F \comp G$, coinsides $\Unidir(D , E)$ itself. This follows from $F (G (\fb))) = \fb$.
 
-  \begin{proposition}\label{prop:interior-op}
-  $\fb$ is in the image of $F$ if and only if $\fb$ is an interior operation,
-  where $\fb$ is interior operation if and only if $\fb$ satisfies the following condition
-  \begin{align*}
-    \fb(e) \leq  e \sqcap \fb (\fb e)).
-  \end{align*}
-  \end{proposition}
-
   We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to some operation on relations.
   \begin{definition}[Completeness]
    A binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if for every relation $R \in G(\fb) * G(\gb)$, $R$ is also $G (\fb \otimes \gb)$, i.e, $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
@@ -615,11 +607,10 @@ potential transfer function.
     M(\fb) &= (\fb , \top)
   \end{align*}
 
-  The image of $I$, i.e, all prefixed-points of $I \comp H$, is characterized by $\join$-closedness:
+  The image of $I$, i.e, all prefixed- oints of $I \comp H$, is characterized by $\join$-closedness:
   \begin{theorem}\label{thm:join-closed}
     A relation $R$ is in the image of $I$ if and only if $R$ is $\join$ \text{-closed}
   \end{theorem}
-
 
   By pre-composing with any monotone function to $I$, the image becomes restricted.
   \begin{proposition} \label{pr:restriction-subset}
@@ -628,12 +619,24 @@ potential transfer function.
   \end{proposition}
   Specifically, all relations in the image of $I \comp K$ and of $I \comp K \comp M$ are $\join$-closed.
 
+  The image of $H$, i.e, all postfixed points of $H \comp I$, is characterized by being interior operator:
+  \begin{proposition}\label{prop:interior-op}
+  $\fb$ is in the image of $F$ if and only if $\fb$ is an interior operator,
+  where $\fb$ is interior operator if and only if $\fb$ satisfies the following condition
+  \begin{align*}
+    \fb(e) \leq  e \sqcap \fb (\fb e)).
+  \end{align*}
+  \end{proposition}
+
   % we need to add Endo condition
   % expansion of lifting
   % expansion of composition of H I. etc
   \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
-  The image of $H$, the class of relations represented by a bidirectional function pair, is characterized by relation $R$ being $\join$-closed and has a property called \emph{butterfly}.
+  The image of $I \comp K$, the class of relations represented by a bidirectional function pair, is characterized as follows
 
+  \begin{proposition}
+    $R$ is in the image of $I \comp K$ if and only if $R$ is $\join$-closed and has a property called \emph{butterfly}.
+  \end{proposition}
   \begin{definition}[Butterfly relation]
     A relation $R$ is \emph{butterfly} if and only if \begin{align*}
       &\forall d\, e\, d_{0}\, d_{1 }\, e_{0}\, e_{1} .
@@ -653,6 +656,14 @@ potential transfer function.
   \end{tikzcd}
   \end{definition}
 
+  The image of $J \comp H$, the class of pairs of monotone functions that are fixed points of $J \comp H \comp I \comp K$ is characterized as follows:
+  \begin{proposition}
+    A pair of function $(\fb , \ff)$ is in the image of $J \comp H$ if and only if $\fb$ and $\ff$ satisfy the following conditions:
+    \begin{enumerate}[i.]
+      \item $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$
+      \item $\fb(e) \leq \fb(e \meet \ff (\fb(e)))$
+    \end{enumerate}
+  \end{proposition}
   \paragraph{Composition and Butterfly property -- A Case of Failure}
   The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
 
