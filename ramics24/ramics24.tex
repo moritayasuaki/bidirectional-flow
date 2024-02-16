@@ -199,18 +199,33 @@ for all $x \in X$, $y \in Y$. Equivalently, one may ask that
 \[
 x \leq \psi(\phi(x)) \quad \mathrm{and} \quad \phi(\psi(y)) \leq y 
 \]
-We write $\phi \dashv \psi$ to state this situation.
+We write $\phi \dashv \psi$ to state this situation.  If
+$\phi(\psi(y)) = y$ for all $y \in Y$, the Galois connection is called
+a \emph{reflection}. In this case, it $\phi$ is necessarily surjective
+and $\psi$ is necessarily injective.
 
-In all examples we consider here, both posets $(X, \leq)$ and
-$(Y, \leq)$ are complete lattices, so have joins of all subsets and
-therefore also meets. In this situation, the lower adjoint $\phi$
-preserves all joins, the upper adjoint $\psi$ preserves all meets.
+If $\phi \dashv \psi$ is a Galois connection, then all joins
+$\bigjoin \{x \mid \phi(x) \leq y\}$ exist, the lower adjoint $\phi$
+preserves all joins existing in $X$ and
+$\psi(y) = \bigjoin \{x \mid \phi(x) \leq y\}$ (so in particular
+$\psi$ is determined by $\phi$). If all joins
+$\bigjoin \{x \mid \phi(x) \leq y\}$ exist and are preserved by a
+monotone function $\phi : X \to Y$, then $\phi$ is a lower adjoint.
 
-Galois connections are necessarily \emph{idempotent} in that one
-always has
+% If both posets $(X, \leq)$ and $(Y, \leq)$ in Galois connection are
+% complete lattices, i.e., have joins of all subsets and therefore also
+% meets, then the lower adjoint $\phi$ preserves all joins and the upper
+% adjoint $\psi$ preserves all meets.  If a monotone function
+% $\phi : X \to Y$ preserves all joins, then it is a lower adjoint: the
+% upper adjoint is $\psi(y) = \bigjoin \{x \mid phi(x) \leq y\}$.
+% Similarly, if a monotone function $\psi : Y \to X$ preserves all
+% meets, it is an upper adjoint.
+
+Galois connections are always \emph{idempotent} in that
 \[
 \psi(y) = \psi(\phi(\psi(y))) \quad \mathrm{and} \quad \phi(\psi(\phi(x))) = \phi(x)
 \]  
+for all $x \in X$, $y \in Y$.
 
 The set $X_0$ of fixedpoints of $\psi \circ \phi$, i.e., those
 elements $x \in X$ for which $x = \psi(\phi(x))$, consists of
@@ -221,19 +236,21 @@ i.e., those elements of $y \in Y$ for which $\phi(\psi(y)) = y$. The
 set $Y_0$ consists of precisely the elements in the image of $\phi$,
 i.e., $y$ such that $\phi(x) = y$.
 
-The monotone bijection between $X_0$ and $Y_0$ is given by just the
+The monotone bijection between $X_0$ and $Y_0$ is given by the
 restrictions of $\phi$ and $\psi$ to $X_0$ and $Y_0$
-respectively. Because of this isomorphism of the two posets
-$(X_0, \leq)$ and $(Y_0, \leq)$, it is customary to refer to either of
-them as the poset of \emph{fixedpoints} of the Galois connection.
+respectively. Owing to this isomorphism of the posets $(X_0, \leq)$ and
+$(Y_0, \leq)$, it is customary to refer to either of them as the poset
+of \emph{fixedpoints} of the Galois connection.
+
+If the Galois connection is a reflection, then $Y_0 = Y$. 
 
 Overall, the following picture emerges:
 \[
 \xymatrix{
-(X, \leq)
-& (Y, \leq) \\   
-(X_0, \leq)
-& (Y_0, \leq)
+(X, \leq) \ar@/^0.5pc/[r]^{\phi} \ar@{}[r]|{\top}
+& (Y, \leq) \ar@/^0.5pc/[l]^{\psi}\\   
+(X_0, \leq) \ar@{>->}[u] \ar@/^0.5pc/[r]^{\phi|_{X_0}} \ar@{}[r]|{\cong}
+& (Y_0, \leq) \ar@{>->}[u] \ar@/^0.5pc/[l]^{\psi|_{Y_0}}
 }  
 \]
 
@@ -251,16 +268,38 @@ $\otimes$ if
 \psi(y_0) \otimes \psi(y_1) \leq \psi(y_0 \boxtimes y_1) 
 \]  
 Given a monotone binary operation $\otimes : X \times X \to X$, one
-can always overapproximate it by the \emph{lifting} $\bar{\otimes}$
-defined by
+can \emph{transport} it to $\bar{\otimes} : Y \times Y \to Y$ defined
+by
 \[
 y_0 \mathbin{\bar{\otimes}} y_1 = \phi(\psi(y_0) \otimes \psi(y_1)) 
 \]
-In fact, the lifting $\bar{\otimes}$ is always the least
-overapproximation of $\otimes$. (To check, it should be??)
+The transport $\bar{\otimes}$ is always the least overapproximation of
+$\otimes$: it is an overapproximation since
+$\psi(y_0) \otimes \psi(y_1) \leq \psi(\phi(\psi(y_0) \otimes
+\psi(y_1))) = \psi(y_0 \mathbin{\bar{\otimes}} y_1)$ and it is below
+any other overapproximation ${\boxtimes}$ since
+$y_0 \mathbin{\bar{\otimes}} y_1 = \phi(\psi(y_0) \otimes \psi(y_1))
+\leq \phi(\psi(y_0 \boxtimes y_1)) \leq y_0 \boxtimes y_1$.
 
-Similar definitions and statements hold of course also for monotone
-unary operations.
+Underapproximation is harder. If $(Y, \leq)$ has all joins (is a
+complete lattice), then one can define
+\[
+y_0 \mathbin{\underline{\otimes}} y_1 = \bigjoin \{ y \mid \psi(y) \leq \psi(y_0) \otimes \psi(y_1))\} 
+\]
+$\underline{\otimes}$ is necessarily above all underapproximations of
+$\otimes$, but it need not itself be one. However, if $\psi$ preserves
+joins (as an upper adjoint it is generally only guaranteed to preserve
+meets), then it is the greatest underapproximation of $\otimes$.
+
+Note that there is no general recipe for underapproximation. In
+general an operation $\otimes$ may not have any underapproximations at
+all.
+
+Similar definitions and statements can be made for monotone operations
+of any arity, including nullary, i.e., constants.  So, in particular,
+we can say that a particular element $y \in Y$ underapproximates
+$x \in X$ if $\psi(y) \leq x$ and overapproximates it if
+$x \leq \psi(y)$.
 
 The order-theoretic concept of Galois connections is a special case of
 adjunctions from category theory and facts about Galois connections
@@ -275,18 +314,18 @@ Galois connections generalizes for idempotent adjunctions.
 
 We will now apply Galois connections to study the relationship between
 relational and unidirectional (specifically, backward) specification
-formats of data-flow analyses. We always view the relational
-specification of an analysis as its ideal version capturing all
-semantically valid analysis results whereas a backward formulation
-should be a version tailored to effective computation of the strongest
-analysis results. We will explain what we mean by these phrases
-shortly.
+formats of data-flow analyses---in terms of constraints and backward
+transfer functions. We always view the relational specification of an
+analysis as its ideal version capturing all semantically valid
+analysis results whereas a backward formulation should be a version
+tailored to effective computation of the strongest analysis
+results. We will explain what we mean by these phrases shortly.
 
-We assume given two complete lattices $(D, \sqleq, \bigjoin)$,
-$(E, \sqleq, \bigjoin)$ that could be the data-flow value domains for
-two program points in a global program (control-flow graph) connected
-by a statement (edge). In usual practice, these domains would be the
-same for all program points, but for now we have no reason to restrict
+We assume given two complete lattices $(D, \sqleq)$, $(E, \sqleq)$
+that could be the data-flow value domains for two program points in a
+global program (control-flow graph) connected by a statement
+(edge). In usual practice, these domains would be the same for all
+program points, but for now we have no reason to restrict
 ourselves. They would normally also be assumed to be locally finite
 (i.e., with all chains finite), but for now we do not need this
 assumption either.
@@ -298,7 +337,7 @@ these posets as relational resp.\ backward specifications of data-flow
 analyses. For brevity, we also write $\Rel(D, E)$ and $\Bwd(D, E)$
 for these two posets. Both are complete lattices in fact; the first
 has its joins given by unions, the second by the joins in
-$(E, \sqleq, \bigjoin)$.
+$(D, \sqleq)$.
 
 Between these two posets, there is a Galois connection $F \dashv G$
 defined by
@@ -308,14 +347,13 @@ defined by
 \end{align*}
 
 A typical data-flow analysis that we can describe relationally and
-backwardly is the live variables analysis. Here
-$(D, \sqleq) = (E, \sqleq) = \Pow(\Var), \supseteq)$. For the
-assignment statement $x := e$, the backward specification of the
-analysis is the monotone function
-$\fb (Y) = Y \setminus \{x\} \cup \FV(e)$ (returning the set of just
-these variables whose values at the prepoint that can possibly affect
-the values of the variables in $Y$ at the postpoint).  The relational
-analysis is $R(X,Y)$ iff $X \supseteq Y \setminus \{x\} \cup \FV(e)$
+backward-unidirectionally is the live variables analysis. Here
+$(D, \sqleq) = (E, \sqleq) = (\Pow(\Var), \supseteq)$. For the
+assignment statement $x := e$, the transfer function is the monotone
+function $\fb (Y) = Y \setminus \{x\} \cup \FV(e)$ (returning the set
+of just these variables whose values at the prepoint that can possibly
+affect the values of the variables in $Y$ at the postpoint).  The
+constraint is $R(X,Y)$ iff $X \supseteq Y \setminus \{x\} \cup \FV(e)$
 (accepting any valid pre-post pair of live variable sets in the sense
 of noninterference).
 
@@ -323,33 +361,41 @@ It is straightforward to verify that $R = G(\fb)$ and $F(R) = \fb$.  So
 $R$ and $\fb$ embody, in $\Rel(D,E)$ resp. $\Bwd(D,E)$, the same
 fixedpoint of the Galois connection.
 
-Another analysis example is preconditions analysis. We might be more
-used to think of it as a program logic, but its only ``flaw'' as an
-analysis is that the data-flow value poset fails to be locally finite.
-Here $(D, \sqleq) = (E, \sqleq) = \Pow(\State), \subseteq)$. For the
-assignment statement $x := e$, the backward specification of the
-analysis is the monotone function
+Another archetypical example is preconditions analysis.\footnote{We
+  might be more used to think of the preconditions analysis as a
+  program logic, but its only ``flaw'' as an analysis is that the
+  data-flow value poset is not locally finite.}  Here
+$(D, \sqleq) = (E, \sqleq) = (\Pow(\State), \subseteq)$. For the
+assignment statement $x := e$, the transfer function is the monotone
+function
 $\fb (Q) = \{ \sigma \mid \sigma[x \mapsto \llbracket
 e\rrbracket(\sigma)] \in Q \}$ (returning the weakest precondition)
-while the relational specification is $R(P, Q)$ iff
+while the constraint is the relation $R(P, Q)$ that holds iff
 $\forall \sigma.\, \sigma \in P \implies \sigma[x \mapsto \llbracket
 e\rrbracket(\sigma)] \in Q$ (accepting any valid pre-postcondition
 pair).
 
-Again $R = G(\fb)$ and $F(R) = \fb$.
+In both cases, $\fb = F(R)$, so $\fb$ is the transport of $R$,
+therefore the least overapproximation of $R$. Moreover, we also have
+$G(\fb) \sqleq R$, so $\fb$ is an underapproximation too. I.e., $\fb$
+perfectly agrees with $R$, they are two embodyments, in $\Rel(D,E)$
+resp. $\Bwd(D,E)$, of the same fixedpoint of the Galois connection.
 
-We say that a backward specification $\fb$ is \emph{sound} for an
-analysis if $G(\fb) \subseteq R$ where $R$ is the ideal relational
-specification and \emph{complete} if $G(\fb) \supseteq R$.
+We say that a backward-functional specification of analysis is
+\emph{sound} if, for any program $s$, the transfer function $\fb_s$
+assigned to it underapproximates the constraint $R_s$ assigned to it
+by the definitive relational specification, i.e.,
+$G(\fb_s) \subseteq R_s$.  For it to be \emph{complete}, $\fb_s$ has
+to be an overapproximation of $R$, i.e., $R \subseteq G(\fb_s)$ for
+any $s$.
 
-In the two examples we have considered, the backward specification
-$\fb$ is both sound and complete.
+In the two examples we have considered, the transfer function
+$\fb$ is both sound and complete wrt.\ the constraint.
 
-To be able to have a sound and complete backward specification of a
-relationally defined analysis, we need that any program is analyzed by
-a relation within the image of $G$, i.e., in $\Rel(D,E)_0$.  A
-relation $R$ turns out to be in the image of $G$ iff it is
-\emph{join-closed}, i.e.,
+For an analysis to admit a sound and complete backward-unidirectional
+specification, the constraint for any program must belong to the image
+of $G$, i.e., in $\Rel(D,E)_0$.  A relation $R$ turns out to be in the
+image of $G$ iff it is \emph{join-closed}, i.e.,
 \[
 \forall S.\,  S \subseteq R \implies \bigjoin S \in R
 \]  
