@@ -280,6 +280,25 @@ $\psi(y_0) \otimes \psi(y_1) \leq \psi(\phi(\psi(y_0) \otimes
 any other overapproximation ${\boxtimes}$ since
 $y_0 \mathbin{\bar{\otimes}} y_1 = \phi(\psi(y_0) \otimes \psi(y_1))
 \leq \phi(\psi(y_0 \boxtimes y_1)) \leq y_0 \boxtimes y_1$.
+\begin{proposition}
+  The image of $\psi$ is closed under $\otimes$ if and only if the lifting $\bar{\otimes}$ underapproximates $\otimes$.
+  \begin{proof}
+    Note that the condition on lhs is equivalent to $\forall y_{0}, y_{i}. \exists y_{2}. \psi(y_{0}) \otimes \psi (y_{1}) = \psi (y_{2})$.
+    It suffices to show that
+    \[
+      (\exists y_{2}. \psi (y_{2}) = \psi(y_{0}) \otimes \psi (y_{1}) ) \iff \psi (y_{0} \bar{\otimes} y_{1}) \leq \psi (y_{0}) \otimes \psi (y_{1})
+    \]
+    for any $y_{0}$ and $y_{1}$.
+
+    Proof of $\impliedby$: Since $\bar{\otimes}$ is an overapproximation of $\otimes$,
+    $\psi (y_{0} \bar{\otimes} y_{1}) = \psi (y_{0}) \otimes \psi (y_{1})$ and we give $y_{0} \bar{\otimes} y_{1}$ for $y_{2}$
+
+    Proof of $\implies$:
+    Let $\boxtimes$ be an operation that takes $y_{0}, y_{1}$ and results $y_{2}$ such that $\psi(y_{2}) = \psi(y_{0}) \otimes \psi(y_{1})$
+    Since $\bar{\otimes}$ is the least overapproximation, and $\boxtimes$ is overapproximation and underapproximation, we get
+    $y_{0} \bar{\otimes} y_{1} \leq y_{0} \boxtimes y_{1} $. Thus, $\psi(y_{0} \bar{\otimes} y_{1}) \leq \psi(y_{0} \boxtimes y_{1}) = \psi(y_{0}) \otimes \psi (y_{1})$
+  \end{proof}
+\end{proposition}
 
 Underapproximation is harder. If $(Y, \leq)$ has all joins (is a
 complete lattice), then one can define
@@ -529,7 +548,6 @@ potential transfer function.
   $G (\fb \otimes \gb) \subseteq G(\fb) * G(\gb)$
   \end{definition}
 
-  We chose these terminology solution
   \paragraph{Operation Lifting}
   For a given binary operation $*$ on relations, a lifted binary operation $\starlift$ on backward transfer functions can be obtained by $F \dashv G$ as follows:
   \begin{align*}
@@ -547,7 +565,7 @@ potential transfer function.
   Sequencing of constraints
     The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the constraints of first and second pieces of code.
 
-    By Using $F \dashv G$, the lifted composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
+    By using $F \dashv G$, the lifted composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
     \begin{align*}
       \cdot \bowtielift \cdot &: \left| \Unidir(C, D) \right| \times  \left| \Unidir(D, E) \right| \to  \left| \Unidir(C, E) \right| \\
       (\fb \bowtielift \gb) (e_{0}) &= F(G(\fb) \bowtie G(\gb)) (e_{0}) \\
@@ -555,7 +573,18 @@ potential transfer function.
                                   &= \pi_{1} (\bigjoin \{ (c, d , e) \mid e \leq e_{0} \land c \leq \fb(d) \land d \leq \gb(e) \}) \\
                                   &= (\fb \comp \gb)(e_{0})
     \end{align*}
-
+    \begin{proposition}
+      if $\bowtielift$ underapproximates the relation composition $\bowtie$, then the image of $G$ is closed under relation composition.
+      $ G (\fb \boxtimes) \gb \subseteq G(\fb) \bowtie G(\gb) $
+    \end{proposition}
+    \begin{proposition}
+       The image of $G$ is closed under relation composition $\bowtie$ if and only if $\bowtielift$ underapproximates $\bowtie$
+      \begin{proof}
+        Suppose $R \in \Rel(C , D)$ and $S \in \Rel(D , E)$, and both are in the image of $G$.
+        By definition, there must be some $\fb \in \Unidir(D , E)$ $\gb \in \Unidir(D , E)$ such that $R = G(\fb)$ and $S = G(\gb)$. Then, the goal to achieve is to find some $h$ such that $G(\fb) \bowtie G(\gb) = G(h)$. Take $h = \fb \bowtielift \gb$,
+        Then $G(\fb) \bowtie G(\gb) = G(\fb \bowtielift \gb)$
+      \end{proof}
+    \end{proposition}
   \paragraph{Composition lifting via Galois connection}
 
   Non-deterministic choice of constraints
@@ -575,9 +604,12 @@ potential transfer function.
   \paragraph{Soundness and Completeness}
   The following equalities
   \begin{itemize}
-    \item $G(\fb) \bowtie G(\gb) = G(\fb \comp \gb)$
+    \item $G(\fb) \bowtie G(\gb) = G(\fb \bowtielift \gb)$
     \item $G(\fb) \cap G(\fb) = G(\fb \meet \gb)$
   \end{itemize}
+  \begin{proposition}
+    $G(\fb) \bowtie G(\gb) = G(\fb \comp \gb)$
+  \end{proposition}
   validate the soundness and completeness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
 
 
@@ -679,7 +711,7 @@ potential transfer function.
   \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $I \comp K$, the class of relations represented by a bidirectional function pair, is characterized as follows
 
-  \begin{proposition}
+  \begin{proposition}\label{prop:butterfly}
     $R$ is in the image of $I \comp K$ if and only if $R$ is $\join$-closed and has a property called \emph{butterfly}.
   \end{proposition}
   \begin{definition}[Butterfly relation]
@@ -902,86 +934,107 @@ potential transfer function.
 \appendix
 \section{Proofs}
 \subsection{Proof of Proposition \ref{prop:predown-postup}}
-The proof is formed by establishing the following three facts:
+The proof consists of three parts:
 \begin{enumerate}[i.]
 \item{$R$ is in the image of $G$ $\implies$ $R$ is pre-down-/post-upclosed:}\\
-  The proposition is proved in the following steps:
-  \begin{align*}
-    R \text{ is in the image of } G \iff \\
-    G(F(R)) \subseteq R \iff \\
-    (\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R) \implies \tag{*}\label{eqv:proof-pre-down-post-upclosed} \\
-    \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R \iff \\
-    R \text{ is pre-down-/post-upclosed }.
-  \end{align*}
-  We prove the nontrivial implication on the step (\ref{eqv:proof-pre-down-post-upclosed}).
-  Suppose $d \leq d_{1}$, $e_{0} \leq e$, and $(d_{1} , e_{0}) \in R$.
-  The point $(d_{1} , e_{0})$ is in the set $\downarrow (\top , e) \cap R$, and we get
-  $d \leq d_{1}  \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$
-  by using transitivity and properties of $\bigjoin$.
-  From the condition $d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$ and the premise $(\forall d\, e . d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \} \implies (d , e) \in R)$, we conclude $(d , e) \in R$.
+  Suppose $R$ is in the image of $G$.
+  Given that $G$ is the right adjoint in the Galois connection $F \dashv G$, it follows that $R$ is a fixed point of $G \comp F$. Specifically, $R$ is a prefixed point of $G \comp F$, meaning $G(F(R)) \subseteq R$. By definition, this is equivalent to the condition
+  \begin{equation}
+    \forall d, e, d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \implies (d , e) \in R \label{eq:GF-prefixed}
+  \end{equation}.
+  Now, we show that $R$ is pre-down-/post-upclosed, i.e.,
+  \begin{equation}
+   \forall d, e, d_{1 }, e_{0}.d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R
+   \label{eq:GF-pre-post}
+  \end{equation}.
+  Given (\ref{eq:GF-prefixed}), it suffices to show
+  \begin{equation}
+    \forall d, e, d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies d \leq \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \label{eq:GF-inequality}
+  \end{equation} for any $d$, $e$, $d_{1}$ and $e_{0}$.  To prove \ref{eq:GF-inequality}, consider arbitrary elements $d, d_{1} \in D$ $e, e_{0} \in E$ such that $d \leq d_{1}$, $e_{0} \leq e$ and $(d_{1}, e_{0}) \in R$.
+  From this assumption, it is evident that $(d_{1} , e_{0})$ is in the set $\downarrow (\top , e) \cap R$.
+  Then, it holds that $d_{1}  \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$ by properties of $\bigjoin$. Since $d \leq d_{1}$, it follows that $d \bigjoin \{ d' \mid \exists e' \leq e \land (d', e') \in R \}$.
+
+  Therefore, we have proven that $R$ is in the image of $G$ $\implies$ $R$ is pre-down-/post-upclosed.
+
 \item{$R$ is in the image of $G$ $\implies$ $R$ is $\join$-closed:}\\
   Recall $G = I \comp K \comp M$. It follows immediately from Proposition \ref{pr:restriction-subset}.
-\item{$R$ is $\join$-closed $\land$ $R$ is pre-down/post-upclosed $\implies$ $R$ is in the image of $G$:}\\
-  Let $(d, e)$ be a point in $D \times E$ such that $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \}$.
-  Use pre-down-/post-upclosedness of $R$ by assigning $(d_{1}, e_{0}) = \bigjoin (\downarrow (\top , e) \cap R)$.
-  From the assumption, we have $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) = d_{1} $.
-  It is obvious that for every $p \in \downarrow (\top , e) \cap R$, $p \leq (\top , e)$, and we conclude $e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq e$ from property of $\bigjoin$.  By using $\join$-closedness of $R$ for the subset $(\downarrow (\top , e) \cap R) \subseteq R$, we have $(d_0 , e_0) = \bigjoin (\downarrow (\top , e) \cap R) \in R$.
-  Given the conjunction of $d \leq d_{1}$, $e_{0} \leq e$ and $(d_{1} , e_{0}) \in R$, the premise results $(d, e) \in R$
+\item{$R$ is in the image of $G$ $\impliedby$ $R$ is $\join$-closed $\land$ $R$ is pre-down/post-upclosed :}\\
+  Suppose $R$ is $\join$-closed and pre-down/post-upclosed.
+  From $F \dashv G$, it suffices to show $G(F(R)) \subseteq R$ (\ref{eq:GF-inequality}).
+  To prove this, consider $d \in D$ and $e \in E$ such that $d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \}$.
+  Using pre-down-/post-upclosedness of $R$ (\ref{eq:GF-pre-post}) by taking $\bigjoin (\downarrow (\top , e) \cap R)$ for $(d_0 , e_1)$, we have
+  \begin{align*}
+    &d \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) \\
+    &\land \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq e\\
+    &\land (\bigjoin (\downarrow (\top , e) \cap R)) \in R\\
+    &\implies (d, e) \in R
+  \end{align*}
+  In fact, all premises of this proposition are true:
+  \begin{equation}
+     d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) \\
+  \end{equation}
+  \begin{equation}
+     \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq \pi_{2} (\bigjoin (\downarrow (\top , e))) = e
+  \end{equation}
+   Since $R$ is $\join$-closed, the join of the subset $(\downarrow (\top , e) \cap R)$ of $R$ must be in $R$, meaning,
+  \begin{equation*} \bigjoin (\downarrow (\top , e) \cap R) \in R
+  \end{equation*}
+  Consequently, we get $(d, e) \in R$.
+  Therefore, we have proved that $R$ is in the image of $G$ $\impliedby$ $R$ is $\join$-closed $\land$ $R$ is pre-down/post-upclosed
 \end{enumerate}
-Therefore, by proving the above propositions, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
+By proving the above propositions, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
 
 
 \subsection{Proof of Theorem \ref{thm:join-closed}}
 The proof is carried out in the following steps:
-\begin{align*}
- R \text{ is in the image of } I &\iff \\
- I(H(R)) \subseteq R &\iff \\
-  \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R &\iff \tag{*}\label{eq:IH-characterization}\\
-\forall S \subseteq R, \bigjoin S \in R &\iff \\
-R \text{ is }\join \text{-closed }
-\end{align*}
-The nontrivial logical equivalence on the step (\ref{eq:IH-characterization}) is proved as follows:
+\begin{align}
+  R \text{ is in the image of } I &\iff I(H(R)) = \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \notag\\
+                                  &\iff \forall S \subseteq R, \bigjoin S \in R \tag{*}\label{eq:IH-characterization}  \\
+                                  &\iff R \text{ is }\join \text{-closed } \notag
+\end{align}
+The proof of the nontrivial step (\ref{eq:IH-characterization}) is proved as follows:
 \begin{enumerate}[i.]
-\item{$ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \implies \forall S \subseteq R, \bigjoin S \in R$}:\\
-Let $S$ be a subset of $R$. Combining the facts $\forall p \in S. p \leq \bigjoin S (\iff S \subseteq \downarrow (\bigjoin S)$ and $S \subseteq R$, we obtain $S \subseteq (\bigjoin S) \cap R)$ . By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \bigjoin (\downarrow (\bigjoin S) \cap R) \subseteq R$.
-
-\item{$ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \impliedby \forall S \subseteq R, \bigjoin S \in R$:}\\
+\item{Proof of $ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \implies \forall S \subseteq R, \bigjoin S \in R$}:\\
+Let $S$ be a subset of $R$. Combining the facts $S \subseteq \downarrow (\bigjoin S)$ and $S \subseteq R$, we obtain $S \subseteq \downarrow (\bigjoin S) \cap R)$ . By using monotonicity of $\bigjoin$, we get $\bigjoin S \leq \bigjoin (\downarrow (\bigjoin S) \cap R)$. Therefore, $\bigjoin S \in \downarrow (\bigjoin (\downarrow (\bigjoin S) \cap R)) \subseteq R$.
+\item{Proof of $ \{ p_{0} \mid p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \} \subseteq R \impliedby \forall S \subseteq R, \bigjoin S \in R$:}\\
 Let $p_0$ be an arbitrary point such that $p_{0} \leq \bigjoin (\downarrow p_{0} \cap R) \}$.
 From the subset relation $\downarrow p_{0} \cap R \subseteq \downarrow p_{0}$ and monotonicity of $\bigjoin$, we get $\bigjoin (\downarrow p_{0} \cap R) \leq \bigjoin (\downarrow p_{0}) = p_{0}$. From anti-symmetry of $\leq$, we get $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$.
 Giving $\downarrow p_{0} \cap R$ for $S$ in the premise results $\bigjoin (\downarrow p_{0} \cap R) \in R$. Since $p_{0} = \bigjoin (\downarrow p_{0} \cap R) \}$, we get $p_{0} \in R$.
 \end{enumerate}
-
-The other steps are proved by definition or by using a general property of the Galois connection $H \dashv I$.
-There fore we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
+Thus, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
 \qed
 
 \subsection{Proof of Proposition \ref{prop:interior-op}}
 The proof is carried out into the following steps:
 \begin{align*}
- f \text{ is in the image of } H &\iff \\
- f \leq H(I(\fb)) &\iff \\
- \forall p. f(p) \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) &\iff \\
- \forall p. f(p) \leq \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) &\iff \\
-  \forall p. f(p) \leq \nu p' . p \meet f(p') &\iff \tag{*}\label{eq:interior-iso}\\
- \forall p. f(p) \leq p \meet f(f(p)) &\iff \\
- \fb \text{ is an interior operator}
+ f \text{ is in the image of } H &\iff f \leq H(I(f)) \\
+  &\iff \forall p. \begin{aligned}[t] f(p)& \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) \\
+              &= \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) \\
+              &= \nu p' . p \meet f(p')
+            \end{aligned} \\
+  &\iff \forall p. f(p) \leq p \meet f(f(p))  \tag{*}\label{eq:interior-iso}\\
+  &\iff f \text{ is an interior operator}
 \end{align*}
 
-We prove $\forall p.\nu p' . p \sqcap f(p') = p \sqcap f(f(p))$ to validate the step (\ref{eq:interior-iso}).
-
+We prove the nontrivial step on (\ref{eq:interior-iso}).
+It is suffice to show $f(p) \leq \nu p' . p \meet f(p') \iff f(p) \leq p \meet f(f(p))$ for any $p$.
+In the following proof, we fix arbitrarily chosen $p \in D \times E$.
 \begin{enumerate}[i.]
-\item{Proof of $(\forall p. f(p) \leq \nu p' . p \sqcap f(p')) \implies (\forall p. f(p) \leq p \meet f(f(p)))$:}\\
-Let $p$ be an arbitrary point of $D \times E$, and $p_{*} = \nu p' . p \meet f(p')$.
-Then it is enough to show that $p_{*} \leq p \meet f(f(p))$ holds. This is done by unfolding $\nu$ in the definition of $p_{*}$ several times, and tne using monotonicity to forget the effects of some subterms.
+\item{Proof of $f(p) \leq \nu p' . p \meet f(p') \implies f(p) \leq p \meet f(f(p))$:}\\
+Let $p_{*} = \nu p' . p \meet f(p')$. Given $f (p) \leq p_{*}$, it suffices to show $p_{*} \leq p \meet f(f(p))$. This is done by unfolding $\nu$ in the definition of $p_{*}$ three times, and then using monotonicity of $f$ and $\meet$ to relate it to itself but with $\top$s in its subterms:
 \begin{align*}
 p_{*} & = p \meet f(p_{*}) = p \meet f(p \meet f(p_{*})) = p \meet (f (p \meet f(p \meet f(p_{*})))) \\
      & \leq p \meet (f (\top \meet f(p \meet \top))) = p \meet (f (f (p)))
 \end{align*}
-\item{Proof of $(\forall p. f(p) \leq \nu p' . p \meet f(p')) \impliedby (\forall p. f(p) \leq p \meet f(f(p)))$:}\\
-
-Let $p$ be an arbitrary point of $D \times E$ and define a function $\chi(p') = p \meet f(p')$.
-From the premise, we have $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ which means that $f(p)$ is a postfixed point of $\chi$ (i.e, $f(p) \in \{ p' \mid p' \leq \chi(p') \}$). Since the greatest fixed point is the greatest postfixed point, we conclude $f(p) \leq \bigjoin \{ p' \mid p' \leq \chi(p') \} = \nu p' . p \meet f(p') $.
+\item{Proof of $f(p) \leq \nu p' . p \meet f(p') \impliedby f(p) \leq p \meet f(f(p)))$:}\\
+Define a function $\chi(p') = p \meet f(p')$.
+The premise $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ means that $f(p)$ is a postfixed point of $\chi$, i.e, $f(p) \in \{ p' \mid p' \leq \chi(p') \}$. Since the greatest fixed point is the greatest postfixed point, we conclude $f(p) \leq \bigjoin \{ p' \mid p' \leq \chi(p') \} = \nu p' . p \meet f(p') $.
 \end{enumerate}
+Thus, is has been proven that $f$ is in the image of $H$ if and only if $f$ is an interior operator.
+\qed
+
+\subsection{Proof of Proposition \ref{prop:butterfly}}
+The proof is carried out into the following steps: TODO
 
 \end{document}
 
