@@ -280,25 +280,25 @@ $\psi(y_0) \otimes \psi(y_1) \leq \psi(\phi(\psi(y_0) \otimes
 any other overapproximation ${\boxtimes}$ since
 $y_0 \mathbin{\bar{\otimes}} y_1 = \phi(\psi(y_0) \otimes \psi(y_1))
 \leq \phi(\psi(y_0 \boxtimes y_1)) \leq y_0 \boxtimes y_1$.
-\begin{proposition}
+\begin{lemma}\label{lem:closedness-lifting-underapproximation}
   The image of $\psi$ is closed under $\otimes$ if and only if the lifting $\bar{\otimes}$ underapproximates $\otimes$.
   \begin{proof}
     Note that the condition on lhs is equivalent to $\forall y_{0}, y_{i}. \exists y_{2}. \psi(y_{0}) \otimes \psi (y_{1}) = \psi (y_{2})$.
     It suffices to show that
     \[
-      (\exists y_{2}. \psi (y_{2}) = \psi(y_{0}) \otimes \psi (y_{1}) ) \iff \psi (y_{0} \bar{\otimes} y_{1}) \leq \psi (y_{0}) \otimes \psi (y_{1})
+      (\exists y. \psi (y) = \psi(y_{0}) \otimes \psi (y_{1}) ) \iff \psi (y_{0} \bar{\otimes} y_{1}) \leq \psi (y_{0}) \otimes \psi (y_{1})
     \]
     for any $y_{0}$ and $y_{1}$.
 
     Proof of $\impliedby$: Since $\bar{\otimes}$ is an overapproximation of $\otimes$,
-    $\psi (y_{0} \bar{\otimes} y_{1}) = \psi (y_{0}) \otimes \psi (y_{1})$ and we give $y_{0} \bar{\otimes} y_{1}$ for $y_{2}$
+    $\psi (y_{0} \bar{\otimes} y_{1}) = \psi (y_{0}) \otimes \psi (y_{1})$ and we give $y_{0} \bar{\otimes} y_{1}$ for $y$
 
     Proof of $\implies$:
-    Let $\boxtimes$ be an operation that takes $y_{0}, y_{1}$ and results $y_{2}$ such that $\psi(y_{2}) = \psi(y_{0}) \otimes \psi(y_{1})$
-    Since $\bar{\otimes}$ is the least overapproximation, and $\boxtimes$ is overapproximation and underapproximation, we get
+    Define an operation $\boxtimes$ that takes $y_{0}, y_{1}$ and results $y$ such that $\psi(y) = \psi(y_{0}) \otimes \psi(y_{1})$
+    Since $\bar{\otimes}$ is the least overapproximation and $\boxtimes$ is an overapproximation (and an underapproximation), we get
     $y_{0} \bar{\otimes} y_{1} \leq y_{0} \boxtimes y_{1} $. Thus, $\psi(y_{0} \bar{\otimes} y_{1}) \leq \psi(y_{0} \boxtimes y_{1}) = \psi(y_{0}) \otimes \psi (y_{1})$
   \end{proof}
-\end{proposition}
+\end{lemma}
 
 Underapproximation is harder. If $(Y, \leq)$ has all joins (is a
 complete lattice), then one can define
@@ -508,7 +508,7 @@ potential transfer function.
 
 \paragraph{The class of relations via the Galois connection}
   The image of $G$ is the class of relations that can be specified by backward transfer functions.
-  This class of relations is equivalent to the condition being a fixed point of the Galois connection i.e, a relation $R$ satisfies $G(F(R)) = R$. Since any relation is a postfixed point ($R \subseteq G(F(R))$) by nature of Galois connections, the class of relations also equivalent to the condition of relation $R$ being a prefixed point $G(F(R)) \subseteq R$.
+  This class of relations is equivalent to the condition being a fixed point of the Galois connection i.e., a relation $R$ satisfies $G(F(R)) = R$. Since any relation is a postfixed point ($R \subseteq G(F(R))$) by nature of Galois connections, the class of relations also equivalent to the condition of relation $R$ being a prefixed point $G(F(R)) \subseteq R$.
   We obtain the characterization of the class from general facts about Galois connection:
   \begin{proposition}\label{prop:predown-postup}
   $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed,
@@ -541,7 +541,7 @@ potential transfer function.
 
   We introduce \emph{completeness} and \emph{soundness} for operations on functions with regard to some operation on relations.
   \begin{definition}[Completeness]
-   A binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if for every relation $R \in G(\fb) * G(\gb)$, $R$ is also $G (\fb \otimes \gb)$, i.e, $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
+   A binary operation $\otimes$ on backward transfer functions is \emph{complete} with regard to $*$ on binary operation on relations if and only if for every relation $R \in G(\fb) * G(\gb)$, $R$ is also $G (\fb \otimes \gb)$, i.e., $G(\fb) * G(\gb) \subseteq G (\fb \otimes \gb)$.
   \end{definition}
 
   \begin{definition}[Soundness]
@@ -565,7 +565,7 @@ potential transfer function.
 
   Sequencing of constraints
     The constraint corresponds to the sequential composition is the relational composition $\bowtie$ of the constraints of first and second pieces of code.
-
+f
     By using $F \dashv G$, the lifted composition of transfer functions $\bowtielift$ is obtained, which is identical to the ordinary function composition $\comp$ in the end.
     \begin{align*}
       \cdot \bowtielift \cdot &: \left| \Unidir(C, D) \right| \times  \left| \Unidir(D, E) \right| \to  \left| \Unidir(C, E) \right| \\
@@ -574,16 +574,14 @@ potential transfer function.
                                   &= \pi_{1} (\bigjoin \{ (c, d , e) \mid e \leq e_{0} \land c \leq \fb(d) \land d \leq \gb(e) \}) \\
                                   &= (\fb \comp \gb)(e_{0})
     \end{align*}
-    \begin{proposition}
-      if $\bowtielift$ underapproximates the relation composition $\bowtie$, then the image of $G$ is closed under relation composition.
-      $ G (\fb \boxtimes) \gb \subseteq G(\fb) \bowtie G(\gb) $
-    \end{proposition}
-    \begin{proposition}
-       The image of $G$ is closed under relation composition $\bowtie$ if and only if $\bowtielift$ underapproximates $\bowtie$
+    \begin{proposition}\label{prop:backword-closed-under-composition}
+      The image of $G$ is closed under $\bowtie$.
       \begin{proof}
-        Suppose $R \in \Rel(C , D)$ and $S \in \Rel(D , E)$, and both are in the image of $G$.
-        By definition, there must be some $\fb \in \Unidir(D , E)$ $\gb \in \Unidir(D , E)$ such that $R = G(\fb)$ and $S = G(\gb)$. Then, the goal to achieve is to find some $h$ such that $G(\fb) \bowtie G(\gb) = G(h)$. Take $h = \fb \bowtielift \gb$,
-        Then $G(\fb) \bowtie G(\gb) = G(\fb \bowtielift \gb)$
+        Leveraging Lemma \ref{lem:closedness-lifting-underapproximation}, the proposition is equivalent to the condition $\bowtielift$ underapproximates $\bowtie$, which means:
+        \[
+          c \leq \fb (\gb (e)) \implies \exists d. c \leq \fb(d) \land d \leq \gb(e).
+        \] for any $c$ and $e$.
+        In fact, if $c \leq \fb (\gb (e))$ then $c \leq \fb(d)$ and $d \leq \gb(e)$ is true when $d = \gb(e)$. Thus, $\bowtielift$ underapproximates $\bowtie$, and the image of $G$ is closed under $\bowtie$. \qed
       \end{proof}
     \end{proposition}
   \paragraph{Composition lifting via Galois connection}
@@ -596,23 +594,24 @@ potential transfer function.
       \cdot \caplift \cdot &: \left| \Unidir(D , E) \right| \times  \left| \Unidir(D, E) \right| \to \left| \Unidir(D, E) \right| \\
       (\fb \caplift \gb) (e_{0})
       &= F(G(\fb) \cap G(\gb)) (e_{0}) \\
-      &= (F(G(\fb) \meet F(G(\fb))) (e_{0}) \\
-      &= \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \fb(e) \} \\ &\quad \meet \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \gb(e) \} \\
+      &= F(G(\fb \meet \gb)) (e_{0}) \\
+      &= \bigjoin \{ d \mid \exists e\,. e \leq e_{0} \land d \leq \fb(e) \meet \gb(e) \} \\
       &= \fb(e_{0}) \meet \gb(e_{0})
     \end{align*}
 
+    \begin{proposition}\label{prop:backword-closed-under-intersection}
+      The image of $G$ is closed under $\cap$.
+      \begin{proof}
+        Similarly to Proposition \ref{prop:backword-closed-under-composition}, the proposition is equivalent to the condition $\caplift$ underapproximates $\cap$, which means:
+        \[
+          d \leq \fb (e) \meet (\gb (e)) \implies d \leq \fb(e) \land d \leq \gb(e).
+        \] for any $d$ and $e$.
+        This follows from the essential properties of $\meet$. Thus, we conclude the image of $G$ is closed under $\cap$. \qed
+      \end{proof}
+    \end{proposition}
 
   \paragraph{Soundness and Completeness}
-  The following equalities
-  \begin{itemize}
-    \item $G(\fb) \bowtie G(\gb) = G(\fb \bowtielift \gb)$
-    \item $G(\fb) \cap G(\fb) = G(\fb \meet \gb)$
-  \end{itemize}
-  \begin{proposition}
-    $G(\fb) \bowtie G(\gb) = G(\fb \comp \gb)$
-  \end{proposition}
-  validate the soundness and completeness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
-
+  Propositions \ref{prop:backword-closed-under-composition} and \ref{prop:backword-closed-under-intersection} validates the soundness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
 
   Example: Live variable analysis
    \begin{center}
@@ -640,7 +639,6 @@ potential transfer function.
 
   \paragraph{Bidirectional Data-Flow Analysis}
   Sometimes, analyzing data-flow in both backward and forward directions is necessary. This is known as \emph{bidirectional data-flow analysis}.
-
 
   Examples
   \begin{itemize}
@@ -685,31 +683,37 @@ potential transfer function.
     M(\fb) &= (\fb , \top)
   \end{align*}
 
-  The image of $I$, i.e, all prefixed- oints of $I \comp H$, is characterized by $\join$-closedness:
+  \subsection{The Class of Relations for Endomonotone Functions -- $\join$-closed}
+  The image of $I$, i.e., all prefixed-points of $I \comp H$, is characterized by $\join$-closedness:
   \begin{theorem}\label{thm:join-closed}
     A relation $R$ is in the image of $I$ if and only if $R$ is $\join$ \text{-closed}
   \end{theorem}
 
-  By pre-composing with any monotone function to $I$, the image becomes restricted.
+  By pre-composing with some monotone function to $I$, the image becomes more restricted.
   \begin{proposition} \label{pr:restriction-subset}
     Given any monotone function $I'$ whose codomain is $\Endo(D, E)$, the image of $I \comp I'$ is included by the image of $I$.
     Hence, if a relation $R$ is in the image of $I \comp I'$ then $R$ is $\join$-closed.
   \end{proposition}
   Specifically, all relations in the image of $I \comp K$ and of $I \comp K \comp M$ are $\join$-closed.
 
-  The image of $H$, i.e, all postfixed points of $H \comp I$, is characterized by being interior operator:
+  The image of $H$, i.e., all postfixed points of $H \comp I$, is characterized by being interior operator:
   \begin{proposition}\label{prop:interior-op}
-  $\fb$ is in the image of $F$ if and only if $\fb$ is an interior operator,
-  where $\fb$ is interior operator if and only if $\fb$ satisfies the following condition
+  $f$ is in the image of $F$ if and only if $f$ is an interior operator,
+  where $f$ is interior operator if and only if $f$ satisfies the following condition
   \begin{align*}
-    \fb(e) \leq  e \sqcap \fb (\fb e)).
+    f(e) \leq  e \sqcap f (f (e)).
   \end{align*}
   \end{proposition}
+
+  \begin{proposition}\label{prop:endo-closed-under-composition}
+    The image of $I$ is closed under $\bowtie$.
+  \end{proposition}
+
 
   % we need to add Endo condition
   % expansion of lifting
   % expansion of composition of H I. etc
-  \paragraph{The Class of Relations for Bidirectional Flow -- Butterfly}
+  \subsection{The Class of Relations for Bidirectional Flow -- Butterfly}
   The image of $I \comp K$, the class of relations represented by a bidirectional function pair, is characterized as follows
 
   \begin{proposition}\label{prop:butterfly}
@@ -717,8 +721,8 @@ potential transfer function.
   \end{proposition}
   \begin{definition}[Butterfly relation]
     A relation $R$ is \emph{butterfly} if and only if \begin{align*}
-      &\forall d\, e\, d_{0}\, d_{1 }\, e_{0}\, e_{1} .
-      d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \implies (d, e) \in R,
+      &\forall d, e, d_{0}, d_{1 }, e_{0}, e_{1} .
+      d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \in R \implies (d, e) \in R,
     \end{align*}or diagramatically, \quad
   \begin{tikzcd}
     d_{1} & e_{1} \\
@@ -735,7 +739,7 @@ potential transfer function.
   \end{definition}
 
   The image of $J \comp H$, the class of pairs of monotone functions that are fixed points of $J \comp H \comp I \comp K$ is characterized as follows:
-  \begin{proposition}
+  \begin{proposition} \label{prop:pair-nice}
     A pair of function $(\fb , \ff)$ is in the image of $J \comp H$ if and only if $\fb$ and $\ff$ satisfy the following conditions:
     \begin{enumerate}[i.]
       \item $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$
@@ -983,7 +987,7 @@ The proof consists of three parts:
   Consequently, we get $(d, e) \in R$.
   Therefore, we have proved that $R$ is in the image of $G$ $\impliedby$ $R$ is $\join$-closed $\land$ $R$ is pre-down/post-upclosed
 \end{enumerate}
-By proving the above propositions, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed.
+By proving the above propositions, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed. \qed
 
 
 \subsection{Proof of Theorem \ref{thm:join-closed}}
@@ -1009,10 +1013,11 @@ Thus, we have shown that $R$ is in the image of $G$ if and only if $R$ is $\join
 The proof is carried out into the following steps:
 \begin{align*}
  f \text{ is in the image of } H &\iff f \leq H(I(f)) \\
-  &\iff \forall p. \begin{aligned}[t] f(p)& \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) \\
-              &= \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) \\
-              &= \nu p' . p \meet f(p')
-            \end{aligned} \\
+                                 &\iff \forall p.
+                                   \begin{aligned}[t] f(p)& \leq \bigjoin (\downarrow p \cap (\{p' \mid p' \leq f(p') \})) \\
+                                                          &= \bigjoin (\{p' \mid p' \leq  p \meet f(p') \})) \\
+                                                          &= \nu p' . p \meet f(p')
+                                   \end{aligned} \\
   &\iff \forall p. f(p) \leq p \meet f(f(p))  \tag{*}\label{eq:interior-iso}\\
   &\iff f \text{ is an interior operator}
 \end{align*}
@@ -1025,17 +1030,64 @@ In the following proof, we fix arbitrarily chosen $p \in D \times E$.
 Let $p_{*} = \nu p' . p \meet f(p')$. Given $f (p) \leq p_{*}$, it suffices to show $p_{*} \leq p \meet f(f(p))$. This is done by unfolding $\nu$ in the definition of $p_{*}$ three times, and then using monotonicity of $f$ and $\meet$ to relate it to itself but with $\top$s in its subterms:
 \begin{align*}
 p_{*} & = p \meet f(p_{*}) = p \meet f(p \meet f(p_{*})) = p \meet (f (p \meet f(p \meet f(p_{*})))) \\
-     & \leq p \meet (f (\top \meet f(p \meet \top))) = p \meet (f (f (p)))
+      & \leq p \meet (f (\top \meet f(p \meet \top))) = p \meet (f (f (p)))
 \end{align*}
 \item{Proof of $f(p) \leq \nu p' . p \meet f(p') \impliedby f(p) \leq p \meet f(f(p)))$:}\\
 Define a function $\chi(p') = p \meet f(p')$.
-The premise $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ means that $f(p)$ is a postfixed point of $\chi$, i.e, $f(p) \in \{ p' \mid p' \leq \chi(p') \}$. Since the greatest fixed point is the greatest postfixed point, we conclude $f(p) \leq \bigjoin \{ p' \mid p' \leq \chi(p') \} = \nu p' . p \meet f(p') $.
+The premise $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ means that $f(p)$ is a postfixed point of $\chi$, i.e., $f(p) \in \{ p' \mid p' \leq \chi(p') \}$. Since the greatest fixed point is the greatest postfixed point, we conclude $f(p) \leq \bigjoin \{ p' \mid p' \leq \chi(p') \} = \nu p' . p \meet f(p') $.
 \end{enumerate}
-Thus, is has been proven that $f$ is in the image of $H$ if and only if $f$ is an interior operator.
+Thus, it has been proven that $f$ is in the image of $H$ if and only if $f$ is an interior operator.
 \qed
+\subsection{Proof of Proposition \ref{prop:endo-closed-under-composition}}
+Leveraging Lemma \ref{lem:closedness-lifting-underapproximation}, it is equivalent to the condition $\bowtielift$ underapproximates $\bowtie$, $I(f \bowtielift g) \subseteq I(f) \bowtielift I(g)$ which means:
+\begin{align*}
+  (c, e) \leq \bigjoin (\downarrow (c , e) \cap \{(c', e') \mid \exists d'. (c' , d') \leq f (c' , d') \land (d' , e') \leq g (d' , e') \}) \\
+  \implies \exists d , (c, d) \leq f (c , d) \land (d, e) \leq g (d, e)
+\end{align*} for any $f$, $g$, $c$ and $e$.
+Define a function $\chi : C \times D \times E \to C \times D \times E$ by
+\[ \chi(c', d', e') = (c \meet \pi_{1} (f (c' ,d')) , \pi_{2} (f (c' , d')) \meet \pi_{1} (g (d' , e')) , e \meet \pi_{2} g (d' , e'))
+\]
+and the greatest fixed point $(c_{*} , d_{*} , e_{*}) = \nu(\chi)$.
+Then the premise can be represented by $(c , e) \leq (\pi_{1}(\nu(\chi)) , \pi_{3}(\nu(\chi))) = (c_{*} , e_{*})$.
+We show that if $(c , e) \leq (c_{*} , e_{*})$ then $(c, d) \leq f (c , d)$ and $(d, e) \leq g (d, e)$ when $d = d_{*}$.
+Unfolding $\nu$ once, we obtain equations componentwisely, as follows:
+\begin{align}
+c_{*} &= c \meet \pi_{1}( f (c_{*} , d_{*})) \label{eq:ineq-first}\\
+d_{*} &= \pi_{2}(f (c_{*} , d_{*})) \meet \pi_{1}(g (d_{*} , e_{*})) \label{eq:ineq-second} \\
+e_{*} &= e \meet \pi_{2}(g (d_{*} , e_{*})) \label{eq:ineq-third}
+\end{align}
+We get $c_{*} \leq c$ and $d_{*} \leq d$ from (\ref{eq:ineq-first}) and (\ref{eq:ineq-third}) respectively by using the property of $\meet$. Since $(c , e) \leq (c_{*} , e_{*})$ from assumption, we also get the equations $c_{*} = c$ and $e_{*} = e$.
+By substituting $c$ for $c_{*}$ in the equation (\ref{eq:ineq-first}), we also get $c = c \meet \pi_{1}(f(c, d_{*})) \leq \pi_{1}(f(c, d_{*}))$. Similarly, $e \leq \pi_{2}(g(d_{*} , e))$.
+By substituting $c$ and $e$ for $c_{*}$ and $e_{*}$ in (\ref{eq:ineq-second}), we have $d_{*} = \pi_{2}(f (c , d_{*})) \meet \pi_{1}(g (d_{*} , e))$. From the property of $\meet$, $d_{*} \leq \pi_{2}(f (c , d_{*})$ and $d_{*} \leq \pi_{1}(g (d_{*} , e))$. From the above discussion, we get $(c, d_{*}) \leq f(c , d_{*})$, $(d_{*}, e) \leq g(d_{*} , e)$. Therefore, the image of $I$ is closed under $\bowtie$. \qed
 
 \subsection{Proof of Proposition \ref{prop:butterfly}}
-The proof is carried out into the following steps: TODO
+Note that $I(K(J(H(R)))) = \{ (d , e) \mid (d , e) \leq (\pi_{1} (\bigjoin(\downarrow (\top , e) \cap R)) , \pi_{2}(\bigjoin(\downarrow (d , \top) \cap R))) \}$ and
+$I(K(J(H(R)))) \subseteq R$ is equivalent to the condition $\forall d\, e. d \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R) \land e \leq \bigjoin(\downarrow (d , \top) \cap R)) \implies (d , e) \in R$.
+To prove $R$ is the image of $I \comp K$ iff $R$ is $\join$-closed and butterfly, it suffices to show the following three propositions:
+\begin{enumerate}[i.]
+  \item{Proof of $I(K(J(H(R)))) \subseteq R \implies R \text{ is } \join \text{-closed}$:}
+    It immediately follows from Proposition \ref{pr:restriction-subset}.
+  \item{Proof of $I(K(J(H(R)))) \subseteq R \implies R \text{ is butterfly}$:}
+    Unfolding the premises and consequences, it suffices to show
+    \begin{align*}
+       d_{0} \leq d \leq d_{1} \land e_{0} \leq e \leq e_{1} \land (d_{1}, e_{0}) \in R \land (d_{0}, e_{1}) \in R \\
+       \implies d \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R) \land e \leq \bigjoin(\downarrow (d , \top) \cap R))
+    \end{align*}
+    for any $d$, $e$, $d_{0}$, $d_{1}$, $e_{0}$, $e_{1}$.
+    Let $d_{0} \leq d \leq d_{1}, e_{0} \leq e \leq e_{1}, (d_{1}, e_{0}) \in R$ and $(d_{0}, e_{1}) \in R$.
+    Since $(d_{1} , e_{0}) \leq (\top , e)$ and $(d_{1} , e_{0}) \in R$ , $(d_{1} , e_{0}) \in \downarrow (\top , e) \cap R$ holds. Thus $(d_{1}, e_{0}) \leq \bigjoin(\downarrow (\top , e) \cap R)$. From the first component of this inequation, we obtain $d \leq d_{1} \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R))$. We see that $e \leq \pi_{2} (\bigjoin(\downarrow (d , \top) \cap R))$ also holds by symmetry.
+  \item{Proof of $I(K(J(H(R)))) \subseteq R \impliedby R \text{ is butterfly} \land R \text{ is } \join \text{-closed}$:}
+        Let $d, e$ such that $d \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R))$ and $e \leq \pi_{2} (\bigjoin(\downarrow (d , \top) \cap R))$.
+        Instantiate $(d_{0}, e_{1}) = \bigjoin(\downarrow (d , \top) \cap R)$ and $(d_{1}, e_{0}) = \bigjoin(\downarrow (\top , e) \cap R)$. We prove the following proposition to obtain $(d , e) \in R$ from the condition that $R$ is butterfly.
+        \begin{enumerate}[]
+          \item{Proof of $d_{0} \leq d \leq d_{1}$:} $d \leq d_{1}$ holds from assumption. $d_{0} = \pi_{1} (\bigjoin(\downarrow (d , \top) \cap R)) \leq \pi_{1} (\bigjoin(\downarrow (d , \top))) = d$.
+          \item{Proof of $e_{0} \leq e \leq e_{1}$:} Symmetry.
+          \item{Proof of $(d_{1}, e_{0}) \in R$:} Use $\join$-closedness of $R$ for the subset $(\downarrow (\top , e) \cap R)$ of $R$.
+          \item{Proof of $(d_{0}, e_{1}) \in R$:} Symmetry.
+        \end{enumerate}
+\end{enumerate}
+Therefore, it has been proved that $R$ is in the image of $I \comp K$ if and only if $R$ is $\join$-closed and butterfly. \qed
+
 
 \end{document}
 
