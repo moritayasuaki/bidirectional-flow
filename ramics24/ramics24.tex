@@ -53,7 +53,7 @@
 \newcommand{\join}{\sqcup}
 \newcommand{\bigjoin}{\bigsqcup}
 \newcommand{\meet}{\sqcap}
-\newcommand{\bigmeet}{\sqcap}
+\newcommand{\bigmeet}{\bigsqcap}
 
 \newcommand{\comp}{\circ}
 \newcommand{\starlift}{\mathbin{\overline{*}}}
@@ -280,10 +280,11 @@ $\psi(y_0) \otimes \psi(y_1) \leq \psi(\phi(\psi(y_0) \otimes
 any other overapproximation ${\boxtimes}$ since
 $y_0 \mathbin{\bar{\otimes}} y_1 = \phi(\psi(y_0) \otimes \psi(y_1))
 \leq \phi(\psi(y_0 \boxtimes y_1)) \leq y_0 \boxtimes y_1$.
+
 \begin{lemma}\label{lem:closedness-lifting-underapproximation}
   The image of $\psi$ is closed under $\otimes$ if and only if the lifting $\bar{\otimes}$ underapproximates $\otimes$.
   \begin{proof}
-    Note that the condition on lhs is equivalent to $\forall y_{0}, y_{i}. \exists y_{2}. \psi(y_{0}) \otimes \psi (y_{1}) = \psi (y_{2})$.
+    Note that the condition on the left hand side is equivalent to $\forall y_{0}, y_{i}. \exists y_{2}. \psi(y_{0}) \otimes \psi (y_{1}) = \psi (y_{2})$.
     It suffices to show that
     \[
       (\exists y. \psi (y) = \psi(y_{0}) \otimes \psi (y_{1}) ) \iff \psi (y_{0} \bar{\otimes} y_{1}) \leq \psi (y_{0}) \otimes \psi (y_{1})
@@ -599,16 +600,17 @@ f
       &= \fb(e_{0}) \meet \gb(e_{0})
     \end{align*}
 
+    We can see that taking pointwise meet of backward functions gives an ideal approximation for non-deterministic choice within the image of $G$:
     \begin{proposition}\label{prop:backword-closed-under-intersection}
       The image of $G$ is closed under $\cap$.
       \begin{proof}
-        Similarly to Proposition \ref{prop:backword-closed-under-composition}, the proposition is equivalent to the condition $\caplift$ underapproximates $\cap$, which means:
-        \[
-          d \leq \fb (e) \meet (\gb (e)) \implies d \leq \fb(e) \land d \leq \gb(e).
-        \] for any $d$ and $e$.
-        This follows from the essential properties of $\meet$. Thus, we conclude the image of $G$ is closed under $\cap$. \qed
+        Recall that $\cap$ is meet in $\Rel(D , E)$ and the upper adjoint $G$ preserves all meets.
+        Consider two relations that can be represented by $G(\fb)$ and $G(\gb)$.
+        We see that the intersection $G(\fb) \cap G(\gb)$ is equals to $G(\fb \meet \gb)$. Therefore, the image of $G$ is closed under $\cap$.
       \end{proof}
     \end{proposition}
+    Notice the above proof only relies on general properties of Galois connections.
+    Thus, the image of any upper adjoint with domain $\Rel(D, E)$ and codomain $Y$ is closed under $\cap$ if $Y$ has $\meet$.
 
   \paragraph{Soundness and Completeness}
   Propositions \ref{prop:backword-closed-under-composition} and \ref{prop:backword-closed-under-intersection} validates the soundness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
@@ -707,6 +709,10 @@ f
 
   \begin{proposition}\label{prop:endo-closed-under-composition}
     The image of $I$ is closed under $\bowtie$.
+  \end{proposition}
+
+\begin{proposition}\label{prop:endo-closed-under-intersection}
+    The image of $I$ is closed under $\cap$.
   \end{proposition}
 
 
@@ -1049,16 +1055,31 @@ Define a function $\chi : C \times D \times E \to C \times D \times E$ by
 \]
 and the greatest fixed point $(c_{*} , d_{*} , e_{*}) = \nu(\chi)$.
 Then the premise can be represented by $(c , e) \leq (\pi_{1}(\nu(\chi)) , \pi_{3}(\nu(\chi))) = (c_{*} , e_{*})$.
-We show that if $(c , e) \leq (c_{*} , e_{*})$ then $(c, d) \leq f (c , d)$ and $(d, e) \leq g (d, e)$ when $d = d_{*}$.
-Unfolding $\nu$ once, we obtain equations componentwisely, as follows:
+We show that if $(c , e) \leq (c_{*} , e_{*})$ then $(c, d) \leq f (c , d)$ and $(d, e) \leq g (d, e)$ when $d = d_{*}$. In other words, assuming $c \leq c_{*}$ and $e \leq e_{*}$, we prove the following inequations:
+\begin{align}
+  \label{enum:c} c \leq \pi_{1} (f (c , d_{*})) \\
+  \label{enum:f} d_{*} \leq \pi_{2} (f (c , d_{*})) \\
+  \label{enum:g} d_{*} \leq \pi_{1} (g (d_{*} , e)) \\
+  \label{enum:e} e \leq \pi_{2} (g (d_{*} , e))
+\end{align}
+First, by unfolding $\nu$ in $(c_{*} , d_{*}, e_{*}) = \nu(\chi)$. we obtain equations as follows:
 \begin{align}
 c_{*} &= c \meet \pi_{1}( f (c_{*} , d_{*})) \label{eq:ineq-first}\\
 d_{*} &= \pi_{2}(f (c_{*} , d_{*})) \meet \pi_{1}(g (d_{*} , e_{*})) \label{eq:ineq-second} \\
 e_{*} &= e \meet \pi_{2}(g (d_{*} , e_{*})) \label{eq:ineq-third}
 \end{align}
-We get $c_{*} \leq c$ and $d_{*} \leq d$ from (\ref{eq:ineq-first}) and (\ref{eq:ineq-third}) respectively by using the property of $\meet$. Since $(c , e) \leq (c_{*} , e_{*})$ from assumption, we also get the equations $c_{*} = c$ and $e_{*} = e$.
-By substituting $c$ for $c_{*}$ in the equation (\ref{eq:ineq-first}), we also get $c = c \meet \pi_{1}(f(c, d_{*})) \leq \pi_{1}(f(c, d_{*}))$. Similarly, $e \leq \pi_{2}(g(d_{*} , e))$.
-By substituting $c$ and $e$ for $c_{*}$ and $e_{*}$ in (\ref{eq:ineq-second}), we have $d_{*} = \pi_{2}(f (c , d_{*})) \meet \pi_{1}(g (d_{*} , e))$. From the property of $\meet$, $d_{*} \leq \pi_{2}(f (c , d_{*})$ and $d_{*} \leq \pi_{1}(g (d_{*} , e))$. From the above discussion, we get $(c, d_{*}) \leq f(c , d_{*})$, $(d_{*}, e) \leq g(d_{*} , e)$. Therefore, the image of $I$ is closed under $\bowtie$. \qed
+Next, we prove that $c_{*} = c$. From the assumption, we have $c \leq c_{*}$, so it suffices to show that $c_{*} \leq c$. From equation (\ref{eq:ineq-first}), this is equivalent to $c \meet \pi_{1}( f (c_{*} , d_{*})) \leq c$, which is obviously true by the property of $\meet$. Thus, we get $c_{*} = c$.
+Substitute $c$ for $c_{*}$ in equation (\ref{eq:ineq-first}), then we have $c = c \meet \pi_{1}( f (c , d_{*}))$. By the property of $\meet$, $c \leq \pi_{1}( f (c , d_{*}))$ is evident, and the condition (\ref{enum:c}) holds.
+Substitute $c$ for $c_{*}$ in equation (\ref{eq:ineq-second}), then we have $d_{*} = \pi_{2}(f (c , d_{*})) \meet \pi_{1}(g (d_{*} , e_{*})) \leq \pi_{2}(f (c , d_{*}))$, thus the condition (\ref{enum:f}) holds.
+Similarly to (\ref{enum:c}) and (\ref{enum:f}), we see that (\ref{enum:g}) and (\ref{enum:e}) hold.
+Thus, it has been shown that $\bowtielift$ underapproximates $\bowtie$, and consequently, the image of $I$ is closed under $\bowtie$. \qed
+
+\subsection{Proof of Proposition \ref{prop:endo-closed-under-intersection}}
+From Lemma \ref{lem:closedness-lifting-underapproximation}, it is suffices to show $\caplift$ underapproximates $\cap$, meaning $I(f \caplift g) \subseteq I(f) \cap I(g)$.
+This is proved by using the fact $I$ preserves $\meet$ and
+\[
+I(f \caplift g) = I(H(I(f) \cap I(g))) = I(H(I(f \meet g))) = I(f \meet g) = I(f) \cap I(g)
+\]
 
 \subsection{Proof of Proposition \ref{prop:butterfly}}
 Note that $I(K(J(H(R)))) = \{ (d , e) \mid (d , e) \leq (\pi_{1} (\bigjoin(\downarrow (\top , e) \cap R)) , \pi_{2}(\bigjoin(\downarrow (d , \top) \cap R))) \}$ and
@@ -1075,7 +1096,7 @@ To prove $R$ is the image of $I \comp K$ iff $R$ is $\join$-closed and butterfly
     \end{align*}
     for any $d$, $e$, $d_{0}$, $d_{1}$, $e_{0}$, $e_{1}$.
     Let $d_{0} \leq d \leq d_{1}, e_{0} \leq e \leq e_{1}, (d_{1}, e_{0}) \in R$ and $(d_{0}, e_{1}) \in R$.
-    Since $(d_{1} , e_{0}) \leq (\top , e)$ and $(d_{1} , e_{0}) \in R$ , $(d_{1} , e_{0}) \in \downarrow (\top , e) \cap R$ holds. Thus $(d_{1}, e_{0}) \leq \bigjoin(\downarrow (\top , e) \cap R)$. From the first component of this inequation, we obtain $d \leq d_{1} \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R))$. We see that $e \leq \pi_{2} (\bigjoin(\downarrow (d , \top) \cap R))$ also holds by symmetry.
+    Since $(d_{1} , e_{0}) \leq (\top , e)$ and $(d_{1} , e_{0}) \in R$ , $(d_{1} , e_{0}) \in \downarrow (\top , e) \cap R$ holds. Thus $(d_{1}, e_{0}) \leq \bigjoin(\downarrow (\top , e) \cap R)$. From the first component of this inequation, we obtain $d \leq d_{1} \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R))$. We see that $e \leq \pi_{2} (\bigjoin(\downarrow (d , \top) \cap R))$ so holds by symmetry.
   \item{Proof of $I(K(J(H(R)))) \subseteq R \impliedby R \text{ is butterfly} \land R \text{ is } \join \text{-closed}$:}
         Let $d, e$ such that $d \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R))$ and $e \leq \pi_{2} (\bigjoin(\downarrow (d , \top) \cap R))$.
         Instantiate $(d_{0}, e_{1}) = \bigjoin(\downarrow (d , \top) \cap R)$ and $(d_{1}, e_{0}) = \bigjoin(\downarrow (\top , e) \cap R)$. We prove the following proposition to obtain $(d , e) \in R$ from the condition that $R$ is butterfly.
