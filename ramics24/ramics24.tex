@@ -600,17 +600,25 @@ f
       &= \fb(e_{0}) \meet \gb(e_{0})
     \end{align*}
 
-    We can see that taking pointwise meet of backward functions gives an ideal approximation for non-deterministic choice within the image of $G$:
+    We can see that taking meet of backward functions gives us ideal approximation for non-deterministic choice within the image of $G$:
     \begin{proposition}\label{prop:backword-closed-under-intersection}
       The image of $G$ is closed under $\cap$.
       \begin{proof}
         Recall that $\cap$ is meet in $\Rel(D , E)$ and the upper adjoint $G$ preserves all meets.
         Consider two relations that can be represented by $G(\fb)$ and $G(\gb)$.
-        We see that the intersection $G(\fb) \cap G(\gb)$ is equals to $G(\fb \meet \gb)$. Therefore, the image of $G$ is closed under $\cap$.
+        Since $G$ preserves meets, the intersection $G(\fb) \cap G(\gb)$ is equals to $G(\fb \meet \gb)$. Therefore, the image of $G$ is closed under $\cap$.
       \end{proof}
     \end{proposition}
-    Notice the above proof only relies on general properties of Galois connections.
-    Thus, the image of any upper adjoint with domain $\Rel(D, E)$ and codomain $Y$ is closed under $\cap$ if $Y$ has $\meet$.
+    Notice that the above proof only relies on the fact $G$ being an upper adjoint.
+    The above result can be generalized to any upper adjoint to $\Rel(D \times E)$ from a poset with binary meets:
+
+    \begin{lemma}\label{lem:any-fixedpoint-of-galois-connection-closed-under-intersection}
+      Let $(Y, \leq)$ be a poset with binary meets and $\psi : (Y , \leq) \to \Rel(D, E)$ be an upper adjoint.
+      Then the image of $\psi$ is closed under $\cap$.
+      \begin{proof}
+        $\psi(y_{0}) \cap \psi(y_{1}) = \psi(y_{0} \meet y_{1})$
+      \end{proof}
+    \end{lemma}
 
   \paragraph{Soundness and Completeness}
   Propositions \ref{prop:backword-closed-under-composition} and \ref{prop:backword-closed-under-intersection} validates the soundness of backward (and forward, by symmetry) data-flow analysis within the image of $G$.  This illustrates how the algorithm for data-flow analysis work:
@@ -707,12 +715,15 @@ f
   \end{align*}
   \end{proposition}
 
+  We can see that the image of $I$ is closed under both $\bowtie$ and $\cap$ which implies $\bowtielift$ and $\caplift$ made from $H \vdash I$ underapproximates $\bowtie$ and $\cap$, respectively.
   \begin{proposition}\label{prop:endo-closed-under-composition}
     The image of $I$ is closed under $\bowtie$.
   \end{proposition}
-
-\begin{proposition}\label{prop:endo-closed-under-intersection}
+  \begin{proposition}\label{prop:endo-closed-under-intersection}
     The image of $I$ is closed under $\cap$.
+    \begin{proof}
+      Since $I$ is an upper adjoint, it follows from Lemma \ref{lem:any-fixedpoint-of-galois-connection-closed-under-intersection}.
+    \end{proof}
   \end{proposition}
 
 
