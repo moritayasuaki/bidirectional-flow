@@ -700,7 +700,7 @@ f
   \end{theorem}
 
   By pre-composing with some monotone function to $I$, the image becomes more restricted.
-  \begin{proposition} \label{pr:restriction-subset}
+  \begin{proposition} \label{prop:restriction-subset}
     Given any monotone function $I'$ whose codomain is $\Endo(D, E)$, the image of $I \comp I'$ is included by the image of $I$.
     Hence, if a relation $R$ is in the image of $I \comp I'$ then $R$ is $\join$-closed.
   \end{proposition}
@@ -759,58 +759,63 @@ f
   \begin{proposition} \label{prop:pair-nice}
     A pair of function $(\fb , \ff)$ is in the image of $J \comp H$ if and only if $\fb$ and $\ff$ satisfy the following conditions:
     \begin{enumerate}[i.]
-      \item $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$
       \item $\fb(e) \leq \fb(e \meet \ff (\fb(e)))$
+      \item $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$
     \end{enumerate}
   \end{proposition}
   \paragraph{Composition and Butterfly property -- A Case of Failure}
-  The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
 
-  Counterexample
-  A pair of butterflies $R$ and $S$ such that the composition $R \bowtie S$ is not a butterfly:
-  \begin{center}
-    \begin{tikzcd}
-          &      \\
-          & d_{1}\\
-    c_{0} & d_{0}
-    \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
-    \arrow["R"{name=r00}, from=3-1, to=3-2, no head, swap]
-    \arrow["R"{name=r01}, from=3-1, to=2-2, no head]
-    \end{tikzcd}
-    $\bowtie$
-    \begin{tikzcd}
-          & e_{2} \\
-    d_{1} & e_{1} \\
-    d_{0} & e_{0}
-    \arrow["\rotleq"{name=d0d1'}, from=3-1, to=2-1]
-    \arrow["S"{name=s00}, from=3-1, to=3-2, no head, swap]
-    \arrow["S"{name=s01}, from=2-1, to=1-2, no head]
-    \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
-    \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
-    \end{tikzcd}
-    $\quad=\quad$
-    \begin{tikzcd}
-          & e_{2} \\
-          & e_{1} \\
-    c_{0} & e_{0}
-    \arrow["R \bowtie S"{name=rs0}, from=3-1, to=3-2, no head, swap]
-    \arrow["/" marking, from=3-1, to=2-2, dashed, no head, gray]
-    \arrow["R \bowtie S"{name=rs1}, from=3-1, to=1-2, no head]
-    \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
-    \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
-    \end{tikzcd}
-  \end{center}
-  Not having the gray dashed line violates being butterfly.
+  The \emph{butterfly} relations nicely behave with non-deterministic choice.
+  \begin{proposition}
+    The image of $J \comp H$ is closed under $\cap$
+  \end{proposition}
+  However, it does not for sequential composition:
+  \begin{proposition}
+    The image of $J \comp H$ is not closed under $\bowtie$
 
+    \begin{example}
+      The following two butterfly relations $R$ and $S$ are examples where their composition $R \bowtie S$ does not result in a butterfly relation.
+      \begin{center}
+        \begin{tikzcd}
+              &      \\
+              & d_{1}\\
+        c_{0} & d_{0}
+        \arrow["\rotleq"{name=d0d1}, from=3-2, to=2-2, swap]
+        \arrow["R"{name=r00}, from=3-1, to=3-2, no head, swap]
+        \arrow["R"{name=r01}, from=3-1, to=2-2, no head]
+        \end{tikzcd}
+        $\bowtie$
+        \begin{tikzcd}
+              & e_{2} \\
+        d_{1} & e_{1} \\
+        d_{0} & e_{0}
+        \arrow["\rotleq"{name=d0d1'}, from=3-1, to=2-1]
+        \arrow["S"{name=s00}, from=3-1, to=3-2, no head, swap]
+        \arrow["S"{name=s01}, from=2-1, to=1-2, no head]
+        \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
+        \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
+        \end{tikzcd}
+        $\quad=\quad$
+        \begin{tikzcd}
+              & e_{2} \\
+              & e_{1} \\
+        c_{0} & e_{0}
+        \arrow["R \bowtie S"{name=rs0}, from=3-1, to=3-2, no head, swap]
+        \arrow["/" marking, from=3-1, to=2-2, dashed, no head, gray]
+        \arrow["R \bowtie S"{name=rs1}, from=3-1, to=1-2, no head]
+        \arrow["\rotleq"{name=e0e1'}, from=3-2, to=2-2, swap]
+        \arrow["\rotleq"{name=e1e2'}, from=2-2, to=1-2, swap]
+        \end{tikzcd}
+      \end{center}
+      Not having the gray dashed line violates being butterfly.
+    \end{example}
+  \end{proposition}
 
-  The \emph{butterfly} property of relations is closed under $\cap$ but \red{not} closed under $\bowtie$.
-  The situation tells us, while we can explicitly give a sequencing operation for bidirectional transfer function as
+  Thus, while we can explicitly give a sequencing operation in bidirectional functions by lifting, i.e.,
   \begin{equation*}
     (\fb,\ff) \bowtielift (\gb,\gf) = I(H((\fb, \ff)) \bowtie H((\gb , \gf))),
   \end{equation*}
-  The outcome is only guaranteed to be an overapproximation and it may not be sound (underapproximation).
-  $H(\fb, \ff) \bowtie H(\gb, \gf) \subseteq H((\fb, \ff) \bowtielift (\gb, \gf))$
-
+  the outcome is only guaranteed to be an overapproximation and it may not be sound (underapproximation).
 
   In the context of analysis of load-pop pairs for stack-based language,
   we have found the case: The sequential composition $\binop; \pop$ is not butterfly while both $\binop$ and $\pop$ are butterfly.
@@ -879,7 +884,7 @@ f
 
   \paragraph{A Remedy -- Narrowing the class of relations }
   The poset of $((E \tomon D) \times E, \leq) = \UnidirConst(D, E)$ locates between $\Bidir(D , E)$ and $\Unidir(D , E)$.
-  The Galois connection $\langle \pi_{1}, \bigjoin \rangle \dashv \langle {\mathrm{id}, \mathrm{const}}\rangle$ and $ \pi_{1} \dashv \langle {\mathrm{id}} , \top \rangle)$ is established and factors $P \dashv M$.
+  The Galois connection $P' \dashv M'$ and $ P'' \dashv M''$ is established and factors $P \dashv M = (P'' \comp P') \dashv (M' \comp M'')$.
   \begin{center}
     \begin{tikzcd}
       (\Pow(D \times E), \subseteq) & = \Rel(D, E) \\
@@ -888,20 +893,25 @@ f
       (E \tomon D , \leq) & = \Unidir(D, E)
         \arrow["J \comp H"{name=H}, bend right=30, swap, from=1-1, to=2-1]
         \arrow["I \comp K"{name=I}, bend right=30, swap, from=2-1, to=1-1]
-        \arrow["\langle {\pi_{1}, \bigjoin } \rangle"{name=J}, bend right=30, swap, from=2-1, to=3-1]
-        \arrow["\langle {\mathrm{id}, \mathrm{const}}\rangle"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
-        \arrow["\pi_{1}"{name=M}, bend right=30, swap, from=3-1, to=4-1]
-        \arrow["\langle {\mathrm{id}, \top} \rangle"{name=N}, bend right=30, swap, hook, from=4-1, to=3-1]
+        \arrow["P'"{name=J}, bend right=30, swap, from=2-1, to=3-1]
+        \arrow["M'"{name=K}, bend right=30, swap, hook, from=3-1, to=2-1]
+        \arrow["P''"{name=M}, bend right=30, swap, from=3-1, to=4-1]
+        \arrow["M''"{name=N}, bend right=30, swap, hook, from=4-1, to=3-1]
         \arrow["\dashv", phantom, from=H, to=I]
         \arrow["\dashv", phantom, from=J, to=K]
         \arrow["\dashv", phantom, from=M, to=N]
     \end{tikzcd}
   \end{center}
+  where
+  \begin{align*}
+    P'(\fb , \ff) &= (\fb , \ff(\top)) & M'(\fb , e) &= (\fb , \lambda d. e) \\
+    P''(\fb , e) &= \fb & M''(\fb) &= (\fb , \top)
+  \end{align*}
+
   Indeed, the class of relations corresponds to the Galois connection between $\Rel(D, E)$ and $\UnidirConst(D, E)$ is closed under both $\cap$ and $\bowtie$.
 
-
   \paragraph{The class of relations for $\UnidirConst$}
-  The class of relation corresponding to the Galois connection $(\langle {\pi_{1}, \bigjoin } \rangle \comp H)  \dashv (I \comp \langle {\mathrm{id}, \mathrm{const}}\rangle)$
+  The class of relation corresponding to the Galois connection $(P' \comp J \comp H)  \dashv (I \comp K \comp M')$
   is characterized by conjunction of the conditions
   ($\forall d\, d_{1}\, e.\, d \leq d_{1} \land (d_{1}, e) \in R \implies (d , e) \in R$ and $\forall d\, e_{0}\, e_{1}\, e.\, e_{0} \leq e \leq e_{1} \land (d, e_{0}) \in R \land (d, e_{1}) \in R \implies (d , e) \in R$)
   represented by the following two diagrams together with $\join$-closedness.
@@ -924,6 +934,14 @@ f
     \arrow[""{name=r'}, from=2-1, to=2-2, dashed, no head]
   \end{tikzcd}
   \end{center}
+  \begin{proposition}\label{prop:predown-postsegment}
+    $R$ is in the image of $I \comp K \comp M'$ if and only if $R$ satisfies the following conditions
+    \begin{enumerate}[i]
+      \item $R$ is $\join$-closed,
+      \item $\forall d, e , d_{1}. d \leq d_{1} \land (d_{1} , e) \in R \implies (d , e) \in R$, and
+      \item $\forall d, e , e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (d , e_{0}) \in R \land (d , e_{1}) \in R \implies (d , e) \in R$
+    \end{enumerate}
+  \end{proposition}
 
 \section{Conclusion}
 
@@ -993,7 +1011,7 @@ The proof consists of three parts:
   \end{align*}
   In fact, all premises of this proposition are true:
   \begin{equation}
-     d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R)) \\
+     d \leq \bigjoin \{d' \mid \exists e' \leq e \land (d' , e') \in R \} = \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R))
   \end{equation}
   \begin{equation}
      \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq \pi_{2} (\bigjoin (\downarrow (\top , e))) = e
@@ -1119,6 +1137,105 @@ To prove $R$ is the image of $I \comp K$ iff $R$ is $\join$-closed and butterfly
         \end{enumerate}
 \end{enumerate}
 Therefore, it has been proved that $R$ is in the image of $I \comp K$ if and only if $R$ is $\join$-closed and butterfly. \qed
+
+\subsection{Proof of Proposition \ref{prop:pair-nice}}
+Notice that $(\fb, \ff)$ is in the image of $J \comp H$ if and only if $(\fb, \ff) \leq J(H(I(K((\fb , \ff)))))$.
+Unfold the definition of $J$, $H$, $I$, and $K$ then rewrite join of postfixed points (the greatest fixedpoint) by $\nu$. Then the condition turns into:
+\[
+  (\fb(e) , \ff(d)) \leq (\pi_{1}(\nu (d',e').(\fb(e') , e \meet \ff(d'))) , \pi_{2}(\nu (d',e').(d \meet \fb(e') , \ff(d'))))
+\]
+for any $d$ and $e$.
+Focusing the first component, we prove
+\[
+  \fb(e) \leq \pi_{1} (\nu (d',e').(\fb(e') , e \meet \ff(d'))) \iff \fb(e) \leq \fb(e \meet \ff (\fb(e)))
+\] for any $e$.
+First, define a function $\chi : D \times E \to D \times E$ by
+\[
+  \chi(d' , e') = (\fb(e') , e \meet \ff(d')),
+\]
+and let us write $(d_{*} , e_{*}) = \nu(\chi)$.
+Then what we prove is:
+\[
+  \fb(e) \leq d_{*} \iff \fb(e) \leq \fb(e \meet \ff (\fb(e))
+\]
+\begin{enumerate}[]
+  \item{Proof of $\implies$:}
+
+    By unfolding $\nu$, we get
+    \begin{align*}
+    d_{*} &= \fb(e_{*}) \\
+          &= \fb(e \meet \ff(d_{*})) \\
+          &= \fb(e \meet \ff(\fb(e_{*}))) \\
+          &= \fb(e \meet \ff(\fb(e \meet \ff(d_{*})))) \\
+          &\leq \fb(e \meet \ff(\fb(e \meet \top))) \\
+          &= \fb(e \meet \ff(\fb(e)))
+    \end{align*}
+    Thus, if $\fb(e) \leq d_{*}$ then $\fb(e) \leq \fb(e \meet \ff(\fb(e)))$.
+
+  \item{Proof of $\impliedby$:}
+
+    Suppose $\fb(e) \leq \fb(e \meet \ff (\fb(e)))$. Then we get
+    \begin{align*}
+      (\fb(e) , e \meet \ff (\fb(e))) & \leq (\fb(e \meet \ff (\fb(e))) , e \meet \ff (\fb(e))) \\
+                                      & = \chi(\fb(e) , e \meet \ff (\fb(e))
+    \end{align*}
+    This means that $(\fb(e) , e \meet \ff (\fb(e)))$ is a postfixed point of $\chi$.
+    Hence, $(\fb(e) , e \meet \ff (\fb(e))) \leq \nu (\chi) = (d_{*} , e_{*})$.
+    By taking the first projection, we conclude $\fb(e) \leq d_{*}$.
+\end{enumerate}
+Therefore, $\fb(e) \leq d_{*} \iff \fb(e) \leq \fb(e \meet \ff (\fb(e)))$.
+
+For the second component, the following equvalence also is proven by symmetry:
+\[
+  \ff(d) \leq \pi_{2} (\nu (d',e').(d \meet \fb(e') , \ff(d'))) \iff \ff(d) \leq \ff(d \meet \fb (\ff(d)))
+\] for any $d$.
+
+Consequently, we have proved that $(\fb, \ff)$ is in the image of $J \comp H$ if and only if
+$\fb(e) \leq \fb(e \meet \ff (\fb(e)))$ and $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$ for any $e$ and $d$.
+
+\subsection{Proof of Proposition \ref{prop:predown-postsegment}}
+First, we see if $R$ is in the image of $I \comp K \comp M'$ then $R$ is $\join$-closed immediately from Lemma (\ref{prop:restriction-subset}).
+Notice that $R$ is in the image of $I \comp K \comp M'$ if and only if $I(K(M'(P'(J(H(R))))))) \subseteq R$. This condition corresponds to
+\begin{equation}\label{eq:IKM'-image}
+  d \leq \pi_{1} (\bigjoin(\downarrow (\top , e) \cap R)) \land e \leq \pi_{2} (\bigjoin R) \implies (d, e) \in R
+\end{equation}
+for any $d$ and $e$.
+
+Proof of (\ref{eq:IKM'-image}) implies $\forall d_{1} , d \leq d_{1} \land (d_{1} , e) \in R \implies (d , e) \in R$.
+Assume $d \leq d_1$, $(d_1, e) \in R$. From $(d_{1} , e) \leq (\top , e)$ and $(d_{1} , e) \in R$, we see $(d_{1} , e) \leq \bigjoin (\downarrow (\top , e) \cap R)$ . Focusing each component, we get $d_{1} \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R))$, $e \leq \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R))$. From the assumption $d \leq d_{1}$, we get
+\[
+  d \leq d_{1} \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R))
+\] and from $\downarrow (\top , e) \cap R \subseteq R$ and monotonicity of $\bigjoin$, we get
+\[
+  e \leq  \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq \pi_{2} (\bigjoin R).
+\] Since all premise in (\ref{eq:IKM'-image}) is true, we conclude $(d, e) \in R$.
+
+Proof of (\ref{eq:IKM'-image}) implies $\forall e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (d , e_{0}) \in R \land (d , e_{1}) \in R \implies (d , e) \in R$:
+Assume $e_{0} \leq e \leq e_{1}$, $(d , e_{0}) \in R$ and $(d, e_{1}) \in R$.
+From $(d , e_{0}) \leq (\top , e)$ and $(d, e{0}) \in R$, we see $(d , e_{0}) \in \downarrow (\top , e) \cap R$ thus $(d , e_{0}) \leq \bigjoin (\downarrow (\top , e) \cap R)$. By taking the first projection, we get
+\[ d \leq \pi_{1} \bigjoin (\downarrow (\top , e) \cap R) \]
+
+From $(d, e_{1}) \in R)$, we get $(d , e_{1}) \leq \bigjoin R$ and, from the second projection,
+\[
+  e \leq e_{1} \leq \pi_{2} (\bigjoin R).
+\]
+Therefore, by using (\ref{eq:IKM'-image}), we get $(d, e) \in R$.
+
+Finally, we show (\ref{eq:IKM'-image}) from
+\begin{enumerate}[i]
+  \item $R$ is $\join$-closed,
+  \item $\forall d, e , d_{1}. d \leq d_{1} \land (d_{1} , e) \in R \implies (d , e) \in R$, and \label{predown}
+  \item $\forall d, e , e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (d , e_{0}) \in R \land (d , e_{1}) \in R \ implies (d , e) \in R$ \label{postsegment}
+\end{enumerate}
+Assume $d \leq \pi_{1} (\bigjoin (\downarrow (\top , e) \cap R))$ and $e \leq \pi_{2} (\bigjoin R)$.
+Let us write $(d_{0} , e_{0}) = \bigjoin (\downarrow (\top , e) \cap R) \in R$, and $(d_{1} , e_{1}) = \bigjoin (R)$,
+then $(d_{0}, e_{0}) \in R$ and $(d_{1}, e_{1}) \in R$ since R is $\join$-closed.
+By using monotonicity of $\pi_{1}$ and $\bigjoin$, we get $d \leq d_{0} \leq d_{1}$.
+From \ref{predown}, we get $(d, e_{0}) \in R$ and $(d, e_{1}) \in R$.
+By using monotonicity of $\pi_{2}$ and $\bigjoin$, we get
+$ e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq  \pi_{2} (\bigjoin (\downarrow (\top , e))) = e \leq e_{0}$.
+Therefore, by using \ref{postsegment}, we get $(d, e) \in R$.
+
 
 
 \end{document}
