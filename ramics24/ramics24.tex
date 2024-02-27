@@ -515,7 +515,7 @@ potential transfer function.
   $R$ is in the image of $G$ if and only if $R$ is $\join$-closed and $R$ is pre-down-/post-upclosed,
   where $R$ is pre-down-/post-upclosed if and only if the condition
   \begin{align*}
-  \forall d\ e\ d_{1 }\ e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R
+  \forall d, e, d_{1 }, e_{0}. d \leq d_{1} \land e_{0} \leq e \land (d_{1}, e_{0}) \in R \implies (d, e) \in R
   \end{align*}
   is met.
   The following diagram represents pre-down-/post-upclosedness:
@@ -685,7 +685,7 @@ f
     I(f) &= \{p \mid p \leq f(p)\} \\
     J &: \Endo \tomon \Bidir &
     K &: \Bidir \tomon \Endo \\
-    J(f) &= (\lambda e . f (\top , e ) , \lambda d . f (d , \top)) &
+    J(f) &= (\lambda e . \pi_{1} (f (\top , e )) , \lambda d . \pi_{2} (f (d , \top))) &
     K(\fb , \ff) &= \lambda (d , e) . (\fb(e) , \ff(d)) \\
     P &: \Bidir \tomon \Unidir &
     M &: \Unidir \tomon \Bidir \\
@@ -913,7 +913,7 @@ f
   \paragraph{The class of relations for $\UnidirConst$}
   The class of relation corresponding to the Galois connection $(P' \comp J \comp H)  \dashv (I \comp K \comp M')$
   is characterized by conjunction of the conditions
-  ($\forall d\, d_{1}\, e.\, d \leq d_{1} \land (d_{1}, e) \in R \implies (d , e) \in R$ and $\forall d\, e_{0}\, e_{1}\, e.\, e_{0} \leq e \leq e_{1} \land (d, e_{0}) \in R \land (d, e_{1}) \in R \implies (d , e) \in R$)
+  ($\forall d, d_{1}, e. d \leq d_{1} \land (d_{1}, e) \in R \implies (d , e) \in R$ and $\forall d, e_{0}, e_{1}, e. e_{0} \leq e \leq e_{1} \land (d, e_{0}) \in R \land (d, e_{1}) \in R \implies (d , e) \in R$)
   represented by the following two diagrams together with $\join$-closedness.
   \begin{center}
   \begin{tikzcd}
@@ -941,6 +941,20 @@ f
       \item $\forall d, e , d_{1}. d \leq d_{1} \land (d_{1} , e) \in R \implies (d , e) \in R$, and
       \item $\forall d, e , e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (d , e_{0}) \in R \land (d , e_{1}) \in R \implies (d , e) \in R$
     \end{enumerate}
+  \end{proposition}
+
+  \begin{proposition}\label{prop:constant-max}
+    $(\fb , c)$ is in the image of $P' \comp J \comp H$ if and only if $\fb e \leq \fb c$ for any $e$
+  \end{proposition}
+
+ \begin{proposition}\label{prop:bwdconst-closed-under-composition}
+    The image of $I \comp K \comp M'$ is closed under $\bowtie$.
+  \end{proposition}
+  \begin{proposition}\label{prop:bwdconst-closed-under-intersection}
+    The image of $I \comp K \comp M'$ is closed under $\cap$.
+    \begin{proof}
+      Since $I$ is an upper adjoint, it follows from Lemma \ref{lem:any-fixedpoint-of-galois-connection-closed-under-intersection}.
+    \end{proof}
   \end{proposition}
 
 \section{Conclusion}
@@ -1237,6 +1251,22 @@ $ e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq  \pi_{2} (\bigj
 Therefore, by using \ref{postsegment}, we get $(d, e) \in R$.
 
 
+\subsection{Proof of Proposition \ref{prop:constant-max}}
+$(\fb, c)$ is in the image of $P' \comp J \comp H$ if and only if $(\fb, c) \leq P'(J(H(I(K(M'(\fb , c))))))$, meaning
+\begin{align*}
+  \fb(e) &\leq \pi_{0} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), e' \meet c) \}) \\
+  c &\leq \pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), c) \})
+\end{align*}
+for any $e$. But the second condition is always true because $\pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), c) \}) = c$.
+Define $\chi(d', e') = (\fb(e') , e' \meet c)$.
+Then the condition becomes
+\begin{align*}
+  \fb(e) &\leq \pi_{0} (\nu \chi) \\
+\end{align*}
+Let us write $(d_{*} , e_{*}) = \nu \chi$, then we get
+$\fb(e) \leq d_{*} = \fb(e_{*}) = \fb(e \meet c) \leq \fb(c)$.
+Thus, we proved that if $(\fb, c)$ is in the image of $P' \comp J \comp H$ then $\fb(e) \leq \fb(c)$ for any e.
+Conversely, if $\fb(e) \leq \fb(c)$, we get $\fb(e) \leq \fb(c) \leq \pi_{0} (\nu \chi)$ from the fact $(\fb(c) , c)$ is a fixed point of $\chi$.
 
 \end{document}
 
