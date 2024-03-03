@@ -904,7 +904,7 @@ f
   \end{center}
   where
   \begin{align*}
-    P'(\fb , \ff) &= (\fb , \ff(\top)) & M'(\fb , e) &= (\fb , \lambda d. e) \\
+    P'(\fb , \ff) &= (\fb , \ff(\top)) & M'(\fb , k) &= (\fb , \lambda d. k) \\
     P''(\fb , e) &= \fb & M''(\fb) &= (\fb , \top)
   \end{align*}
 
@@ -953,7 +953,7 @@ f
   \begin{proposition}\label{prop:bwdconst-closed-under-intersection}
     The image of $I \comp K \comp M'$ is closed under $\cap$.
     \begin{proof}
-      Since $I$ is an upper adjoint, it follows from Lemma \ref{lem:any-fixedpoint-of-galois-connection-closed-under-intersection}.
+      Since $I \comp K \comp M'$ is an upper adjoint, it follows from Lemma \ref{lem:any-fixedpoint-of-galois-connection-closed-under-intersection}.
     \end{proof}
   \end{proposition}
 
@@ -1088,7 +1088,7 @@ The premise $f(p) \leq p \meet f (f (p)) = \chi (f(p))$ means that $f(p)$ is a p
 Thus, it has been proven that $f$ is in the image of $H$ if and only if $f$ is an interior operator.
 \qed
 \subsection{Proof of Proposition \ref{prop:endo-closed-under-composition}}
-Leveraging Lemma \ref{lem:closedness-lifting-underapproximation}, it is equivalent to the condition $\bowtielift$ underapproximates $\bowtie$, $I(f \bowtielift g) \subseteq I(f) \bowtielift I(g)$ which means:
+Leveraging Lemma \ref{lem:closedness-lifting-underapproximation}, it is equivalent to the condition $\bowtielift$ underapproximates $\bowtie$, $I(f \bowtielift g) \subseteq I(f) \bowtie I(g)$ which means:
 \begin{align*}
   (c, e) \leq \bigjoin (\downarrow (c , e) \cap \{(c', e') \mid \exists d'. (c' , d') \leq f (c' , d') \land (d' , e') \leq g (d' , e') \}) \\
   \implies \exists d , (c, d) \leq f (c , d) \land (d, e) \leq g (d, e)
@@ -1116,13 +1116,6 @@ Substitute $c$ for $c_{*}$ in equation (\ref{eq:ineq-first}), then we have $c = 
 Substitute $c$ for $c_{*}$ in equation (\ref{eq:ineq-second}), then we have $d_{*} = \pi_{2}(f (c , d_{*})) \meet \pi_{1}(g (d_{*} , e_{*})) \leq \pi_{2}(f (c , d_{*}))$, thus the condition (\ref{enum:f}) holds.
 Similarly to (\ref{enum:c}) and (\ref{enum:f}), we see that (\ref{enum:g}) and (\ref{enum:e}) hold.
 Thus, it has been shown that $\bowtielift$ underapproximates $\bowtie$, and consequently, the image of $I$ is closed under $\bowtie$. \qed
-
-\subsection{Proof of Proposition \ref{prop:endo-closed-under-intersection}}
-From Lemma \ref{lem:closedness-lifting-underapproximation}, it is suffices to show $\caplift$ underapproximates $\cap$, meaning $I(f \caplift g) \subseteq I(f) \cap I(g)$.
-This is proved by using the fact $I$ preserves $\meet$ and
-\[
-I(f \caplift g) = I(H(I(f) \cap I(g))) = I(H(I(f \meet g))) = I(f \meet g) = I(f) \cap I(g)
-\]
 
 \subsection{Proof of Proposition \ref{prop:butterfly}}
 Note that $I(K(J(H(R)))) = \{ (d , e) \mid (d , e) \leq (\pi_{1} (\bigjoin(\downarrow (\top , e) \cap R)) , \pi_{2}(\bigjoin(\downarrow (d , \top) \cap R))) \}$ and
@@ -1205,7 +1198,7 @@ For the second component, the following equvalence also is proven by symmetry:
 \] for any $d$.
 
 Consequently, we have proved that $(\fb, \ff)$ is in the image of $J \comp H$ if and only if
-$\fb(e) \leq \fb(e \meet \ff (\fb(e)))$ and $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$ for any $e$ and $d$.
+$\fb(e) \leq \fb(e \meet \ff (\fb(e)))$ and $\ff(d) \leq \ff(d \meet \fb (\ff(d)))$ for any $e$ and $d$. \qed
 
 \subsection{Proof of Proposition \ref{prop:predown-postsegment}}
 First, we see if $R$ is in the image of $I \comp K \comp M'$ then $R$ is $\join$-closed immediately from Lemma (\ref{prop:restriction-subset}).
@@ -1248,26 +1241,76 @@ By using monotonicity of $\pi_{1}$ and $\bigjoin$, we get $d \leq d_{0} \leq d_{
 From \ref{predown}, we get $(d, e_{0}) \in R$ and $(d, e_{1}) \in R$.
 By using monotonicity of $\pi_{2}$ and $\bigjoin$, we get
 $ e_{0} = \pi_{2} (\bigjoin (\downarrow (\top , e) \cap R)) \leq  \pi_{2} (\bigjoin (\downarrow (\top , e))) = e \leq e_{0}$.
-Therefore, by using \ref{postsegment}, we get $(d, e) \in R$.
+Since all premises of \ref{postsegment} are true, we get $(d, e) \in R$.
+
+Therefore, we proved that the condition characterizes the image of $I \comp K \comp M'$. \qed
 
 
 \subsection{Proof of Proposition \ref{prop:constant-max}}
-$(\fb, c)$ is in the image of $P' \comp J \comp H$ if and only if $(\fb, c) \leq P'(J(H(I(K(M'(\fb , c))))))$, meaning
+$(\fb, k)$ is in the image of $P' \comp J \comp H$ if and only if $(\fb, k) \leq P'(J(H(I(K(M'(\fb , k))))))$, meaning
 \begin{align*}
-  \fb(e) &\leq \pi_{0} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), e' \meet c) \}) \\
-  c &\leq \pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), c) \})
+  \fb(e) &\leq \pi_{0} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), e' \meet k) \}) \\
+  k &\leq \pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), k) \})
 \end{align*}
-for any $e$. But the second condition is always true because $\pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), c) \}) = c$.
-Define $\chi(d', e') = (\fb(e') , e' \meet c)$.
+for any $e$. But the second condition is always true because $\pi_{1} (\bigmeet \{(d' , e') \mid (d' , e') \leq (\fb(e'), k) \}) = k$.
+Define $\chi(d', e') = (\fb(e') , e' \meet k)$.
 Then the condition becomes
 \begin{align*}
   \fb(e) &\leq \pi_{0} (\nu \chi) \\
 \end{align*}
 Let us write $(d_{*} , e_{*}) = \nu \chi$, then we get
-$\fb(e) \leq d_{*} = \fb(e_{*}) = \fb(e \meet c) \leq \fb(c)$.
-Thus, we proved that if $(\fb, c)$ is in the image of $P' \comp J \comp H$ then $\fb(e) \leq \fb(c)$ for any e.
-Conversely, if $\fb(e) \leq \fb(c)$, we get $\fb(e) \leq \fb(c) \leq \pi_{0} (\nu \chi)$ from the fact $(\fb(c) , c)$ is a fixed point of $\chi$.
+$\fb(e) \leq d_{*} = \fb(e_{*}) = \fb(e \meet k) \leq \fb(k)$.
+Thus, we proved that if $(\fb, k)$ is in the image of $P' \comp J \comp H$ then $\fb(e) \leq \fb(k)$ for any e.
+Conversely, if $\fb(e) \leq \fb(k)$, we get $\fb(e) \leq \fb(k) \leq \pi_{0} (\nu \chi)$ from the fact $(\fb(k) , k)$ is a fixed point of $\chi$. \qed
 
+\subsection{Proof of Proposition \ref{prop:bwdconst-closed-under-composition}}
+Let relation $R \in \Rel(C, D)$, $S \in \Rel(D , E)$, and $R$ and $S$ are in the image of $I \comp K \comp M'$.
+By using the characterization \ref{prop:predown-postsegment}, it suffices to show that
+\begin{enumerate}[i]
+  \item $R \bowtie S$ is $\join$-closed \label{i},
+  \item $\forall c, e , c_{1}. c \leq c_{1} \land (c_{1} , e) \in R \bowtie S \implies (c , e) \in R \bowtie S$, and \label{ii}
+  \item $\forall c, e , e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (c , e_{0}) \in S \land (c , e_{1}) \in S \implies (c , e) \in R$ \label{iii}
+\end{enumerate}
+from
+\begin{enumerate}[]
+  \item $R$ is $\join$-closed,
+  \item $\forall c, d , c_{1}. c \leq c_{1} \land (c_{1} , d) \in R \implies (c , d) \in R$, and
+  \item $\forall c, d , d_{0}, d_{1}. d_{0} \leq d \leq d_{1} \land (c , d_{0}) \in R \land (c , d_{1}) \in R \implies (d , e) \in R$
+\end{enumerate}
+\begin{enumerate}[]
+  \item $S$ is $\join$-closed,
+  \item $\forall d, e , d_{1}. d \leq d_{1} \land (d_{1} , e) \in S \implies (d , e) \in S$, and
+  \item $\forall d, e , e_{0}, e_{1}. e_{0} \leq e \leq e_{1} \land (d , e_{0}) \in S \land (d , e_{1}) \in S \implies (d , e) \in R$.
+\end{enumerate}
+
+\begin{enumerate}[i]
+\item[Proof of \ref{i}]:
+From Proposition \ref{prop:endo-closed-under-composition} and the characterization (Proposition \ref{thm:join-closed}), we see that both $R$ and $S$ are $\join$-closed then $R \bowtie S$ is $\join$-closed.
+
+\item[Proof of \ref{ii}]:
+From $(c_{1} , e) \in R \bowtie S$, there must be $d_1 \in D$ such that $(c_{1} , d_{1}) \in R$ and $(d_{1} , e) \in S$.
+
+Take $d_{0}$ for $d$ in $\forall c, d , c_{1}. c \leq c_{1} \land (c_{1} , d) \in R \implies (c , d) \in R$.
+Then we get $(c, d_{1}) \in R$. Since $(c , d_{1}) \in R$ $(d_{1} , e) \in S$, we conclude $(c , e) \in R \bowtie S$.
+
+\item[Proof of \ref{iii}]:
+From $(c , e_{0}) \in R \bowtie S$, and $(c , e_{1}) \in R \bowtie S$, there must be $d_{0}, d_1 \in D$ such that $(c , d_{0}) \in R$, $(d_{0}, e_{0}) \in S$, $(c, d_{1}) \in R$ and $(d_{1}, e_{1}) \in S$.
+Take $(d_{0}, e) \join (d_{1}, e)$
+
+
+
+
+% I (K (M' (f , c))) = I (K (f , const c)) = I (\lambda d e. (f(e) , c)) = \{ (d, e) | (d , e) \leq (f(e) , c)\}
+% ((\fb , k) \bowtielift (gb , l)) = P'(J(H(I(K(M'((f, c)))) \bowtie
+% P'(J(H(R))) = P'(J(\lambda p . \bigjoin (\downarrow p \cap R))) = P'(\lambda e. \pi_1 (\bigjoin (\downarrow (\top , e) \cap R)) , \lambda d. \pi_2 (\downarrow (d , \top) \cap R)) = (\lambda e. \pi_1 (\bigjoin (\downarrow (\top , e) \cap R)) , \pi_2 (\bigjoin R)
+% \{(d , e) \mid (d , e) \leq (\pi_1 (\bigjoin (\downarrow (\top , e) \cap R)), \pi_2 (\bigjoin R)) \}
+% \begin{align*}
+% \{ (c, e) | \exists d. (c , d) \leq (\fb(d) , k) \land (d , e) \leq (\gb(e), l) \}
+% j \subseteq \{ (c, e) | \exists d. (c , d) \leq (\fb(d) , k) \land (d , e) \leq (\gb(e), l) \}
+% \end{align*} for any $\fb$, $k$, $\gb$, $l$ , $c$ and $e$.
+%
+\end{enumerate}
+Therefore, it is shown that the image of $I \comp K \comp M'$ is closed under $\bowtie$. \qed
 \end{document}
 
 
