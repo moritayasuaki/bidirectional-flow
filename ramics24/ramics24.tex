@@ -1,4 +1,6 @@
 \documentclass{llncs}
+
+\usepackage{hyperref}
 \usepackage{tikz-cd}
 %\usepackage{amsthm}
 \usepackage{amsmath}
@@ -10,7 +12,6 @@
 \usepackage{tikz}
 \usepackage[all]{xy}
 \usepackage{amssymb}
-\usepackage{stmaryrd}
 \usepackage{enumerate}
 
 % \lstset{
@@ -119,18 +120,6 @@
   \end{proof}%
 }
 
-\title{Bidirectional data-flow analyses compared to relational through Galois connections}
-\author{
-  Dylan McDermott
-\and
-  * Yasuaki Morita
-\and
-  Tarmo Uustalu
-}
-\institute{Reykjavik University}
-\date{Wed 22 - Thu 23 November NWPT 2023 V{\"a}ster{\aa}s }
-
-\begin{document}
 
 
 
@@ -164,6 +153,19 @@
 ]
 
 
+
+\title{Bidirectional data-flow analyses compared to relational through Galois connections}
+\author{
+  Dylan McDermott
+\and
+  * Yasuaki Morita
+\and
+  Tarmo Uustalu
+}
+\institute{Reykjavik University}
+\date{Wed 22 - Thu 23 November NWPT 2023 V{\"a}ster{\aa}s }
+
+\begin{document}
   
 \section{Introduction}
 
@@ -182,9 +184,11 @@ Constraint-based analysis
     \end{itemize}
 
 
-\section{Preliminaries: Galois connections}
+\section{Preliminaries}
 
-In this paper, we compare different formats of data-flow analyses in
+\subsection{Galois connections}
+
+In this paper, we compare different domains of data-flow analyses in
 terms of Galois connections. We need the following basic definitions
 and facts.
 
@@ -328,6 +332,55 @@ at most one map between any two objects and isomorphic objects are
 equal). Not every adjunction is idempotent. The fixedpoint theory of
 Galois connections generalizes for idempotent adjunctions.
 
+
+\subsection{Kleene algebras and weaker structures}
+
+We take the view that a programming language, quotiented by semantic
+equivalence, is a Kleene algebra (as it supports sequential
+composition, nondeterministic choice and iteration obeying the Kleene
+algebra equations).
+
+An analysis (of the whole language) will be a homomorphism from this
+Kleene algebra to a weaker structure.
+
+A \emph{Kleene algebra} is an idempotent semiring
+$(X, 0, {+},1, {\cdot})$ together with a unary operation $(-)^*$ on
+$X$ such that $x^*$ is simultaneously the least fixedpoint of both
+$1 + x \cdot {-}$ and $1 + {-} \cdot x$.  We note that since
+$(X, 0, {+})$ is a idempotent commutative monoid (so an upper
+semilattice with bottom), it comes with a partial order given by
+$x \leq y$ if $x + y = y$. The operations $+$ and $\cdot$ are both
+monotone in both arguments. Therefore, the functions $1 + x \cdot {-}$
+and $1 + {-} \cdot x$ are both monotone.
+
+We need to work with a weaker algebraic structure of flow algebras. 
+
+A \emph{flow algebra} is a set $X$ with designated elements $0$, $1$,
+binary operations $+$, $\cdot$ and a unary operation $(-)^*$ such that
+$(X, 0, {+})$ is an idempotent commutative monoid, $(X, 1, {\cdot})$
+is a monoid, $\cdot$ is monotone in both arguments, $(-)^*$ is
+monotone and $x^*$ is a prefixedpoint of both $1 + x \cdot {-}$, and
+$1 + {-} \cdot x$, i.e.,
+\[
+  1 + x \cdot x^* \leq x^* \textrm{~and~} 1 + x^* \cdot x \leq x^*  
+\]  
+Monotonicity of $\cdot$ is equivalent to distributivity of $\cdot$
+over $+$ from both the left and the right as an inequation:
+\[
+  x \cdot y + x \cdot z \leq x \cdot (y+z) \textrm{~and~}
+  y \cdot x + z \cdot x \leq (y+z) \cdot x  
+\]
+
+A \emph{homomorphism} between flow algebras
+$(X, 0, {+}, 1, {\cdot}, (-)^*)$ and
+$(Y, 0', {+'}, 1', {\cdot'}, (-)^{*'})$ is a function $h : X \to Y$
+that preserves the structure. A \emph{lax homomorphism} is a function
+that preserves the structure as inequations:
+\[
+  0' \leq h(0) \quad h(x) +' h(y) \leq h(x + y) \quad
+  1' \leq h(1) \quad h(x) \cdot' h(y) \leq h \cdot (x + y) \quad
+  (h(x))*' \leq h(x^*) 
+\]  
 
 \section{Unidirectional analyses}
 
