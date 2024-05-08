@@ -1,6 +1,7 @@
 ```agda
 {-# OPTIONS --type-in-type --exact-split #-}
 open import Level
+open import Agda.Primitive
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
 -- open import Data.Bool hiding (_∨_ ; _∧_)

@@ -55,7 +55,6 @@ open HasCarrier {{...}} hiding (Carrier) public
 Setoid : Set
 Setoid = SetoidPoly lzero lzero
 
-
 Poset : Set
 Poset = PosetPoly lzero lzero lzero
 
@@ -75,7 +74,6 @@ module _ where
 
   _→cong_ = BinRMorph.SetoidHomomorphism
   _→mono_ = BinRMorph.PosetHomomorphism
-
 
 record HasBracket (A : Set) (B : Set) : Set where
   field
@@ -105,6 +103,11 @@ Cong.⟦ ⟦ f ⟧cong ⟧ = ⟦ f ⟧
 infix 0 _↔_
 _↔_ : Set → Set → Set
 A ↔ B = (A → B) × (B → A)
+
+posetToSetoid : Poset → Setoid
+posetToSetoid P .SetoidPoly.Carrier = P .PosetPoly.Carrier
+posetToSetoid P .SetoidPoly._≈_ x y = P .PosetPoly._≈_ x y
+posetToSetoid P .SetoidPoly.isEquivalence = P .PosetPoly.isEquivalence
 
 Prop→-poset : Poset
 Prop→-poset .PosetPoly.Carrier = Set
@@ -399,6 +402,35 @@ module _ where
 
   open IsPartialOrder using (isPreorder)
   open IsPreorder using (isEquivalence)
+
+  ≼ : (D : Poset) → Pred (posetToSetoid D) → Pred (posetToSetoid D) → Set
+  ≼ D P Q = ∀ x → ⟦ P ⟧ x → Σ λ y → (⟦ Q ⟧ y) × (D ._≤_ x y)
+
+  ≼-refl : (D : Poset) → {x : _} → ≼ D x x
+  ≼-refl D x Px = x , (Px , D .isPartialOrder .isPreorder .IsPreorder.reflexive (D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.refl))
+
+  ≼-trans : (D : Poset) → {P Q R : _} → ≼ D P Q → ≼ D Q R → ≼ D P R
+  ≼-trans D PQ QR x Px =
+    let (y , Qy , x≤y) = PQ x Px
+        (z , Rz , y≤z) = QR y Qy in z , Rz , (D .isPartialOrder .isPreorder .IsPreorder.trans x≤y y≤z )
+
+  ∼ : (D : Poset) → Pred (posetToSetoid D) → Pred (posetToSetoid D) → Set
+  ∼ D P Q = ≼ D P Q × ≼ D Q P
+
+  ∼-refl : (D : Poset) → {x : _} → ∼ D x x
+  ∼-refl D {P} = ≼-refl D {P} , ≼-refl D {P}
+
+  Pred≼-poset : (D : Poset) → Poset
+  Pred≼-poset D .Carrier = Pred (posetToSetoid D)
+  Pred≼-poset D ._≈_ P Q = ∼ D P Q
+  Pred≼-poset D ._≤_ P Q = ≼ D P Q
+  Pred≼-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.refl {P} = ≼-refl D {P} , ≼-refl D {P}
+  Pred≼-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.sym = Product.swap
+  Pred≼-poset D .isPartialOrder .isPreorder .isEquivalence .IsEquivalence.trans {P} {Q} {R} p q = ≼-trans D {P} {Q} {R} (p .proj₁) (q .proj₁) , ≼-trans D {R} {Q} {P} (q .proj₂) (p .proj₂)
+  Pred≼-poset D .isPartialOrder .isPreorder .IsPreorder.reflexive P=Q x Px = P=Q .proj₁ x Px
+  Pred≼-poset D .isPartialOrder .isPreorder .IsPreorder.trans {P} {Q} {R} P<Q Q<R x Px = ≼-trans D {P} {Q} {R} P<Q Q<R x Px
+  Pred≼-poset D .isPartialOrder .IsPartialOrder.antisym = _,_
+
   Pred⊆-poset : (D : Setoid) → Poset
   Pred⊆-poset D .Carrier = Pred D
   Pred⊆-poset D ._≈_ P Q = P ≐ Q
@@ -419,6 +451,10 @@ module _ where
   Pred⊆-→mono-Prop→ : (D : Setoid) → Pred⊆-poset D →mono Prop→-poset
   Pred⊆-→mono-Prop→ D = mkMono (Pred⊆-poset D) Prop→-poset (Pred→Prop D)
     (λ {P} {Q} P⊆Q ∀d→d∈P d → P⊆Q (∀d→d∈P d))
+
+  ⋂ : {D : Setoid} → Pred (Pred≐-setoid D) → Pred D
+  Pred.⟦ ⋂ P ⟧ d = ∀ S → S ∈ P → d ∈ S
+  ⋂ P .Pred.isWellDefined {x} {y} x≈y ⋂P S S∈P = S .Pred.isWellDefined x≈y (⋂P S S∈P)
 
 module _ {X≈ : Setoid} where
   open SetoidPoly X≈
@@ -460,7 +496,6 @@ _⋈_ {Y = Y} R S .Pred.isWellDefined {x , z} {x' , z'} (x≈x' , z≈z') (y , x
 
 ⋈-cong-r : {X Y Z : Setoid} (P Q : Pred (Y ×-setoid Z)) (S : Pred (X ×-setoid Y)) → P ≐ Q → (S ⋈ P) ≐ (S ⋈ Q)
 ⋈-cong-r P Q S P≐Q = ⋈-mono-r P Q S (P≐Q .proj₁) , ⋈-mono-r Q P S (P≐Q .proj₂)
-
 
 module _ {X≈ Y≈ : Setoid} where
   private
@@ -728,6 +763,21 @@ module _ (D≤ : Poset) where
   Pred.⟦ downset S ⟧ d = Σ x ∶ D , (x ∈ S × d ≤ x)
   downset S .Pred.isWellDefined d≈d' (x , x∈S , d≤x) = (x , x∈S , trans (reflexive (Eq.sym d≈d')) d≤x)
 
+  maximal-set : Pred D≈ → Pred D≈
+  Pred.⟦ maximal-set S ⟧ x = x ∈ S × (∀ y → y ∈ S → x ≤ y → y ≤ x)
+  maximal-set S .Pred.isWellDefined {x} {y} x≈y (x∈S , x-maximal)
+    = (S .Pred.isWellDefined x≈y x∈S)
+    , (λ z z∈S y≤z → trans (x-maximal z z∈S (trans (reflexive x≈y) y≤z)) (reflexive x≈y))
+
+  ≼-↓ : (P : Pred D≈) → ≼ D≤ P (downset P)
+  ≼-↓ P x x∈P = x , ((x , x∈P , refl) , refl)
+
+  ∼-↓ : (P : Pred D≈) → ∼ D≤ P (downset P)
+  ∼-↓ P = ≼-↓ P , λ x (y , y∈P , x≤y) → y , y∈P , x≤y
+
+  ≼-ext : ∀ S R → (∀ S' → (≼ D≤ S S') → (≼ D≤ R S')) → ≼ D≤ R S
+  ≼-ext S R u x x∈R = u S (≼-refl D≤ {S}) x x∈R
+
   principal-upset : D → Pred D≈
   Pred.⟦ principal-upset d ⟧ d' = d ≤ d'
   Pred.isWellDefined (principal-upset d) d'≈d'' d≤d' = trans d≤d' (reflexive d'≈d'')
@@ -745,6 +795,54 @@ module _ (D≤ : Poset) where
   upset : Pred D≈ → Pred D≈
   Pred.⟦ upset S ⟧ u = Σ x ∶ D , (x ∈ S × x ≤ u)
   upset S .Pred.isWellDefined u≈u' (x , x∈S , x≤u) = (x , x∈S , trans x≤u (reflexive u≈u'))
+
+record ↟Poset : Set where
+  field
+    Carrier : Set
+    _≈_ : Rel Carrier
+    _≤_ : Rel Carrier
+    ≤-po : IsPartialOrder _≈_ _≤_
+
+  poset : Poset
+  poset = record {isPartialOrder = ≤-po}
+
+  module Po = PosetPoly poset
+  module Eq = Po.Eq
+
+  field
+    ↟ : Pred Eq.setoid → Pred Eq.setoid
+    ↟-least∼ : ∀ S → (∼ poset S (↟ S)) × (∀ S' → (∼ poset S S') → ↟ S ⊆ S')
+
+  ↓! : Carrier → Pred Eq.setoid
+  ↓! x = principal-downset poset x
+
+  ↟-∼ : ∀ S → (∼ poset S (↟ S))
+  ↟-∼ S = ↟-least∼ S .proj₁
+
+  ↟-least : ∀ S S' → (∼ poset S S') → ↟ S ⊆ S'
+  ↟-least S = ↟-least∼ S .proj₂
+
+  ↓ : Pred Eq.setoid → Pred Eq.setoid
+  ↓ = downset poset
+
+  ↓-mono : ∀ S S' → ≼ poset S S' → ≼ poset (↓ S) (↓ S')
+  ↓-mono S S' S≼S' x (y , y∈S , x≤y) = let (z , z∈S' , y≤z) = S≼S' y y∈S in z , ((z , z∈S' , Po.refl) , Po.trans x≤y y≤z)
+
+  ↟-mono : ∀ S S' → ≼ poset S S' → ≼ poset (↟ S) (↟ S')
+  ↟-mono S S' S≼S' x x∈↟S =
+    let (y , y∈S' , x≤y) = S≼S' x (↟-least S S (∼-refl poset {S}) x∈↟S)
+        (z , z∈↟S' , y≤z) = ↟-∼ S' .proj₁ y y∈S'
+    in (z , z∈↟S' , Po.trans x≤y y≤z)
+
+  ↟-↓!⊆singleton : ∀ x → ↟ (↓! x) ⊆ ｛ x ｝
+  ↟-↓!⊆singleton x = (λ y∈↟↓!x → ↟-least (↓! x) ｛ x ｝ ((λ z z≤x → x , Eq.refl , z≤x) , λ z x≈z → x , (Po.refl , Po.reflexive (Eq.sym x≈z))) y∈↟↓!x)
+
+  singleton⊆↟-↓! : ∀ x → ｛ x ｝ ⊆ ↟ (↓! x)
+  singleton⊆↟-↓! x {y} x≈y =
+    let (y' , y'∈↟↓x , y≤y') = ↟-∼ (↓! x) .proj₁ y (Po.reflexive (Eq.sym x≈y))
+        (y'' , y''∈↟↓x , y'≤y'') = ↟-∼ (↓! x) .proj₂ y' y'∈↟↓x
+    in {!!}
+
 
 record SLat : Set where
   field
@@ -1164,6 +1262,7 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
   νproj₂ : (D≈ ×-setoid E≈) →cong (D≈ ×-setoid E≈) → (E≈ →cong E≈)
   νproj₂ f = proj₂≈ _ _ ∘-cong (curry-cong f (ν f .proj₁))
 
+{-
   νproj₁-≈ : (f≤ : (D≤ ×-poset E≤) →mono (D≤ ×-poset E≤)) → D.ν (νproj₁ ⟦ f≤ ⟧cong) D.≈ ν ⟦ f≤ ⟧cong .proj₁
   νproj₁-≈ f≤ = D.⨆-cong (post D.poset (νproj₁ ⟦ f≤ ⟧cong)) (post poset ⟦ f≤ ⟧cong ∣₁) (P $- , Q $-) -- (P , Q)
     where
@@ -1184,7 +1283,7 @@ module _ (D⨆ : SLat) (E⨆ : SLat) where
 
     Q : ∀ d → Σ e ∶ E , (d , e) ≤ ⟦ f≤ ⟧ (d , e) → d D.≤ ⟦ νproj₁ ⟦ f≤ ⟧cong ⟧ d
     Q d (e , de≤fde) = D.Po.trans (proj₁ de≤fde) (proj₁-mono D≤ E≤ .IsMono.mono (f≤ .Mono.mono (D.Po.refl , (E.Po.trans (proj₂ de≤fde) (E.⨆-ub (post poset ⟦ f≤ ⟧cong ∣₂) (proj₂ (⟦ f≤ ⟧ (d , e))) (⟦ f≤ ⟧ (d , e) .proj₁ , f≤ .Mono.mono de≤fde))))))
-
+-}
 IsCoclosure : (D : Poset) (f : ∣ D ∣ → ∣ D ∣) → Set
 IsCoclosure D f = ∀ d → f d ≤ d × f d ≤ f (f d)
   where open PosetPoly D

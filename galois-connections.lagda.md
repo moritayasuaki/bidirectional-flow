@@ -1,5 +1,6 @@
 ```agda
 {-# OPTIONS --type-in-type --exact-split #-}
+open import Agda.Primitive hiding (_⊔_)
 open import Level renaming (_⊔_ to _l⊔_)
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
@@ -1422,3 +1423,4 @@ module derive-subset-galois
       cl = {!!}
 -}
 ```
+

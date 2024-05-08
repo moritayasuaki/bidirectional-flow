@@ -31,6 +31,34 @@ open import Data.List.Relation.Unary.All
 open import Base
 
 
+module 𝒫≼-and-`𝒫≼ (C↟ : ↟Poset) where
+
+  private
+    C≤ = ↟Poset.poset C↟
+    C≈ = ↟Poset.Eq.setoid C↟
+    C = ↟Poset.Carrier C↟
+    module C = ↟Poset C↟
+
+  𝒫≼ = Pred≼-poset C≤
+  ^𝒫≼ = C≤ →mono Pred≼-poset C≤
+
+  open ↟Poset C↟
+
+  #-raw : Pred C≈ → C → Pred C≈
+  #-raw S c = ↟ (↓! c ∩ S)
+
+  ♭-raw : (C → Pred C≈) → Pred C≈
+  Pred.⟦ ♭-raw f ⟧ c = Σ λ c' → c ∈ ↓ (f c')
+  ♭-raw f .Pred.isWellDefined {x} {y} x≈y (c' , x∈↓fc') = c' , (↓ (f c') .Pred.isWellDefined x≈y x∈↓fc')
+
+  #-mono : (P Q : Pred C≈) → ≼ C≤ P Q → ∀ {x} → ≼ C≤ (#-raw P x) (#-raw Q x)
+  #-mono P Q P≼Q {x} y y∈#Px =
+    let (z , (z≤x , z∈P) , y≤z) = ↟-∼ (↓! x ∩ P) .proj₂ y y∈#Px
+        (w , w∈Q , z≤w) = P≼Q z z∈P
+        G = {!↟-least (↓! x ∩ Q) ? ? !}
+        (v , v∈#Qx , w≤v) = ↟-∼ (↓! x ∩ Q) .proj₁ {!w!} ({!↟-least (↓! z) (↓! x)!} , w∈Q)
+    in v , (v∈#Qx , {!!})
+
 -- First abstraction
 module 𝒫⊆-and-Endo (C⨆ : SLat) where
 
@@ -40,10 +68,35 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
     C = ∣ C⨆ ∣
     module C = SLat C⨆
 
+  𝒫≼ = Pred≼-poset C≤
   𝒫⊆ = Pred⊆-poset C≈
   Endo = C≤ →mono-pw C≤
   open SLat C⨆
 
+  !-raw : Pred C≈ → Pred C≈
+  !-raw = id
+
+  !-mono : {P Q : Pred C≈} → P ⊆ Q → ≼ C≤ (!-raw P) (!-raw Q)
+  !-mono P⊆Q x x∈P = x , ((P⊆Q x∈P) , (C.Po.refl))
+
+  ! : 𝒫⊆ →mono 𝒫≼
+  ! = mkMono 𝒫⊆ 𝒫≼ !-raw λ {P} {Q} → !-mono {P} {Q}
+
+  ↓-mono : {P Q : Pred C≈} → P ⊆ Q → ≼ C≤ (↓ P) (↓ Q)
+  ↓-mono P⊆Q x (y , y∈P , x≤y) = x , (y , (P⊆Q y∈P) , x≤y) , C.Po.refl
+
+  ↓-mono' : {P Q : Pred C≈} → ≼ C≤ P Q → ↓ P ⊆ ↓ Q
+  ↓-mono' P≼Q {x} (y , y∈P , x≤y) = let (z , z∈Q , y≤z) = P≼Q y y∈P in z , z∈Q , C.Po.trans x≤y y≤z
+
+  ↓≼ : 𝒫⊆ →mono 𝒫≼
+  ↓≼ = mkMono 𝒫⊆ 𝒫≼ ↓ (λ {P} {Q} → ↓-mono {P} {Q})
+
+  ↓⊆ : 𝒫≼ →mono 𝒫⊆
+  ↓⊆ = mkMono 𝒫≼ 𝒫⊆ ↓ (λ {P} {Q} → ↓-mono' {P} {Q})
+
+  !⊣↓⊆ : ! ⊣ ↓⊆
+  !⊣↓⊆ .GaloisConnection.ψ P Q .proj₁ P≼Q {x} x∈P = P≼Q x x∈P
+  !⊣↓⊆ .GaloisConnection.ψ P Q .proj₂ P⊆↓Q x x∈P = P⊆↓Q x∈P
 
   -- This module gives an adjoint poset map between binary relations and endo monotone functions on product
   --     (𝒫 (D × E) , ⊆)
@@ -91,6 +144,7 @@ module 𝒫⊆-and-Endo (C⨆ : SLat) where
   F⊣G .GaloisConnection.ψ P f .proj₂ P⊆Gf d = ⨆-least (↓! d ∩ P) (⟦ f ⟧ d) \d' (d'≤d , d'∈P) → Po.trans (P⊆Gf d'∈P) (Mono.mono f d'≤d)
     where
     private module M = PosetPoly (C≤ →mono-pw C≤)
+
 
   postFG-characterization : (f≤ : C≤ →mono C≤)
     → f≤ ∈ GaloisConnection.postLR F⊣G ↔ IsCoclosure C≤ ⟦ f≤ ⟧

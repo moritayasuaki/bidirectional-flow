@@ -1,6 +1,7 @@
 ```agda
 {-# OPTIONS --type-in-type --exact-split #-}
 open import Level
+open import Agda.Primitive
 open import Data.Product renaming (proj₁ to fst; proj₂ to snd)
 open import Data.Sum renaming (inj₁ to left; inj₂ to right)
 -- open import Data.Bool hiding (_∨_ ; _∧_)
@@ -53,7 +54,7 @@ syntax comprehension-syntax (\ x → P) = ｛ x ∣ P ｝
 rel : Set → Set → prop
 rel X Y = REL X Y (level-of X ⊔ level-of Y)
 
-pointwise : ∀ {C X Y} → rel X Y → rel (C → X) (C → Y)
+pointwise : ∀ {C X Y : Set} → rel X Y → rel (C → X) (C → Y)
 pointwise _~_ f g = ∀ c → f c ~ g c
 
 map-rel : ∀ {C D X Y} → (C → X) → (D → Y) → rel X Y → rel C D
