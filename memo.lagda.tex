@@ -1,0 +1,883 @@
+\documentclass{article}
+\usepackage[margin=2cm]{geometry}
+
+% \usepackage{bbm}
+% \usepackage[greek,english]{babel}
+% \usepackage{stix}
+% \usepackage{stix2}
+% \usepackage{fontspec}
+% \usepackage{ucs}
+% \usepackage[utf8x]{inputenc}
+% \usepackage{autofe}
+
+\usepackage{agda}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\usepackage{tikz-cd}
+\usepackage{bussproofs}
+
+
+\usepackage{unicode-math}
+\usepackage{newunicodechar}
+\setmathfont{STIX Two Math}
+\setromanfont{STIX Two Math}
+\setsansfont{STIX Two Math}
+\setmainfont{TeX Gyre Schola}
+
+\newcommand{\intersection}{\cap}
+\newcommand{\union}{\cup}
+\newcommand{\defeq}{\stackrel{\text{def}}{=}}
+\newcommand{\pow}{\mathcal{P}}
+\newcommand{\meet}{\sqcap}
+\newcommand{\join}{\sqcup}
+\newcommand{\bigjoin}{\bigsqcup}
+\newcommand{\imp}{\Rightarrow}
+
+\begin{document}
+
+\section{What is a static program analysis}
+
+Static program analysis is the way to extract useful information or property of a given program without running it.
+The technique is used for proving safety property (for security), or finding redundancy (for optimization).
+There are well-known approaches to perform static analyses;
+Unification, Hoare logic, dataflow analysis framework, and abstract interpretation.
+We develop meta-theory on these approache as subsystem of predicate logic:
+Eventually, we extract nice property about a program and predicate would be a set of programs that satisfy the desired property.
+One crucial property of a static analysis framework is compositionality, meaning that one can compose information about a whole complex program by accumulating information on its program fragments.
+In other words, the analysis can be performed in a divide-and-conquer manner.
+
+For program language in general, we think of program semantics as a predicate on variables indexed by \emph{context} in $\pow(V_\Gamma)$  , where a context $\Gamma : C$ is a list of variables equipped with its type.
+\begin{align*}
+   \Gamma, \Delta &:= \epsilon \mid \Gamma (x : \tau) &\mathit{Context} \\
+   \tau, \kappa &\in \mathbf{Type} &\mathit{Type} \\
+   x, y, z &\in \mathbf{Var}  & \mathit{Variable}
+\end{align*}
+
+Given two predicates $P, Q : \pow(V_\Gamma)$, we say $P$ is more precise than $Q$, or equivalently, $Q$ is less precise than $P$, when $P \subseteq Q$ holds.
+We consider a static program analysis as a approximation of the predicate semantics, i.e., we specify a logic and relate it with
+the program by assigning logical formula to the program constructs and presenting predicates on variables.
+
+\begin{code}[hide]
+
+{-# OPTIONS --prop --postfix-projections --exact-split --cubical --rewriting #-}
+open import Agda.Primitive renaming (Set to Type ; _⊔_ to _⊔-level_)
+open import Agda.Builtin.Equality renaming (refl to rfl)
+open import Agda.Builtin.Equality.Rewrite
+open import Agda.Builtin.Nat
+open import Agda.Builtin.String
+module memo where
+\end{code}
+
+\begin{code}[hide]
+
+private variable
+  ℓ ℓ' ℓ'' : Level
+
+level-of : Type ℓ → Level
+level-of {ℓ} X = ℓ
+
+Pred : Type ℓ → Type _
+Pred X = X → Prop (level-of X)
+
+Pred₀ : Type ℓ → Type _
+Pred₀ X = X → Prop
+
+
+\end{code}
+
+\begin{code}[hide]
+
+data Empty {l : Level} : Type l where
+record Unit {l : Level} : Type l where
+  constructor unit
+
+record Σ {l l' : Level} {A : Type l} (B : A → Type l') : Type (l ⊔-level l') where
+  constructor mk
+  field
+    {fst} : A
+    snd : B fst
+
+record _×_ {l l' : Level} (A : Type l) (B : Type l') : Type (l ⊔-level l') where
+  constructor mk
+  field
+    fst : A
+    snd : B
+
+data _⊎_ {l l' : Level} (A : Type l) (B : Type l') : Type (l ⊔-level l') where
+  left : A → A ⊎ B
+  right : B → A ⊎ B
+
+record Sub {l l' : Level} {A : Type l} (B : A → Prop l') : Type (l ⊔-level l') where
+  constructor mk
+  field
+    {fst} : A
+    snd : B fst
+
+data ∃ {l l' : Level} {A : Type l} (B : A → Prop l') : Prop (l ⊔-level l') where
+  mk : (a : A) → B a → ∃ B
+
+record PropResizing (l : Level) : Type (lsuc l) where
+  field
+    resize : Prop l → Prop
+    resize-equivr : {P : Prop l} → P → resize P
+    resize-equivl : {P : Prop l} → resize P → P
+
+open PropResizing
+
+module _ (pr : {l : Level} → PropResizing l) where
+
+data Eq {X : Type ℓ} : X → X → Prop ℓ where
+  refl : {x : _} → Eq x x
+
+Rel : Type ℓ → Type ℓ → _
+Rel X Y = X → Y → Prop
+
+Reflexive : {X : Type ℓ} → Rel X X → Prop ℓ
+Reflexive r = {x : _} → r x x
+
+Associative : {X : Type ℓ} → Rel X X → Prop ℓ
+Associative r = {x y z : _} → r x y → r y z → r x z
+
+Symmetric : {X : Type ℓ} → Rel X X → Prop ℓ
+Symmetric r = {x y : _} → r x y → r y x
+
+Extensional : {X : Type} → Rel X X → Prop
+Extensional r = {x y z : _} → r x y → r z y → r x z
+
+Normalizable : {X : Type} → Rel X X → (X → X) → Prop
+Normalizable r f = {x : _} → r x (f x)
+
+Idempotent : {X : Type} → (X → X) → Type
+Idempotent f = {x : _} → f x ≡ f (f x)
+
+record True : Prop ℓ where
+
+record And (X : Prop ℓ) (Y : Prop ℓ') : Prop (ℓ ⊔-level ℓ') where
+  constructor mk
+  field
+    fst : X
+    snd : Y
+
+infixr 2 _∧_
+_∧_ = And
+
+Intersection : {X : Type ℓ} → Pred X → Pred X → Pred X
+Intersection P Q = \x → P x ∧ Q x
+
+_∩_ : {X : Type ℓ} → Pred X → Pred X → Pred X
+P ∩ Q = \x → P x ∧ Q x
+
+Iff : Prop ℓ → Prop ℓ' → Prop _
+Iff P Q = (P → Q) ∧ (Q → P)
+
+_⇔_ = Iff
+
+data False {ℓ : Level} : Prop ℓ where
+
+data Or (X : Prop ℓ) (Y : Prop ℓ') : Prop (ℓ ⊔-level ℓ')  where
+  left : X → Or X Y
+  right : Y → Or X Y
+
+_∨_ = Or
+
+Union : {X : Type ℓ} → Pred X → Pred X → Pred X
+Union P Q = \x → P x ∨ Q x
+
+_∪_ : {X : Type ℓ} → Pred X → Pred X → Pred X
+_∪_ = Union
+
+U : {X : Type ℓ} → Pred X
+U = \ _ → True
+
+BigUnion : {X : Type ℓ} {I : Type} → (I → Pred X) → Pred X
+BigUnion f x = ∃ λ i → f i x
+
+⋃ = BigUnion
+
+∅ : {X : Type ℓ} → Pred X
+∅ = \ _ → False
+
+comp-fun : {X Y Z : Type ℓ} → (Y → Z) → (X → Y) → (X → Z)
+comp-fun f g x = f (g x)
+
+_∘_ = comp-fun
+
+comp-binrel : {X Y Z : Type ℓ} → Pred (X × Y) → Pred (Y × Z) → Pred (X × Z)
+comp-binrel S R (mk x z) = ∃ λ y → S (mk x y) ∧ R (mk y z)
+
+_⋈_ = comp-binrel
+
+data Accessible {X : Type} (r : Rel X X) (x : X) : Prop where
+  acc : (∀ y → r y x →  Accessible r y) → Accessible r x
+
+WellFounded : {X : Type} (r : Rel X X) → Prop
+WellFounded r = ∀ x → Accessible r x
+
+elim_of : {B : Type ℓ} {A : Type ℓ'} → A → (A → B) → B
+elim a of f = f a
+
+case_of : {B : Prop ℓ} {A : Prop ℓ'} → A → (A → B) → B
+case a of f = f a
+
+record Setoid (X : Type) : Type1 where
+  constructor mk
+  field
+    eq : Rel X X
+
+  field
+    eq-refl : Reflexive eq
+    eq-symm : Symmetric eq
+    eq-assoc : Associative eq
+
+  _∙_ = eq-assoc
+  _⁻ = eq-symm
+
+record NSetoid (X : Type) : Type1 where
+  constructor mk
+  field
+    eq : Rel X X
+    n : X → X
+
+  field
+    ext : Extensional eq
+    norm : Normalizable eq n
+
+module _ where
+  open Setoid
+  open NSetoid
+  N : ∀ (X : Type) → Setoid X → NSetoid X
+  N X (mk eq eq-refl symm assoc) .NSetoid.eq = eq
+  N X (mk eq eq-refl symm assoc) .NSetoid.n x = x
+  N X (mk eq eq-refl symm assoc) .NSetoid.ext xy zy = assoc xy (symm zy)
+  N X (mk eq eq-refl symm assoc) .NSetoid.norm = eq-refl
+
+  unN : ∀ (X : Type) → NSetoid X → Setoid X
+  unN X (mk eq n ext norm) .Setoid.eq = eq
+  unN X (mk eq n ext norm) .Setoid.eq-refl = ext norm norm
+  unN X (mk eq n ext norm) .Setoid.eq-symm = ext (ext norm norm)
+  unN X (mk eq n ext norm) .Setoid.eq-assoc xy yz = ext xy (ext (ext norm norm) yz)
+
+record Proset (X : Type) : Type1 where
+  constructor mk
+  field
+    le : Rel X X
+
+  field
+    le-refl : Reflexive le
+    le-assoc : Associative le
+
+  _∙_ = le-assoc
+
+record Poset (X : Type) : Type1 where
+  constructor mk
+  field
+    proset : Proset X
+
+  open Proset proset public
+
+  eq : Rel X X
+  eq x y = And (le x y) (le y x)
+
+record Subsetoid {X : Type} (X-setoid : Setoid X) : Type₁ where
+  constructor mk
+  open Setoid X-setoid
+  field
+    elem : Pred X
+    elem-setoid : ∀ x y → eq x y → elem x → elem y
+
+_=>_ : {X : Type} → Pred X → Pred X → Prop
+P => Q = ∀ x → P x → Q x
+
+_=>-setoid_ : {X : Type} {X-setoid : Setoid X} → Subsetoid X-setoid → Subsetoid X-setoid → Prop
+_=>-setoid_ {X} {X-setoid} P Q = ∀ x → P .Subsetoid.elem x → ∃ (λ y → Q .Subsetoid.elem y ∧ X-setoid .Setoid.eq x y)
+
+\end{code}
+
+\section{Toy language}
+
+In this section we introduce our toy language as an example.
+
+\newcommand{\bnfdef}{\;:=\;}
+\newcommand{\bnfalt}{\;\mid\;}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\integer}{\mathbb{Z}}
+
+\begin{align*}
+c, c' &:= c \mathop{;} c' \mid c \mathop{|} c' \mid \mathit{skip} \mid \mathit{abort} \mid \mathit{test}(e) \mid x := e &\mathit{Program} \\
+e, e' &:= \# m \mid x \mid e + e' \mid e * e' \mid \mathit{pred} e &\mathit{Expression} \\
+x, y, z &\in \mathbf{Var} &\mathit{Variable} \\
+m, n &\in \nat &\mathit{Value}
+\end{align*}
+
+\begin{code}
+
+data Program : Type
+data Expression : Type
+
+
+data List (X : Type ℓ) : Type ℓ where
+  [] : List X
+  _∷_ : X → List X → List X
+
+
+lunit : {X : Type ℓ} → X → List X
+lunit x = x ∷ []
+
+fmap : {X : Type ℓ} {Y : Type ℓ'} → (X → Y) → List X → List Y
+fmap f [] = []
+fmap f (x ∷ xs) = f x ∷ fmap f xs
+
+fold : {X : Type ℓ} {Y : Type ℓ'} → Y → (Y → X → Y) → List X → Y
+fold y f [] = y
+fold y f (x ∷ xs) = fold (f y x) f xs
+
+_++_ : {X : Type ℓ} → List X → List X → List X
+[] ++ xs' = xs'
+(x ∷ xs) ++ xs' = x ∷ (xs ++ xs')
+
+lift : {X : Type ℓ} → (X → List X) → List X → List X
+lift f [] = []
+lift f (x ∷ m) = f x ++ lift f m
+
+ListAll : {X : Type ℓ} (P : X → Prop) → List X → Prop
+ListAll P xs = fold True And (fmap P xs)
+
+ListAny : {X : Type ℓ} (P : X → Prop) → List X → Prop
+ListAny P xs = fold False Or (fmap P xs)
+
+Variable = Nat
+data Program where
+  _⨾_ : (c c' : Program) → Program
+  _∣_ : (c c' : Program) → Program
+  skip : Program
+  abort : Program
+  test : (x : Variable) → Program
+  _:=_ : (x : Variable) (e : Expression) → Program
+
+data Expression where
+  # : (n : Nat) → Expression
+  ` : (x : Variable) → Expression
+  add : (e e' : Expression) → Expression
+  mul : (e e' : Expression) → Expression
+
+\end{code}
+
+The program context is defined as follows
+\begin{align*}
+\Gamma_0 &= (\text{prog} : \mathbf{Program}) (\text{cont} : \mathbf{Cont}(\text{prog})) (\text{ass} : \mathbf{Var}(\text{prog}) \to \integer)
+\end{align*}
+
+\begin{code}[hide]
+
+State = Variable → Nat
+
+StateEq : State → State → Prop
+StateEq S S' = ∀ v → Eq (S v) (S' v)
+
+record C : Type where
+  constructor mk
+  field
+    prog : Program
+    ass : State
+
+exp : Expression → State → Nat
+exp (# n) S = n
+exp (` x) S = S x
+exp (add e e') S = exp e S + exp e' S
+exp (mul e e') S = exp e S * exp e' S
+
+ass : Nat → Nat → State → State
+ass zero n S zero = n 
+ass zero n S (suc x') = S (suc x')
+ass (suc x) n S zero = S zero
+ass (suc x) n S (suc x') = ass x n (S ∘ suc) x'
+
+run : Program → State → List State
+run (c ⨾ c') S = lift (run c') (run c S)
+run (c ∣ c') S = run c S ++ run c' S
+run skip S = lunit S 
+run abort S = []
+run (test x) S = elim S x of λ { zero → [] ; (suc x) → lunit S }
+run (x := e) S = lunit (ass x (exp e S) S)
+
+embed : (State → List State) → Pred (State × State)
+embed t (mk σ σ') = ListAny (StateEq σ) (t σ)
+
+-- Hyperproperty?
+HRel : Type → Type → Type₁
+HRel X Y = Pred₀ (Pred (X × X) × Pred (Y × Y))
+
+-- live variable analysis
+-- ∀ σ k → σ k
+
+-- Our Program has
+
+
+-- S represents possible path between value set x and value set y
+Hoare : (X Y : Type) → Pred (X × Y) → HRel X Y
+Hoare X Y S (mk P Q) = ∀ x x' y y' → S (mk x y) → S (mk x' y') → P (mk x x') → Q (mk y y')
+
+
+
+
+\end{code}
+
+A property is a relation on pre and poststate in $\mathscr{P}(S_0 × S_1)$.
+Every hyperproperty is an intersection of a hyper safety property and a hyper liveness property, i.e.,
+Hypersafety is every bad thing fnitely observable and
+
+
+
+\newcommand{\sem}[1]{\llbracket #1 \rrbracket}
+\newcommand{\dto}{\Rightarrow}
+The semantics is given inductively as follows:
+\begin{center}
+%
+\begin{prooftree}
+  \AxiomC{$P(V_{\Gamma}) \dto [ c ] R(V_{\Delta}) $}
+  \AxiomC{$R(V_{\Delta}) \dto [ c' ] Q(V_{\Theta}) $}
+  \BinaryInfC{$P(V_\Gamma) \dto [ c \mathop{;} c' ] Q(V_{\Theta}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$P(V_{\Gamma}) \dto [ c ] R(V_{\Delta}) $}
+  \AxiomC{$Q(V_{\Gamma}) \dto [ c' ] R(V_{\Delta}) $}
+  \BinaryInfC{$P(V_{\Gamma}) \lor Q(V_{\Gamma}) \dto [ c \mathop{|} c' ] R(V_{\Delta}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$e = 0 \land P(V_{\Gamma}) \dto [ \text{skip} ] R(V_{\Delta}) $}
+  \UnaryInfC{$P(V_{\Gamma}) \dto [ \text{while }(e)\{ c \} ] R(V_{\Delta}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$e \neq 0 \land P(V_{\Gamma}) \dto [c \mathop{;} \text{while }(e)\{ c \} ] R(V_{\Delta}) $}
+  \UnaryInfC{$P(V_{\Gamma}) \dto [ \text{while }(e)\{ c \} ] R(V_{\Delta}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$P(V_{\Gamma}) \dto [ \text{abort } ] R(V_{\Delta}) $}
+  \end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$P(V_{\Gamma}) \dto [ \text{skip} ] P(V_{\Gamma}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$e \neq 0 \land P(V_{\Gamma}) \dto [ \text{test } e ] P(V_{\Gamma}) $}
+\end{prooftree}
+%
+\begin{prooftree}
+  \AxiomC{$e = 0 \land P(V_{\Gamma}) \dto [ \text{test } e ] R(V_{\Delta}) $}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$[x \mapsto e] P(V_{\Gamma}) \dto [ x := e ] P(V_{\Gamma}) $}
+\end{prooftree}
+
+\end{center}
+
+\begin{code}
+module _ where
+\end{code}
+
+An infomation poset over $C$ is a pair $(D, \le , F)$ consists of a poset $(D, \le)$ and order embedding $F : D \to \mathbf{\Omega}^{\mathbf{Cfg}}$, i.e.,
+\begin{enumerate}
+\item for every $d, d' \in D$, $d \le d'$ if and only if $F(d) \subseteq F(d')$
+\end{enumerate}
+
+\[
+\begin{tikzcd}
+D \arrow[r, "!"] \arrow[d, hookrightarrow, "\iota"'] \arrow[dr, phantom, "\lrcorner", very near start] & * \arrow[d, "\text{true}"] \\
+C \arrow[r, "\chi_{\iota}"] & \mathbf{\Omega}
+\end{tikzcd}
+\]
+
+
+% https://q.uiver.app/#q=WzAsNCxbMCwwLCJEIl0sWzAsMSwiRCJdLFsxLDAsIlxcbWF0aGJme1xcT21lZ2F9XntcXG1hdGhiZntDZmd9fSJdLFsxLDEsIlxcbWF0aGJme1xcT21lZ2F9XntcXG1hdGhiZntDZmd9fSJdLFswLDIsIkYiXSxbMSwzLCJGIiwyXSxbMiwzLCJcXHN1YnNldGVxIiwwLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoiYmFycmVkIn19fV0sWzAsMSwiIiwxLHsic3R5bGUiOnsiYm9keSI6eyJuYW1lIjoibm9uZSJ9LCJoZWFkIjp7Im5hbWUiOiJub25lIn19fV0sWzAsMSwiXFxsZSIsMix7InN0eWxlIjp7ImJvZHkiOnsibmFtZSI6ImJhcnJlZCJ9fX1dLFs0LDUsIiIsMCx7InNob3J0ZW4iOnsic291cmNlIjo0MCwidGFyZ2V0Ijo0MH19XV0=
+\[\begin{tikzcd}
+D & {\mathbf{\Omega}^{C}} \\
+D & {\mathbf{\Omega}^{C}}
+\arrow[""{name=0, anchor=center, inner sep=0}, "F", from=1-1, to=1-2]
+\arrow[draw=none, from=1-1, to=2-1]
+\arrow["\le"', "\shortmid"{marking}, from=1-1, to=2-1]
+\arrow["\subseteq", "\shortmid"{marking}, from=1-2, to=2-2]
+\arrow[""{name=1, anchor=center, inner sep=0}, "F"', from=2-1, to=2-2]
+\arrow[shorten <=9pt, shorten >=9pt, Rightarrow, from=0, to=1]
+\end{tikzcd}\]
+
+% https://q.uiver.app/#q=WzAsNCxbMSwwLCJEIFxcdGltZXMgRCJdLFsyLDAsIlxcbWF0aGJme1xcT21lZ2F9XntcXG1hdGhiZntDZmd9fVxcdGltZXMgXFxtYXRoYmZ7Q2ZnfSJdLFswLDAsIkQiXSxbMywwLCJcXG1hdGhiZntcXE9tZWdhfSJdLFswLDEsIkYgXFx0aW1lcyBcXGlvdGEiXSxbMiwwLCJcXGRlbHRhIl0sWzEsMywiXFxtYXRoaXR7ZXZ9Il1d
+\[\begin{tikzcd}
+	D & {D \times D} & {\mathbf{\Omega}^{C}\times C} & {\mathbf{\Omega}}
+	\arrow["\delta", from=1-1, to=1-2]
+	\arrow["{F \times \iota}", from=1-2, to=1-3]
+	\arrow["{\mathit{ev}}", from=1-3, to=1-4]
+\end{tikzcd}\]
+
+% https://q.uiver.app/#q=WzAsMTEsWzEsMSwiRCBcXHRpbWVzIEQiXSxbMiwxLCJcXG1hdGhiZntcXE9tZWdhfV57XFxtYXRoYmZ7Q2ZnfX1cXHRpbWVzIFxcbWF0aGJme0NmZ30iXSxbMCwxLCJEIl0sWzMsMSwiXFxtYXRoYmZ7XFxPbWVnYX0iXSxbMCwyLCJEIl0sWzEsMiwiRCJdLFsyLDIsIlxcbWF0aGJme0NmZ30iXSxbMywyLCJcXG1hdGhiZntcXE9tZWdhfSJdLFsyLDAsIkQgXFx0aW1lcyBcXG1hdGhiZntDZmd9Il0sWzAsMywiKiJdLFszLDMsIlxcbWF0aGJme1xcT21lZ2F9Il0sWzAsMSwiRiBcXHRpbWVzIFxcaW90YSJdLFsyLDAsIlxcZGVsdGEiXSxbMSwzLCJcXG1hdGhpdHtldn0iXSxbMiw0LCJpZCIsMl0sWzQsNSwiaWQiLDJdLFswLDUsIlxccGlfMSIsMl0sWzUsNiwiXFxpb3RhIiwyXSxbMSw2LCJcXHBpXzIiLDJdLFs2LDcsIlxcY2hpX3tcXGlvdGF9IiwyXSxbMyw3LCJpZCJdLFs4LDEsInUgXFx0aW1lcyBpZCJdLFs4LDMsIlxcc2ltIiwwLHsiY3VydmUiOi0yfV0sWzQsOSwiISJdLFs5LDEwLCJcXG1hdGhpdHt0cnVlfSJdLFs3LDEwLCJpZCJdLFswLDgsImlkIFxcdGltZXMgXFxpb3RhIiwwLHsiY3VydmUiOi0yfV1d
+\[\begin{tikzcd}
+	&& {D \times C} \\
+	D & {D \times D} & {\mathbf{\Omega}^{C}\times C} & {\mathbf{\Omega}} \\
+	D & D & {C} & {\mathbf{\Omega}} \\
+	{*} &&& {\mathbf{\Omega}}
+	\arrow["{u \times id}", from=1-3, to=2-3]
+	\arrow["\sim", from=1-3, to=2-4]
+	\arrow["\delta", from=2-1, to=2-2]
+	\arrow["id"', from=2-1, to=3-1]
+	\arrow["{id \times \iota}", from=2-2, to=1-3]
+	\arrow["{F \times \iota}", from=2-2, to=2-3]
+	\arrow["{\pi_1}"', from=2-2, to=3-2]
+	\arrow["{\mathit{ev}}", from=2-3, to=2-4]
+	\arrow["{\pi_2}"', from=2-3, to=3-3]
+	\arrow["id", from=2-4, to=3-4]
+	\arrow["id"', from=3-1, to=3-2]
+	\arrow["{!}", from=3-1, to=4-1]
+	\arrow["\iota"', from=3-2, to=3-3]
+	\arrow["{\chi_{\iota}}"', from=3-3, to=3-4]
+	\arrow["id", from=3-4, to=4-4]
+	\arrow["{\mathit{true}}", from=4-1, to=4-4]
+\end{tikzcd}\]
+
+Hoare logic's Relative completeness makes weakest precondition useful especially for total deterministic program.
+In the runtime, each variable are assigned certain concrete value, and by evaluation, variable can get another value.
+Our predicate in predicate transformer is essentially represents possible values.
+But property such that variables can be more general for example how the variable will be used in future execution
+modified in future etc.
+Such information can be represented by relation between different program points.
+
+
+
+But variable information more use
+The situation is that we have an inclusion F from the domain $D X$ to the lattice of powersets $\pow X$
+We call an element of $P \in \pow X$ a subset of X, or interchangablly a predicate on X.
+We write $P \subseteq Q$ or $P  Q$ interchangeablly, to mean inclusion order ($\forall x, x \in P \implies x \in Q$).
+We also call $P$ is smaller than $Q$ or $P$ is stronger than $Q$ when $P \subseteq Q$ or $P \imp Q$.
+$X$ is a set of contexts in the program. A context is a list of variables with types.
+And an assignment for each variable is called configuraton.
+
+For exmample, for a program such that
+\begin{verbatim}
+L1: z <- add x y
+L2: x <- mul y z
+L3: y <- sub x y
+L4: t <- le x 0
+L5: goto-if 2 t
+\end{verbatim}
+
+For example $X$ can be \{var label : sort, x y z : var, L1 L2 L3 L4 : label \}.
+A predicate on $X$ can be represented by a logical formula refering symbols in $X$, e.g,
+`$x = 1$', `$x = 1 \implies y = 2$' and so on.
+And configuration is an assignment for each symbols in $X$.
+Meaning that
+
+$\pow X$ contains ideal precise information about a program,
+We define subclass of $\pow X$ that can be handled convenently, by specifiyng a domain of information $D$ equipped semantic brancket $[ - ]$
+
+\begin{equation}
+[ - ] : D X → \pow X
+\end{equation}
+
+Then we define an order acording to its logical strength in the semantics
+\begin{equation}
+x \le y \defeq [ x ] \subseteq [ y ]
+\end{equation}
+
+In analysis, given two information about a program $x y \in D X$, that represent two predicates [ x ] and [ y ],
+Then, we hope we can get new information $z$ that combine two information $x y$ as precise as possible in the language.
+Therefore, $x \meet y$ is the greatest lower bound, i.e.,
+\[ x \meet y \le x \]
+\[ x \meet y \le y \]
+\[ z \le x \land z \le y \implies z \le x \meet y \]
+
+We naturally think of $\meet$ as an approximation of $\intersection$ in its semantics, i.e.,
+intersection of interpretations is stronger than interpretation of meet:
+\[ [ x ] \intersection [ y ] \subseteq [ x \meet y ]  \]
+This inclusion does not hold from the property of $\meet$.
+by asserting this property to be held, the approximation of $\meet$ become safe by design.
+On the other hand, the property of $\meet$ assure the other direction.
+\[  [ x \meet y ] \subseteq [ x ] \intersection [ y ] \]
+
+Similary, $D X$ may have a join operatioon $\join$ that also combine information but the result are weaker.
+This happens when the program has branches or non-determinic choices, i.e.,
+we may have information (or a predicate that holds) on each branch but we do not know which branch will be taken.
+Semantically, it is the union of predicates $\union$.
+\[ x \le x \join y \]
+\[ y \le x \join y \]
+\[ x \le z \land y \le z \implies x \join y \le z \]
+
+Similarly to the $\meet$, $\join$ has to be safe approximation of its semantics, i.e,
+\[  [ x ] \union [ y ] \subseteq [ x \join y ] \]
+This inclusion already holds from the property of $\join$.
+
+We assume $D X$ has $\top$ with its property $\forall x, x \le \top$, and semantics $[ \top ] = X$
+and $\bot$ with its property $\forall x, \bot \le x$, and semantics $[ \bot ] = \emptyset$
+
+
+
+\begin{code}
+
+-- substitution : Γ ⇒ Δ
+-- nondeterministic substitution of nondeterminisity I : Γ ⇒ Δ^I
+-- sequential composition ⋈ : (Γ ⇒δ Δ^I) × (Δ ⇒θ Θ^J) → (γ : Γ) ⇒ (∃ (i : I), (θ (δ γ i) : Θ^J))
+--
+-- VΔ → ℕ → E(VΓ)
+-- VΔ × ℕ → E(VΓ)
+--
+--
+-- nondeterministic substitution of unspecified nondeterminisity : Γ ⇒ 𝒫ω Δ ≅ 𝒫ω (Γ -× Δ)
+-- sequential composition ⋈ : 𝒫ω (Γ -× Δ) × 𝒫ω (Δ -× Θ) → 𝒫ω(Γ -× Θ)
+-- x := x + 1
+-- predicates over possible pass 𝒫(𝒫(Γ × Δ))
+--
+-- ∀ i j, ∀ k<i, v ¬ (y_i ∈ ass[v_k])
+--        ∀ k>j, v ¬ (v_k depends on y_j)
+-- y := x + 1 (y is generated)
+
+
+_⊆_ : {X : Type ℓ} → Pred X → Pred X → Prop _
+P ⊆ Q = ∀ x → P x → Q x
+
+_≅_ : {X : Type ℓ} → Pred X → Pred X → Prop _
+P ≅ Q = (P ⊆ Q) ∧ (Q ⊆ P)
+
+union-intersection-distribution : {X : Type ℓ} {I : Type} → (F : I → Pred X) (P : Pred X) → BigUnion (λ i → F i ∩ P) ≅ (BigUnion F ∩ P)
+union-intersection-distribution F P = mk (λ { x (mk i (mk x∈Fi x∈P)) → mk (mk i x∈Fi) x∈P}) (λ { x (mk (mk i x∈Fi) x∈P) → mk i (mk x∈Fi x∈P)})
+
+union-comp-distribution : {X Y Z : Type ℓ} {I : Type} → (F : I → Pred (X × Y)) (R : Pred (Y × Z)) → BigUnion (λ i → F i ⋈ R) ≅ (BigUnion F ⋈ R)
+union-comp-distribution F R = mk
+  (λ { (mk x z) (mk i (mk y (mk xy∈Fi yz∈R))) → mk y (mk (mk i xy∈Fi) yz∈R)})
+  (λ { (mk x z) (mk y (mk (mk i xy∈Fi) yz∈R)) → mk i (mk y (mk xy∈Fi yz∈R))})
+
+-- Approximation of Pow(C) by D
+record Approx (C : Type) (D : Type ℓ) : Type (lsuc ℓ) where
+  field
+    map : D → Pred C -- semantics
+    top : D
+    bot : D
+    meet : D → D → D
+    bigjoin : {I : Type} → (I → D) → D
+
+  infix 4 _≤_ _≈_
+  infixr 8 _⊓_
+
+  ⨆ = bigjoin
+
+  [_] = map
+  _≤_ : D → D → Prop _
+  a ≤ b = [ a ] ⊆ [ b ]
+
+  _≈_ : D → D → Prop _
+  a ≈ b = [ a ] ≅ [ b ]
+
+  _⊓_ = meet
+  ⊤ = top
+  ⊥ = bot
+
+  field
+    -- inc-id : ∀ d d' → d ≈ d' → Id d d'
+
+    top-max : ∀ d → d ≤ ⊤
+
+    meet-glb : ∀ d e
+      → (d ⊓ e ≤ d)
+      ∧ (d ⊓ e ≤ e)
+      ∧ (∀ z → (z ≤ d) ∧ (z ≤ e) → z ≤ d ⊓ e)
+
+    join-lub : {I : Type} (f : I → D)
+      → (∀ i → f i ≤ bigjoin f)
+      ∧ (∀ x → (∀ i → f i ≤ x) → bigjoin f ≤ x)
+
+    top-approximates-total : U ⊆ [ ⊤ ]
+
+    meet-approximates-intersection : ∀ x y
+      → ([ x ] ∩ [ y ]) ⊆ [ x ⊓ y ]
+
+  top-overapproximates-whole : [ ⊤ ] ⊆ U
+  top-overapproximates-whole = λ _ _ → _
+
+  meet-overapproximates-intersection : (d d' : D) → [ d ⊓ d' ] ⊆ ([ d ] ∩ [ d' ])
+  meet-overapproximates-intersection d d' c map-d-d'-c =
+    mk (meet-glb d d' .And.fst c map-d-d'-c)
+       (meet-glb d d' .And.snd .And.fst c map-d-d'-c)
+
+  meet-mono-l : {d d' : D} (e : D)
+    → d ≤ d'
+    → (d ⊓ e ≤ d' ⊓ e)
+  meet-mono-l e d≤d' c c∈[d⊓e]
+    = let (mk c∈[d] c∈[e]) = meet-overapproximates-intersection _ _ _ c∈[d⊓e]
+      in meet-approximates-intersection _ _ _ (mk (d≤d' _ c∈[d]) c∈[e])
+
+  meet-mono-r : {d d' : D} (e : D)
+    → d ≤ d'
+    → (e ⊓ d ≤ e ⊓ d')
+  meet-mono-r e d≤d' c c∈[e⊓d]
+    = let (mk c∈[e] c∈[d]) = meet-overapproximates-intersection _ _ _ c∈[e⊓d]
+      in meet-approximates-intersection _ _ _ (mk c∈[e] (d≤d' _ c∈[d]))
+
+  bot-approximates-empty : ∅ ⊆ map ⊥
+  bot-approximates-empty x ()
+
+  join-approximates-union : {I : Type} (f : I → D)
+    → BigUnion (λ i → [ f i ]) ⊆ [ ⨆ f ]
+  join-approximates-union f c (mk i map-fa-c) = And.fst (join-lub f) i c map-fa-c 
+
+  join-mono :
+    {I : Type} (f : I → D)
+    {J : Type} (g : J → D)
+    → (∀ i → ∃ λ j → f i ≤ g j)
+    → ⨆ f ≤ ⨆ g
+  join-mono f g f≼g c c∈[⨆f] = join-lub f .And.snd (⨆ g)
+    (λ i c' c'∈[fi] → (case (f≼g i) of λ { (mk j fi≤gj) → join-lub _ .And.fst _ _ (fi≤gj _ c'∈[fi]) }))
+    _
+    c∈[⨆f]
+
+\end{code}
+
+\begin{code}
+data Ctx : Type
+data Ty : Ctx → Type
+data Tm : (Γ : Ctx) → Ty Γ → Type
+data Var : (Γ : Ctx) → Ty Γ → Type
+
+private variable
+  Γ Δ : Ctx
+  A : Ty Γ
+  B : Ty Δ
+
+data Ctx where
+  empty : Ctx
+  extend : (Γ : Ctx) → Ty Γ → Ctx
+
+data Ty where
+  sort : Ty Γ
+  El : Tm Γ sort → Ty Γ
+  top : (A : Ty Γ) → Ty (extend Γ A)
+
+data Tm where
+  var : Var Γ A → Tm Γ A
+
+data Var where
+  this : Var (extend Γ A) (top A)
+  last : Var Δ A → Var (extend Δ B) (top B)
+
+CPred : Ctx → Type (lsuc lzero)
+CPred empty = Pred Unit
+CPred (extend Γ A) = CPred Γ × Pred (Var Γ A)
+
+\end{code}
+
+Now, contexts $C$ contains names over the whole program.
+So $D$ would become
+
+To build a substance framework we would like the s
+We would like more compositonally as a big program consists of smaller codes.
+
+Now, we would like talk about static analysis.
+We try to gather information without running it.
+To do this, we `Divide-and-conquer' syntax of program.
+For example, the following example, the whole program consists of lines of instructions.
+
+\begin{verbatim}
+L1: z := add x y
+L2 x := mul y z
+L3 if (x = 0) goto L1
+L4 y := sub x y
+L5
+\end{verbatim}
+
+For each instruction, we obtain small information, for example, at the line L2, we get information about pre and post condition within a evaluation
+\begin{align*}
+  c_n = (\mathrm{ip} \leftarrow \mathrm{L2}, x \leftarrow 0, y \leftarrow 1, z \leftarrow 2) \\
+  \implies c_{n + 1} = (\mathrm{ip} \leftarrow \mathrm{L3} , x \leftarrow 2, x \leftarrow 1, z \leftarrow 2)
+\end{align*}
+
+the set of predicates over a domain $D$ equips with the following data
+\begin{enumerate}
+  \item $[-]: D \to \pow X$
+  \item $\top: D$
+  \item $\bot: D$
+  \item $- \meet - : D \to D \to D$
+  \item $- \join - : D \to D \to D$
+\end{enumerate}
+where $X$ and $Y$ are set of variables at pre and post states, respectively.
+We interpret $d : D$ as a syntax of represent relation $ [ d ] : \pow(X \times Y) $.
+
+\begin{enumerate}
+  \item $p : X \to D$
+  \item $\bot \leq p(x) \leq \top$
+  \item $p(x) \meet p(y) \leq p(x) \land p(x) \meet p(y) \leq p(y) $
+  \item $p(x) \leq p(x) \join p(y) \land p(y) \leq p(x) \join p(y) $
+  \item $p(x) \leq d \join e \implies p x \leq d \lor p x \leq e$
+  \item $p(x) \leq \bigjoin_{i} d_{i} \implies \exists i, p x \leq d_{i}$
+  \item $[ d ]^{p=} := \{ x : X \mid p x = d \} $
+  \item $[ d ]^{p\leq} := \{ x : X \mid p x \leq d \} $
+  \item $[ d \meet e ] := \{ x : X \mid p x \leq d \meet e \} $
+\end{enumerate}
+
+\begin{align*}
+\forall d\ e, d \leq e = \\
+  [ d ] \subseteq [ e ] = \\
+  \{ x \mid p x \leq d \} \subseteq \{ x \mid p x \leq e \} = \\
+  (\forall x, p x \leq d \implies p x \leq e)
+\end{align*}
+We recall approximation constraints on $\join$ and $\meet$.
+This constraint corresponts the property of $p$:
+\begin{align*}
+  \forall d\ e, [ d ] \cup [ e ] \subseteq [ d \join e ] \iff  \\
+  \forall d\ e, \{x \mid p x \le d \} \cup \{x \mid p x \le e \} \subseteq \{ x \mid p x \le d \join e \} \iff \\
+  \forall d\ e\ x,  p x \le d \lor p x \le e \implies  p x \le d \join e
+\end{align*}
+This is always true because if $p x \le d$, we get $p x \le d \join e$ by using $d \leq d \join e$, and similarly if $p x \leq e$ then $p x \leq d \join e$.
+
+And approximation for $\top$ is also trivially true.
+\begin{align*}
+  U \subseteq [ \top ] \iff  \\
+  U \subseteq \{ x \mid p x \leq \top \} \iff \\
+  \forall x , p x \leq \top
+\end{align*}
+
+And approximation for $\bot$ is trivially true.
+\begin{align*}
+  \emptyset \subseteq [ \bot ]
+\end{align*}
+
+But approximation conditions of $\land$ and $\top$ are not trivial:
+\begin{align*}
+  \forall d\ e, [ d ] \cap [ e ] \subseteq [ d \meet e ]  \iff  \\
+  \forall d\ e, \{x \mid p x \le d \} \cap \{x \mid p x \le e \} \subseteq \{ x \mid p x \le d \meet e \} \iff \\
+  \forall d\ e\ x,\ p x \le d \land p x \leq e \implies p x \le d \meet e \}
+\end{align*}
+
+We consider a program to be a morphism between assignments of names
+
+\begin{code}
+
+wp : {A B : Type ℓ} → (A → B) → Pred B → Pred A
+wp f ρ a = ρ (f a)
+
+sp : {A B : Type ℓ} → (A → B) → Pred A → Pred B
+sp f ρ b = ∃ λ a → Eq (f a) b ∧ ρ a
+
+record ApproxTrans (C C' : Type) (D D' : Type ℓ) : Type (lsuc ℓ) where
+  field
+    pre : Approx C D
+    post : Approx C' D'
+
+  open Approx
+
+module _
+  (C C' : Type)
+  (D D' : Type ℓ)
+  (pre : ApproxTrans C C' D D') where
+
+\end{code}
+
+% \item \lub is sound : ([ x ] ∪ [ y ]) ⊂ [ x ⊔ y ]
+% rule2, ⨆ is sound : ⋃ (F xi) ⊂ F (⨆ xi)
+
+
+
+
+
+\end{document}

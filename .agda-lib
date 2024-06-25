@@ -1,0 +1,4 @@
+name: bidrectional-flow
+depend: standard-library
+include: ./
+flags: --guardedness --no-import-sorts --exact-split --prop --postfix-projections
